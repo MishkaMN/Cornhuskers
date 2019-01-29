@@ -261,7 +261,60 @@ void aPosterioriUpdate(float dt)
 
 void outputEstimate()
 {
-    return;
+    // Determine walls:
+  int wall_f = det_wall(0);
+  int wall_s = det_wall(1);
+  // 
+  float theta = q(0);
+  float x = q(1):
+  float y = q(2);
+  // Adjust theta depending on which wall facing:
+  switch (wall_f)
+  {
+    case 0: break;
+    case 1: theta = theta - 90; break;
+    case 2: theta = theta - 180; break;
+    case 3: theta = theta - 270; break;
+  }
+  BLA:: Matrix<3> h;
+  if (wall_f == 0 && wall_s == 2) {
+    h  << q(0),(L - y)/cos(theta),
+           y/(sin(theta));}
+  else if (wall_f == 0 && wall_s == 1){
+    h << q(0),(L - y)/cos(theta),
+           (W-x)/(cos(theta));}
+  else if (wall_f == 0 && wall_s == 0) {
+    h << q(0),(L - y)/cos(theta),
+           (L - y)/(sin(theta));}
+  else if (wall_f == 1 && wall_s == 3) {
+    h << q(0),(W - x)/cos(theta),
+           x/(sin(theta));}
+  else if (wall_f == 1 && wall_s == 2) {
+    h << q(0),(W - x)/cos(theta),
+           y/(cos(theta));}
+  else if (wall_f == 1 && wall_s == 1) {
+    h << q(0),(W - x)/cos(theta),
+           (W-x)/(sin(theta));}
+  else if (wall_f == 2 && wall_s == 0) {
+    h << q(0), y/cos(theta),
+           (L - y)/(sin(theta));}
+  else if (wall_f == 2 && wall_s == 3) {
+    h << q(0),y/cos(theta),
+           x/(cos(theta));}
+  else if (wall_f == 2 && wall_s == 2) {
+    h << q(0),y/cos(theta),
+           y/(sin(theta));}
+  else if (wall_f == 3 && wall_s == 1) {
+    h << q(0), x/cos(theta),
+           (W-x)/(sin(theta));}
+  else if (wall_f == 3 && wall_s == 0) {
+    h << q(0),x/cos(theta),
+           (L -y)/(cos(theta));}
+  else if (wall_f == 3 && wall_s == 3){
+    h << q(0),x/cos(theta),
+           x/(sin(theta));}
+  BLA::Matrix <3> offset << 0,25,30;
+  return h - offset;
 }
 
 void setup() {
