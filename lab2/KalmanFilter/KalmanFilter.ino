@@ -48,9 +48,9 @@ int wall_s = -1;
 // Miscellaneous equations for finding H i.e. linearized equations
 float eq(int num) 
 {
-  float theta = q(1);
-  float x = q(2);
-  float y = q(3);
+  float theta = q(0);
+  float x = q(1);
+  float y = q(2);
   // Adjust theta depending on which wall facing:
   switch(wall_f)
   {
@@ -153,9 +153,9 @@ void update_H(float dt)
 int det_wall(int sensorType)
 {
   // TODO: measure sensors from middle point of vehicle to account for displacement
-  float theta = q(1);
-  float x = q(2);
-  float y = q(3);
+  float theta = q(0);
+  float x = q(1);
+  float y = q(2);
 
   if (sensorType == 1)
     theta += 90;
@@ -177,8 +177,8 @@ int det_wall(int sensorType)
   thetas[0]= acos((L-y)/z[2]) * 180 / PI;
   thetas[1]= acos((W-x)/z[2]) * 180 / PI;
   thetas[2]= acos((W-x)/z[3]) * 180 / PI;
-  thetas[3]= acos(y/z[0]) * 180 / PI;
-  thetas[4]= acos(y/z[3]) * 180 / PI;
+  thetas[3]= acos(y/z[3]) * 180 / PI;
+  thetas[4]= acos(y/z[0]) * 180 / PI;
   thetas[5]= acos(x/z[0]) * 180 / PI;
   thetas[6]= acos(x/z[1]) * 180 / PI;
   thetas[7]= acos((L-y)/z[1]) * 180 / PI;
@@ -222,8 +222,8 @@ void getVelocities(float pwmR, float pwmL, float& vR, float& vL, float &vT, floa
 void update_F(float dt)
 {
   F << 1, 0, 0,
-       -vT * sin(q(1)) * dt, 1, 0,
-       vT * cos(q(1)) * dt, 1, 0;
+       -vT * sin(q(0)) * dt, 1, 0,
+       vT * cos(q(0)) * dt, 1, 0;
 }
 
 void update_Q(float dt)
@@ -238,8 +238,8 @@ void aPrioriUpdate(float dt)
 {
   //get q^ estimate
   q_est(1) = q_est(1) + (wAng * dt);
-  q_est(2) = vT * cos(q(1));
-  q_est(3) = vT * sin(q(1));
+  q_est(2) = vT * cos(q(0));
+  q_est(3) = vT * sin(q(0));
 
   //P update
   update_F(dt);
