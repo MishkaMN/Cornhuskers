@@ -145,15 +145,25 @@ void update_H(float dt)
 
 // Input: given state
 // Output: determine wall wall_f, wall_s
-void det_wall()
+// Argument: 
+// 	int sensorType: 0 - front sensor
+// 			1 - right sensor
+int det_wall(int sensorType)
 {
+  // TODO: measure sensors from middle point of vehicle to account for displacement
   float theta = q(1);
   float x = q(2);
   float y = q(3);
+
+  if (sensorType == 1)
+	  theta += 90;
+  if (theta > 360)
+	  theta -= 360;
+
   // N = 0, E = 1, S = 3, W = 4;
-  wall_f = - 1; wall_s = -1;
   // Find distances to each corner:
-  int z[4];
+  float z[4];
+  // distances to corners, px's are coordinates of corners
   for (int i =0; i <4; i++)
   {
     z[i] = sqrt(pow((px[i] - x),2) + pow((py[i] - y),2));
@@ -161,41 +171,35 @@ void det_wall()
   // Angles for possible 8 triangular view:
   // theta with respect to true North
   float thetas[8];
-  thetas[5]= 90 - asin(x/z[0]);
-  thetas[6]= 90 - asin(x/z[1]);
-  thetas[7]= 90 - asin((L-y)/z[1]);
-  thetas[0]= 90 - asin((L-y)/z[2]);
-  thetas[1]= 90 - asin((W-x)/z[2]);
-  thetas[2]= 90 - asin((W-x)/z[3]);
-  thetas[3]= 90 - asin(y/z[0]);
-  thetas[4]= 90 - asin(y/z[3]);
-  
+  // starting from North line rotating clockwise, total of eight divisions
+  thetas[0]= acos((L-y)/z[2]);
+  thetas[1]= acos((W-x)/z[2]);
+  thetas[2]= acos((W-x)/z[3]);
+  thetas[3]= acos(y/z[0]);
+  thetas[4]= acos(y/z[3]);
+  thetas[5]= acos(x/z[0]);
+  thetas[6]= acos(x/z[1]);
+  thetas[7]= acos((L-y)/z[1]);
+
+  int n_sections = 8
   // Range should be between 0-360
   // And check which walls the robot is pointing at:
-  for (int i = 1; i < 8; i++)
-  {
-    thetas[i] = thetas[i -1] + thetas[i];
-    if (theta < thetas[i] && wall_f == -1)
-    {
-      wall_f = (i + 1)/2;
-      if (wall_f == 4)
-        wall_f = 0;
-      int side_th = theta + 90;
-      for (int m = i + 1; m < 8; m++)
-      {
-        thetas[m] = thetas[m -1] + thetas[m];
-        if (side_th < thetas[m] && wall_s == -1)
-        {
-          wall_s = (m + 1)/2;
-          if (wall_s == 4)
-            wall_s = 0;
-          break;
-        }
-      }
-      break;
-    }
+  // cumulative theta 
+  for (int i = 0; i < n_sections; i++) {
+	if (i == 0) {
+		if (theta < thetas[i]) {
+			return 0;
+		}
+		continue;
+	}
+	thetas[i] = thetas[i-1] + thetas[i];
+	if (theta < thetas[i]) {
+		int w = (i+1)/2;
+		if (w == 4)
+        		return 0;
+		return w;
+	}
   }
-  return;
 }
 
 void getVelocities(float pwmR, float pwmL, float& vR, float& vL, float &vT, float& wAng)
