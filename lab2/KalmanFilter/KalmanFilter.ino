@@ -228,18 +228,18 @@ void update_F(float dt)
 
 void update_Q(float dt)
 {
-  Q << pow((dt/b),2)*sumVar, pow(dt,2)/(2*b)*cos(q_est(1))*diffVar, pow(dt,2)/(2*b)*sin(q_est(1))*diffVar,
-       pow(dt,2)/(2*b)*cos(q_est(1))*diffVar, pow(cos(q_est(1)),2) * pow(dt,2)/4*sumVar, sin(q_est(1))* cos(q_est(1)) * pow(dt,2)/4*sumVar,
-       pow(dt,2)/(2*b)*sin(q_est(1))*diffVar, sin(q_est(1))* cos(q_est(1)) * pow(dt,2)/4*sumVar, pow(sin(q_est(1)),2) * pow(dt,2)/4*sumVar;
+  Q << pow((dt/b),2)*sumVar, pow(dt,2)/(2*b)*cos(q_est(0))*diffVar, pow(dt,2)/(2*b)*sin(q_est(0))*diffVar,
+       pow(dt,2)/(2*b)*cos(q_est(0))*diffVar, pow(cos(q_est(0)),2) * pow(dt,2)/4*sumVar, sin(q_est(0))* cos(q_est(0)) * pow(dt,2)/4*sumVar,
+       pow(dt,2)/(2*b)*sin(q_est(0))*diffVar, sin(q_est(0))* cos(q_est(0)) * pow(dt,2)/4*sumVar, pow(sin(q_est(0)),2) * pow(dt,2)/4*sumVar;
   return;
 }
 
 void aPrioriUpdate(float dt)
 {
   //get q^ estimate
-  q_est(1) = q_est(1) + (wAng * dt);
-  q_est(2) = vT * cos(q(0));
-  q_est(3) = vT * sin(q(0));
+  q_est(0) = q_est(0) + (wAng * dt);
+  q_est(1) = vT * cos(q(0));
+  q_est(2) = vT * sin(q(0));
 
   //P update
   update_F(dt);
