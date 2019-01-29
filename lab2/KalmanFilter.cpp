@@ -44,6 +44,10 @@ const float py[4] = {0,L,L,0};
 int wall_f = - 1; 
 int wall_s = -1;
 
+int NORTH_WALL = 0;
+int EAST_WALL = 1;
+int SOUTH_WALL = 2;
+int WEST_WALL = 3;
 // Miscellaneous equations for finding H i.e. linearized equations
 float eq(int num) 
 {
@@ -89,54 +93,59 @@ float eq(int num)
 void update_H(float dt)
 {
   // Determine walls:
-  det_wall();
-  // 
-  if (wall_f == 0 && wall_s == 2)
+  // 0: wall_north
+  // 1: wall_east
+  // 2: wall_south
+  // 3: wall_west
+  wall_f = det_wall(0);
+  wall_s = det_wall(1);
+
+  if (wall_f == NORTH_WALL && wall_s == SOUTH_WALL)
   {
     H  << 1,0,0,
            eq(1), 0, eq(2),
            eq(3), 0, eq(4);}
-  else if (wall_f == 0 && wall_s == 1){
+  else if (wall_f == NORTH_WALL && wall_s == EAST_WALL){
     H  << 1,0,0,
            eq(1), 0, eq(2),
            eq(5), eq(2), 0;}
-  else if (wall_f == 0 && wall_s == 0){
+  else if (wall_f == NORTH_WALL && wall_s == NORTH_WALL){
     H  << 1,0,0,
            eq(1), 0, eq(2),
            eq(6), 0, eq(7);}
-  else if (wall_f == 1 && wall_s == 3){
+  else if (wall_f == EAST_WALL && wall_s == WEST_WALL){
     H  << 1,0,0,
            eq(5), eq(2), 0,
            eq(8), eq(4), 0;}
-  else if (wall_f == 1 && wall_s == 2){
+  else if (wall_f == EAST_WALL && wall_s == SOUTH_WALL){
     H  << 1,0,0,
            eq(5), eq(2), 0,
            eq(9), 0, eq(10);}
-  else if (wall_f == 1 && wall_s == 1){
+  else if (wall_f == EAST_WALL && wall_s == EAST_WALL){
     H  << 1,0,0,
            eq(5), eq(2), 0,
            eq(11), eq(7), 0;}
-  else if (wall_f == 2 && wall_s == 0){
+  else if (wall_f == SOUTH_WALL && wall_s == NORTH_WALL){
     H  << 1,0,0,
            eq(9), 0, eq(10),
            eq(6), 0, eq(7);}
-  else if (wall_f == 2 && wall_s == 3){
+  else if (wall_f == SOUTH_WALL && wall_s == WEST_WALL){
     H  << 1,0,0,
            eq(9), 0, eq(10),
            eq(11), eq(10), 0;}
-  else if (wall_f == 2 && wall_s == 2){
+  else if (wall_f == SOUTH_WALL && wall_s == SOUTH_WALL){
     H  << 1,0,0,
            eq(9), 0, eq(10),
            eq(3), 0, eq(4);}
-  else if (wall_f == 3 && wall_s == 1){
+  else if (wall_f == WEST_WALL && wall_s == EAST_WALL){
     H  << 1,0,0,
            eq(12), eq(10), 0,
            eq(11), eq(7), 0;}
-  else if (wall_f == 3 && wall_s == 0){
+  else if (wall_f == WEST_WALL && wall_s == NORTH_WALL){
     H  << 1,0,0,
            eq(12), eq(10), 0,
            eq(1), 0, eq(2);}
-  else if (wall_f == 3 && wall_s == 3){
+  else if (wall_f == WEST_WALL && wall_s == WEST_WALL){
     H  << 1,0,0,
            eq(12), eq(10), 0,
            eq(8), eq(4), 0;}
