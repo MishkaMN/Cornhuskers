@@ -244,7 +244,7 @@ void update_Q()
 void aPrioriUpdate(float dt)
 {
   //get q^ estimate
-  q_est(0) = q_est(0) + (wAng * dt);
+  q_est(0) = q_est(0) + (wAng * dt)*RAD_TO_DEG;
   q_est(1) += vT * cos(q(0) * DEG_TO_RAD) * dt;
   q_est(2) += vT * sin(q(0) * DEG_TO_RAD) * dt;
 
