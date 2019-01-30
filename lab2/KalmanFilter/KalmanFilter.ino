@@ -32,7 +32,7 @@ const float diffVar = sigmaR * sigmaR - sigmaL * sigmaL;
 const float sigmaAngle = 15.3;//deg
 const float sigmaFLaser =  3.91;//mm
 const float sigmaSLaser =  5.68;//mm
-const float b = 0.094; //meters
+const float b = 94; //mm
 const int FRONT = 0;
 const int SIDE = 1;
 float vL, vR, vT, wAng;
@@ -209,8 +209,8 @@ int det_wall(int sensorType)
 
 void getVelocities(float pwmR, float pwmL, float& vR, float& vL, float &vT, float& wAng)
 {
-  vR = -.140 * tanh(-0.048 * (pwmR - 91.8));
-  vL = .139 * tanh(-0.047 * (pwmL - 92.6));
+  vR = -140 * tanh(-0.048 * (pwmR - 91.8)); //mm/s
+  vL = 139 * tanh(-0.047 * (pwmL - 92.6)); //mm/s
   vT = .5 * (vL + vR);
   wAng = 1/b * (vR-vL);
 }
@@ -224,9 +224,9 @@ void update_F(float dt)
 
 void update_Q(float dt)
 {
-  Q << pow((dt/b),2)*sumVar, pow(dt,2)/(2*b)*cos(q_est(0))*diffVar, pow(dt,2)/(2*b)*sin(q_est(0))*diffVar,
-       pow(dt,2)/(2*b)*cos(q_est(0))*diffVar, pow(cos(q_est(0)),2) * pow(dt,2)/4*sumVar, sin(q_est(0))* cos(q_est(0)) * pow(dt,2)/4*sumVar,
-       pow(dt,2)/(2*b)*sin(q_est(0))*diffVar, sin(q_est(0))* cos(q_est(0)) * pow(dt,2)/4*sumVar, pow(sin(q_est(0)),2) * pow(dt,2)/4*sumVar;
+  Q << pow((dt/b),2)*sumVar, pow(dt,2)/(2*b)*cos(q_est(0)*DEG_TO_RAD)*diffVar, pow(dt,2)/(2*b)*sin(q_est(0)*DEG_TO_RAD)*diffVar,
+       pow(dt,2)/(2*b)*cos(q_est(0)*DEG_TO_RAD)*diffVar, pow(cos(q_est(0)*DEG_TO_RAD),2) * pow(dt,2)/4*sumVar, sin(q_est(0)*DEG_TO_RAD)* cos(q_est(0)*DEG_TO_RAD) * pow(dt,2)/4*sumVar,
+       pow(dt,2)/(2*b)*sin(q_est(0)*DEG_TO_RAD)*diffVar, sin(q_est(0)*DEG_TO_RAD)* cos(q_est(0*DEG_TO_RAD)) * pow(dt,2)/4*sumVar, pow(sin(q_est(0)*DEG_TO_RAD),2) * pow(dt,2)/4*sumVar;
   return;
 }
 
