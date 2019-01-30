@@ -4,7 +4,7 @@
 VL53L0X sensor, sensor2;
 
 //State, Output Vectors
-BLA::Matrix<3> q = {0,250,375};
+BLA::Matrix<3> q = {1.0,250,375};
 BLA::Matrix<3> z = {350,200,0};
 BLA::Matrix<3> q_est;
 BLA::Matrix<3> z_est;
@@ -32,7 +32,7 @@ const float diffVar = sigmaR * sigmaR - sigmaL * sigmaL;
 const float sigmaAngle = 15.3;//deg
 const float sigmaFLaser =  3.91;//mm
 const float sigmaSLaser =  5.68;//mm
-const float b = 0.094; //meters
+const float b = 94; //mm
 const int FRONT = 0;
 const int SIDE = 1;
 float vL, vR, vT, wAng;
@@ -64,29 +64,29 @@ float eq(int num)
   switch(num)
   {
     case 1:
-      return (L-y)* sin(theta * (180 / PI))/pow(cos(theta* (180 / PI)),2); break;
+      return (L-y)* sin(theta * DEG_TO_RAD)/pow(cos(theta* DEG_TO_RAD),2); break;
     case 2:
-      return -1/(cos(theta* (180 / PI))); break;
+      return -1/(cos(theta* DEG_TO_RAD)); break;
     case 3:
-      return (-y)* cos(theta* (180 / PI))/pow(sin(theta* (180 / PI)),2); break;
+      return (-y)* cos(theta* DEG_TO_RAD)/pow(sin(theta* DEG_TO_RAD),2); break;
     case 4:
       return 1/(sin(theta)); break;
     case 5:
-      return (W - x)*sin(theta* (180 / PI))/pow(cos(theta* (180 / PI)),2); break;
+      return (W - x)*sin(theta* DEG_TO_RAD)/pow(cos(theta* DEG_TO_RAD),2); break;
     case 6:
-      return (y-L)*cos(theta* (180 / PI))/pow(sin(theta* (180 / PI)),2);  break;
+      return (y-L)*cos(theta* DEG_TO_RAD)/pow(sin(theta* DEG_TO_RAD),2);  break;
     case 7:
-      return -1/sin(theta* (180 / PI)); break;
+      return -1/sin(theta* DEG_TO_RAD); break;
     case 8:
-      return -x * cos(theta* (180 / PI))/pow(sin(theta* (180 / PI)),2); break;
+      return -x * cos(theta* DEG_TO_RAD)/pow(sin(theta* DEG_TO_RAD),2); break;
     case 9:
-      return sin(theta* (180 / PI))/pow(cos(theta* (180 / PI)),2) * y; break;
+      return sin(theta* DEG_TO_RAD)/pow(cos(theta* DEG_TO_RAD),2) * y; break;
     case 10:
-      return 1/(cos(theta* (180 / PI))); break;
+      return 1/(cos(theta* DEG_TO_RAD)); break;
     case 11:
-      return cos(theta* (180 / PI))/pow(sin(theta* (180 / PI)),2)*(x - W); break;
+      return cos(theta* DEG_TO_RAD)/pow(sin(theta* DEG_TO_RAD),2)*(x - W); break;
     case 12:
-      return -x*sin(theta* (180 / PI))/pow((cos(theta* (180 / PI))),2); break;
+      return -x*sin(theta* DEG_TO_RAD)/pow((cos(theta* DEG_TO_RAD)),2); break;
   }
 }
 
@@ -158,9 +158,9 @@ void update_H(float dt)
 int det_wall(int sensorType)
 {
   // TODO: measure sensors from middle point of vehicle to account for displacement
-  float theta = q(0);
-  float x = q(1);
-  float y = q(2);
+  float theta = q_est(0);
+  float x = q_est(1);
+  float y = q_est(2);
 
   if (sensorType == 1)
     theta += 90;
@@ -211,8 +211,8 @@ int det_wall(int sensorType)
 
 void getVelocities(float pwmR, float pwmL, float& vR, float& vL, float &vT, float& wAng)
 {
-  vR = -.140 * tanh(-0.048 * (pwmR - 91.8));
-  vL = .139 * tanh(-0.047 * (pwmL - 92.6));
+  vR = -140 * tanh(-0.048 * (pwmR - 91.8)); //mm/s
+  vL = 139 * tanh(-0.047 * (pwmL - 92.6)); //mm/s
   vT = .5 * (vL + vR);
   wAng = 1/b * (vR-vL);
 }
@@ -226,9 +226,9 @@ void update_F(float dt)
 
 void update_Q(float dt)
 {
-  Q << pow((dt/b),2)*sumVar, pow(dt,2)/(2*b)*cos(q_est(0))*diffVar, pow(dt,2)/(2*b)*sin(q_est(0))*diffVar,
-       pow(dt,2)/(2*b)*cos(q_est(0))*diffVar, pow(cos(q_est(0)),2) * pow(dt,2)/4*sumVar, sin(q_est(0))* cos(q_est(0)) * pow(dt,2)/4*sumVar,
-       pow(dt,2)/(2*b)*sin(q_est(0))*diffVar, sin(q_est(0))* cos(q_est(0)) * pow(dt,2)/4*sumVar, pow(sin(q_est(0)),2) * pow(dt,2)/4*sumVar;
+  Q << pow((dt/b),2)*sumVar, pow(dt,2)/(2*b)*cos(q_est(0)*DEG_TO_RAD)*diffVar, pow(dt,2)/(2*b)*sin(q_est(0)*DEG_TO_RAD)*diffVar,
+       pow(dt,2)/(2*b)*cos(q_est(0)*DEG_TO_RAD)*diffVar, pow(cos(q_est(0)*DEG_TO_RAD),2) * pow(dt,2)/4*sumVar, sin(q_est(0)*DEG_TO_RAD)* cos(q_est(0)*DEG_TO_RAD) * pow(dt,2)/4*sumVar,
+       pow(dt,2)/(2*b)*sin(q_est(0)*DEG_TO_RAD)*diffVar, sin(q_est(0)*DEG_TO_RAD)* cos(q_est(0*DEG_TO_RAD)) * pow(dt,2)/4*sumVar, pow(sin(q_est(0)*DEG_TO_RAD),2) * pow(dt,2)/4*sumVar;
   return;
 }
 
@@ -261,8 +261,10 @@ void aPosterioriUpdate(float dt)
 void outputEstimate(BLA::Matrix<3>& z_est, BLA::Matrix<3>& q_est)
 {
     // Determine walls:
-  int wall_f = det_wall(0);
-  int wall_s = det_wall(1);
+  int wall_f = det_wall(FRONT);
+  int wall_s = det_wall(SIDE);
+  Serial.print(wall_f); Serial.print(" ");
+  Serial.print(wall_s); Serial.print("\n");
   // 
   float theta = q_est(0);
   float x = q_est(1);
@@ -277,41 +279,41 @@ void outputEstimate(BLA::Matrix<3>& z_est, BLA::Matrix<3>& q_est)
   }
 
   if (wall_f == 0 && wall_s == 2) {
-    z_est  << q_est(0),(L - y)/cos(theta*(180/PI)),
-           y/(sin(theta*(180/PI)));}
+    z_est  << q_est(0),(L - y)/cos(theta*DEG_TO_RAD),
+           y/(sin(theta*DEG_TO_RAD));}
   else if (wall_f == 0 && wall_s == 1){
-    z_est << q_est(0),(L - y)/cos(theta*(180/PI)),
-           (W-x)/(cos(theta*(180/PI)));}
+    z_est << q_est(0),(L - y)/cos(theta*DEG_TO_RAD),
+           (W-x)/(cos(theta*DEG_TO_RAD));}
   else if (wall_f == 0 && wall_s == 0) {
-    z_est << q_est(0),(L - y)/cos(theta*(180/PI)),
-           (L - y)/(sin(theta*(180/PI)));}
+    z_est << q_est(0),(L - y)/cos(theta*DEG_TO_RAD),
+           (L - y)/(sin(theta*DEG_TO_RAD));}
   else if (wall_f == 1 && wall_s == 3) {
-    z_est << q_est(0),(W - x)/cos(theta*(180/PI)),
-           x/(sin(theta*(180/PI)));}
+    z_est << q_est(0),(W - x)/cos(theta*DEG_TO_RAD),
+           x/(sin(theta*DEG_TO_RAD));}
   else if (wall_f == 1 && wall_s == 2) {
-    z_est << q_est(0),(W - x)/cos(theta*(180/PI)),
-           y/(cos(theta*(180/PI)));}
+    z_est << q_est(0),(W - x)/cos(theta*DEG_TO_RAD),
+           y/(cos(theta*DEG_TO_RAD));}
   else if (wall_f == 1 && wall_s == 1) {
-    z_est << q_est(0),(W - x)/cos(theta*(180/PI)),
-           (W-x)/(sin(theta*(180/PI)));}
+    z_est << q_est(0),(W - x)/cos(theta*DEG_TO_RAD),
+           -(W-x)/(sin(theta*DEG_TO_RAD));}
   else if (wall_f == 2 && wall_s == 0) {
-    z_est << q_est(0), y/cos(theta*(180/PI)),
-           (L - y)/(sin(theta*(180/PI)));}
+    z_est << q_est(0), y/cos(theta*DEG_TO_RAD),
+           (L - y)/(sin(theta*DEG_TO_RAD));}
   else if (wall_f == 2 && wall_s == 3) {
-    z_est << q_est(0),y/cos(theta*(180/PI)),
-           x/(cos(theta*(180/PI)));}
+    z_est << q_est(0),y/cos(theta*DEG_TO_RAD),
+           x/(cos(theta*DEG_TO_RAD));}
   else if (wall_f == 2 && wall_s == 2) {
-    z_est << q_est(0),y/cos(theta*(180/PI)),
-           y/(sin(theta*(180/PI)));}
+    z_est << q_est(0),y/cos(theta*DEG_TO_RAD),
+           y/(sin(theta*DEG_TO_RAD));}
   else if (wall_f == 3 && wall_s == 1) {
-    z_est << q_est(0), x/cos(theta*(180/PI)),
-           (W-x)/(sin(theta*(180/PI)));}
+    z_est << q_est(0), x/cos(theta*DEG_TO_RAD),
+           (W-x)/(sin(theta*DEG_TO_RAD));}
   else if (wall_f == 3 && wall_s == 0) {
-    z_est << q_est(0),x/cos(theta*(180/PI)),
-           (L -y)/(cos(theta*(180/PI)));}
+    z_est << q_est(0),x/cos(theta*DEG_TO_RAD),
+           (L -y)/(cos(theta*DEG_TO_RAD));}
   else if (wall_f == 3 && wall_s == 3){
-    z_est << q_est(0),x/cos(theta*(180/PI)),
-           x/(sin(theta*(180/PI)));}
+    z_est << q_est(0),x/cos(theta*DEG_TO_RAD),
+           -x/(sin(theta*DEG_TO_RAD));}
   BLA::Matrix <3> offset;
   offset<< 0,25,30;
   z_est -= offset;
@@ -408,8 +410,12 @@ void loop() {
   wall_s = det_wall(SIDE);
   update_H(dt);
   outputEstimate(z_est, q_est);
-  q_est(0) += 1;
-  
+
+  /*
+  q_est(0) = 45;
+  q_est(0) = q_est(0) > 360 ? 0 : q_est(0);
+  q_est(1) += 1.5;//cos(q_est(0) * DEG_TO_RAD);
+  q_est(2) += 1.5;//sin(q_est(0) * DEG_TO_RAD);
   Serial.print(" Z: ");
   Serial.print(z_est(0)); Serial.print(" ");
   Serial.print(z_est(1)); Serial.print(" ");
