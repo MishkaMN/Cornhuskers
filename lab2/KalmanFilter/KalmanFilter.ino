@@ -268,13 +268,6 @@ void outputEstimate(BLA::Matrix<3>& z_est, BLA::Matrix<3>& q_est)
   float x = q_est(1);
   float y = q_est(2);
   // Adjust theta depending on which wall facing:
-  switch (wall_f)
-  {
-    case 0: break;
-    case 1: theta = theta - 90; break;
-    case 2: theta = theta - 180; break;
-    case 3: theta = theta - 270; break;
-  }
 
   if (wall_f == 0 && wall_s == 2) {
     z_est  << q_est(0),(L - y)/cos(theta*DEG_TO_RAD),
@@ -286,32 +279,32 @@ void outputEstimate(BLA::Matrix<3>& z_est, BLA::Matrix<3>& q_est)
     z_est << q_est(0),(L - y)/cos(theta*DEG_TO_RAD),
            -(L - y)/(sin(theta*DEG_TO_RAD));}
   else if (wall_f == 1 && wall_s == 3) {
-    z_est << q_est(0),(W - x)/cos(theta*DEG_TO_RAD),
-           x/(sin(theta*DEG_TO_RAD));}
+    z_est << q_est(0),(W - x)/cos((theta-90)*DEG_TO_RAD),
+           x/(sin((theta-90)*DEG_TO_RAD));}
   else if (wall_f == 1 && wall_s == 2) {
-    z_est << q_est(0),(W - x)/cos(theta*DEG_TO_RAD),
-           y/(cos(theta*DEG_TO_RAD));}
+    z_est << q_est(0),(W - x)/cos((theta-90)*DEG_TO_RAD),
+           y/(cos((theta-90)*DEG_TO_RAD));}
   else if (wall_f == 1 && wall_s == 1) {
-    z_est << q_est(0),(W - x)/cos(theta*DEG_TO_RAD),
-           -(W-x)/(sin(theta*DEG_TO_RAD));}
+    z_est << q_est(0),(W - x)/cos((theta-90)*DEG_TO_RAD),
+           -(W-x)/(sin((theta-90)*DEG_TO_RAD));}
   else if (wall_f == 2 && wall_s == 0) {
-    z_est << q_est(0), y/cos(theta*DEG_TO_RAD),
-           (L - y)/(sin(theta*DEG_TO_RAD));}
+    z_est << q_est(0), y/cos((theta - 180)*DEG_TO_RAD),
+           (L - y)/(sin((theta - 180)*DEG_TO_RAD));}
   else if (wall_f == 2 && wall_s == 3) {
-    z_est << q_est(0),y/cos(theta*DEG_TO_RAD),
-           x/(cos(theta*DEG_TO_RAD));}
+    z_est << q_est(0),y/cos((theta - 180)*DEG_TO_RAD),
+           x/(cos((theta - 180)*DEG_TO_RAD));}
   else if (wall_f == 2 && wall_s == 2) {
-    z_est << q_est(0),y/cos(theta*DEG_TO_RAD),
-           -y/(sin(theta*DEG_TO_RAD));}
+    z_est << q_est(0),y/cos((theta - 180)*DEG_TO_RAD),
+           -y/(sin((theta - 180)*DEG_TO_RAD));}
   else if (wall_f == 3 && wall_s == 1) {
-    z_est << q_est(0), x/cos(theta*DEG_TO_RAD),
-           (W-x)/(sin(theta*DEG_TO_RAD));}
+    z_est << q_est(0), x/cos((theta - 270)*DEG_TO_RAD),
+           (W-x)/(sin((theta - 270)*DEG_TO_RAD));}
   else if (wall_f == 3 && wall_s == 0) {
-    z_est << q_est(0),x/cos(theta*DEG_TO_RAD),
-           (L -y)/(cos(theta*DEG_TO_RAD));}
+    z_est << q_est(0),x/cos((theta - 270)*DEG_TO_RAD),
+           (L -y)/(cos((theta - 270)*DEG_TO_RAD));}
   else if (wall_f == 3 && wall_s == 3){
-    z_est << q_est(0),x/cos(theta*DEG_TO_RAD),
-           -x/(sin(theta*DEG_TO_RAD));}
+    z_est << q_est(0),x/cos((theta - 270)*DEG_TO_RAD),
+           -x/(sin((theta - 270)*DEG_TO_RAD));}
   BLA::Matrix <3> offset;
   offset<< 0,25,30;
   z_est -= offset;
