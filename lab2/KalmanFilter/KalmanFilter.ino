@@ -4,8 +4,8 @@
 VL53L0X sensor, sensor2;
 
 //State, Output Vectors
-BLA::Matrix<3> q = {1.0,250,375};
-BLA::Matrix<3> z = {350,200,0};
+BLA::Matrix<3> q = {45,250,375};
+BLA::Matrix<3> z = {0,350,200};
 BLA::Matrix<3> q_est;
 BLA::Matrix<3> z_est;
 
@@ -226,9 +226,9 @@ void update_F(float dt)
 
 void update_Q(float dt)
 {
-  Q << pow((dt/b),2)*sumVar, pow(dt,2)/(2*b)*cos(q_est(0)*DEG_TO_RAD)*diffVar, pow(dt,2)/(2*b)*sin(q_est(0)*DEG_TO_RAD)*diffVar,
-       pow(dt,2)/(2*b)*cos(q_est(0)*DEG_TO_RAD)*diffVar, pow(cos(q_est(0)*DEG_TO_RAD),2) * pow(dt,2)/4*sumVar, sin(q_est(0)*DEG_TO_RAD)* cos(q_est(0)*DEG_TO_RAD) * pow(dt,2)/4*sumVar,
-       pow(dt,2)/(2*b)*sin(q_est(0)*DEG_TO_RAD)*diffVar, sin(q_est(0)*DEG_TO_RAD)* cos(q_est(0*DEG_TO_RAD)) * pow(dt,2)/4*sumVar, pow(sin(q_est(0)*DEG_TO_RAD),2) * pow(dt,2)/4*sumVar;
+  Q << pow((1/b),2)*sumVar, 1/(2*b)*cos(q_est(0)*DEG_TO_RAD)*diffVar, 1/(2*b)*sin(q_est(0)*DEG_TO_RAD)*diffVar,
+       1/(2*b)*cos(q_est(0)*DEG_TO_RAD)*diffVar, pow(cos(q_est(0)*DEG_TO_RAD),2)/4*sumVar, sin(q_est(0)*DEG_TO_RAD)* cos(q_est(0)*DEG_TO_RAD)/4*sumVar,
+       1/(2*b)*sin(q_est(0)*DEG_TO_RAD)*diffVar, sin(q_est(0)*DEG_TO_RAD)* cos(q_est(0*DEG_TO_RAD))/4*sumVar, pow(sin(q_est(0)*DEG_TO_RAD),2)/4*sumVar;
   return;
 }
 
@@ -270,13 +270,6 @@ void outputEstimate(BLA::Matrix<3>& z_est, BLA::Matrix<3>& q_est)
   float x = q_est(1);
   float y = q_est(2);
   // Adjust theta depending on which wall facing:
-  switch (wall_f)
-  {
-    case 0: break;
-    case 1: theta = theta - 90; break;
-    case 2: theta = theta - 180; break;
-    case 3: theta = theta - 270; break;
-  }
 
   if (wall_f == 0 && wall_s == 2) {
     z_est  << q_est(0),(L - y)/cos(theta*DEG_TO_RAD),
@@ -286,34 +279,34 @@ void outputEstimate(BLA::Matrix<3>& z_est, BLA::Matrix<3>& q_est)
            (W-x)/(cos(theta*DEG_TO_RAD));}
   else if (wall_f == 0 && wall_s == 0) {
     z_est << q_est(0),(L - y)/cos(theta*DEG_TO_RAD),
-           (L - y)/(sin(theta*DEG_TO_RAD));}
+           -(L - y)/(sin(theta*DEG_TO_RAD));}
   else if (wall_f == 1 && wall_s == 3) {
-    z_est << q_est(0),(W - x)/cos(theta*DEG_TO_RAD),
-           x/(sin(theta*DEG_TO_RAD));}
+    z_est << q_est(0),(W - x)/cos((theta-90)*DEG_TO_RAD),
+           x/(sin((theta-90)*DEG_TO_RAD));}
   else if (wall_f == 1 && wall_s == 2) {
-    z_est << q_est(0),(W - x)/cos(theta*DEG_TO_RAD),
-           y/(cos(theta*DEG_TO_RAD));}
+    z_est << q_est(0),(W - x)/cos((theta-90)*DEG_TO_RAD),
+           y/(cos((theta-90)*DEG_TO_RAD));}
   else if (wall_f == 1 && wall_s == 1) {
-    z_est << q_est(0),(W - x)/cos(theta*DEG_TO_RAD),
-           -(W-x)/(sin(theta*DEG_TO_RAD));}
+    z_est << q_est(0),(W - x)/cos((theta-90)*DEG_TO_RAD),
+           -(W-x)/(sin((theta-90)*DEG_TO_RAD));}
   else if (wall_f == 2 && wall_s == 0) {
-    z_est << q_est(0), y/cos(theta*DEG_TO_RAD),
-           (L - y)/(sin(theta*DEG_TO_RAD));}
+    z_est << q_est(0), y/cos((theta - 180)*DEG_TO_RAD),
+           (L - y)/(sin((theta - 180)*DEG_TO_RAD));}
   else if (wall_f == 2 && wall_s == 3) {
-    z_est << q_est(0),y/cos(theta*DEG_TO_RAD),
-           x/(cos(theta*DEG_TO_RAD));}
+    z_est << q_est(0),y/cos((theta - 180)*DEG_TO_RAD),
+           x/(cos((theta - 180)*DEG_TO_RAD));}
   else if (wall_f == 2 && wall_s == 2) {
-    z_est << q_est(0),y/cos(theta*DEG_TO_RAD),
-           y/(sin(theta*DEG_TO_RAD));}
+    z_est << q_est(0),y/cos((theta - 180)*DEG_TO_RAD),
+           -y/(sin((theta - 180)*DEG_TO_RAD));}
   else if (wall_f == 3 && wall_s == 1) {
-    z_est << q_est(0), x/cos(theta*DEG_TO_RAD),
-           (W-x)/(sin(theta*DEG_TO_RAD));}
+    z_est << q_est(0), x/cos((theta - 270)*DEG_TO_RAD),
+           (W-x)/(sin((theta - 270)*DEG_TO_RAD));}
   else if (wall_f == 3 && wall_s == 0) {
-    z_est << q_est(0),x/cos(theta*DEG_TO_RAD),
-           (L -y)/(cos(theta*DEG_TO_RAD));}
+    z_est << q_est(0),x/cos((theta - 270)*DEG_TO_RAD),
+           (L -y)/(cos((theta - 270)*DEG_TO_RAD));}
   else if (wall_f == 3 && wall_s == 3){
-    z_est << q_est(0),x/cos(theta*DEG_TO_RAD),
-           -x/(sin(theta*DEG_TO_RAD));}
+    z_est << q_est(0),x/cos((theta - 270)*DEG_TO_RAD),
+           -x/(sin((theta - 270)*DEG_TO_RAD));}
   BLA::Matrix <3> offset;
   offset<< 0,25,30;
   z_est -= offset;
@@ -410,13 +403,14 @@ void loop() {
   wall_s = det_wall(SIDE);
   update_H(dt);
   outputEstimate(z_est, q_est);
-
+  q_est(0) += 1;
   /*
   q_est(0) = 45;
   q_est(0) = q_est(0) > 360 ? 0 : q_est(0);
   q_est(1) += 1.5;//cos(q_est(0) * DEG_TO_RAD);
   q_est(2) += 1.5;//sin(q_est(0) * DEG_TO_RAD);
   Serial.print(" Z: ");
+  */
   Serial.print(z_est(0)); Serial.print(" ");
   Serial.print(z_est(1)); Serial.print(" ");
   Serial.print(z_est(2)); Serial.print("\n");
