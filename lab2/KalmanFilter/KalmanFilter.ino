@@ -4,8 +4,8 @@
 VL53L0X sensor, sensor2;
 
 //State, Output Vectors
-BLA::Matrix<3> q = {45,250,375};
-BLA::Matrix<3> z = {0,350,200};
+BLA::Matrix<3> q = {0,203,305};//{0.1,250,375};
+BLA::Matrix<3> z = {0,406,610};//{0,350,200};
 BLA::Matrix<3> q_est;
 BLA::Matrix<3> z_est;
 
@@ -45,22 +45,16 @@ const float px[4] = {0,0,W,W};
 const float py[4] = {0,L,L,0};
 int wall_f = - 1; 
 int wall_s = -1;
-
+/*
 // Miscellaneous equations for finding H i.e. linearized equations
 float eq(int num) 
 {
-  float theta = q(0);
-  float x = q(1);
-  float y = q(2);
+  float theta = q_est(0);
+  float x = q_est(1);
+  float y = q_est(2);
   // Adjust theta depending on which wall facing:
   wall_f = det_wall(FRONT);
-  switch(wall_f)
-  {
-    case 0: break;
-    case 1: theta = theta - 90; break;
-    case 2: theta = theta - 180; break;
-    case 3: theta = theta - 270; break;
-  }
+
   switch(num)
   {
     case 1:
@@ -68,13 +62,13 @@ float eq(int num)
     case 2:
       return -1/(cos(theta* DEG_TO_RAD)); break;
     case 3:
-      return (-y)* cos(theta* DEG_TO_RAD)/pow(sin(theta* DEG_TO_RAD),2); break;
+      return DEG_TO_RAD*(-y)* cos(theta* DEG_TO_RAD)/pow(sin(theta* DEG_TO_RAD),2); break;
     case 4:
       return 1/(sin(theta)); break;
     case 5:
-      return (W - x)*sin(theta* DEG_TO_RAD)/pow(cos(theta* DEG_TO_RAD),2); break;
+      return DEG_TO_RAD*(W - x)*sin(theta* DEG_TO_RAD)/pow(cos(theta* DEG_TO_RAD),2); break;
     case 6:
-      return (y-L)*cos(theta* DEG_TO_RAD)/pow(sin(theta* DEG_TO_RAD),2);  break;
+      return DEG_TO_RAD*(y-L)*cos(theta* DEG_TO_RAD)/pow(sin(theta* DEG_TO_RAD),2);  break;
     case 7:
       return -1/sin(theta* DEG_TO_RAD); break;
     case 8:
@@ -89,9 +83,13 @@ float eq(int num)
       return -x*sin(theta* DEG_TO_RAD)/pow((cos(theta* DEG_TO_RAD)),2); break;
   }
 }
-
-void update_H(float dt)
+*/
+void update_H()
 {
+  float theta = q_est(0);
+  if(theta == 0 || theta == 90 || theta == 270  || theta == 180) theta +=.1;
+  float x = q_est(1);
+  float y = q_est(2);
   // Determine walls:
   wall_f = det_wall(FRONT);
   wall_s = det_wall(SIDE);
@@ -99,52 +97,52 @@ void update_H(float dt)
   if (wall_f == 0 && wall_s == 2)
   {
     H  << 1,0,0,
-           eq(1), 0, eq(2),
-           eq(3), 0, eq(4);}
+           DEG_TO_RAD*(L-y)* sin(theta * DEG_TO_RAD)/pow(cos(theta* DEG_TO_RAD),2), 0, -1/(cos(theta* DEG_TO_RAD)),
+           DEG_TO_RAD*(-y)* cos(theta* DEG_TO_RAD)/pow(sin(theta* DEG_TO_RAD),2), 0, 1/(sin(theta));}
   else if (wall_f == 0 && wall_s == 1){
     H  << 1,0,0,
-           eq(1), 0, eq(2),
-           eq(5), eq(2), 0;}
+           DEG_TO_RAD*(L-y)* sin(theta * DEG_TO_RAD)/pow(cos(theta* DEG_TO_RAD),2), 0, -1/(cos(theta* DEG_TO_RAD)),
+           DEG_TO_RAD*(W - x)*sin(theta* DEG_TO_RAD)/pow(cos(theta* DEG_TO_RAD),2), -1/(cos(theta* DEG_TO_RAD)), 0;}
   else if (wall_f == 0 && wall_s == 0){
     H  << 1,0,0,
-           eq(1), 0, eq(2),
-           eq(6), 0, eq(7);}
+           DEG_TO_RAD*(L-y)* sin(theta * DEG_TO_RAD)/pow(cos(theta* DEG_TO_RAD),2), 0, -1/(cos(theta* DEG_TO_RAD)),
+           DEG_TO_RAD*(y-L)*cos(theta* DEG_TO_RAD)/pow(sin(theta* DEG_TO_RAD),2), 0, -1/sin(theta* DEG_TO_RAD);}
   else if (wall_f == 1 && wall_s == 3){
     H  << 1,0,0,
-           eq(5), eq(2), 0,
-           eq(8), eq(4), 0;}
+           DEG_TO_RAD*(W-x)*tan(DEG_TO_RAD*(theta-90))/cos(DEG_TO_RAD*(theta-90)), -1/(cos(DEG_TO_RAD*(theta-90))), 0,
+           -DEG_TO_RAD*x/tan(DEG_TO_RAD*(theta-90))/sin(DEG_TO_RAD*(theta-90)), 1/sin(DEG_TO_RAD*(theta-90)), 0;}
   else if (wall_f == 1 && wall_s == 2){
     H  << 1,0,0,
-           eq(5), eq(2), 0,
-           eq(9), 0, eq(10);}
+           DEG_TO_RAD*(W-x)*tan(DEG_TO_RAD*(theta-90))/cos(DEG_TO_RAD*(theta-90)), -1/(cos(DEG_TO_RAD*(theta-90))), 0,
+           DEG_TO_RAD*y*tan(DEG_TO_RAD*(theta-90))/cos(DEG_TO_RAD*(theta-90)), 0, 1/cos(DEG_TO_RAD*(theta-90));}
   else if (wall_f == 1 && wall_s == 1){
     H  << 1,0,0,
-           eq(5), eq(2), 0,
-           eq(11), eq(7), 0;}
+           DEG_TO_RAD*(W-x)*tan(DEG_TO_RAD*(theta-90))/cos(DEG_TO_RAD*(theta-90)), -1/(cos(DEG_TO_RAD*(theta-90))), 0,
+           -DEG_TO_RAD*(x-W)/cos(DEG_TO_RAD*(theta-90))/tan(DEG_TO_RAD*(theta-90)), 1/(sin(DEG_TO_RAD*(theta-90))), 0;}
   else if (wall_f == 2 && wall_s == 0){
     H  << 1,0,0,
-           eq(9), 0, eq(10),
-           eq(6), 0, eq(7);}
+           DEG_TO_RAD*y*tan(DEG_TO_RAD*(theta-180))*1/cos(DEG_TO_RAD*(theta-180)), 0, 1/cos(DEG_TO_RAD*(theta-180)),
+          -DEG_TO_RAD*(L-y)*1/tan(DEG_TO_RAD*(theta-180))*1/sin(DEG_TO_RAD*(theta-180)), 0, -1/sin(DEG_TO_RAD*(theta-180));}
   else if (wall_f == 2 && wall_s == 3){
     H  << 1,0,0,
-           eq(9), 0, eq(10),
-           eq(11), eq(10), 0;}
+           DEG_TO_RAD*y*tan(DEG_TO_RAD*(theta-180))*1/cos(DEG_TO_RAD*(theta-180)), 0, 1/cos(DEG_TO_RAD*(theta-180)),
+           DEG_TO_RAD*x*tan(DEG_TO_RAD*(theta-180))*1/cos(DEG_TO_RAD*(theta-180)), 1/cos(DEG_TO_RAD*(theta-180)), 0;}
   else if (wall_f == 2 && wall_s == 2){
     H  << 1,0,0,
-           eq(9), 0, eq(10),
-           eq(3), 0, eq(4);}
+           DEG_TO_RAD*y*tan(DEG_TO_RAD*(theta-180))*1/cos(DEG_TO_RAD*(theta-180)), 0, 1/cos(DEG_TO_RAD*(theta-180)),
+           DEG_TO_RAD*y*1/tan(DEG_TO_RAD*(theta-180))*1/cos(DEG_TO_RAD*(theta-180)), 0, -1/sin(DEG_TO_RAD*(theta-180));}
   else if (wall_f == 3 && wall_s == 1){
     H  << 1,0,0,
-           eq(12), eq(10), 0,
-           eq(11), eq(7), 0;}
+           DEG_TO_RAD*x*tan(DEG_TO_RAD*(theta-270.0))*1/cos(DEG_TO_RAD*(theta-270.0)), 1/cos(DEG_TO_RAD*(theta-270.0)), 0,
+           DEG_TO_RAD*(W-x)* 1/tan(DEG_TO_RAD*(theta-270.0)) * 1/sin(DEG_TO_RAD*(theta-270.0)), -1/sin(DEG_TO_RAD*(theta-270.0)), 0;}
   else if (wall_f == 3 && wall_s == 0){
     H  << 1,0,0,
-           eq(12), eq(10), 0,
-           eq(1), 0, eq(2);}
+           DEG_TO_RAD*x*tan(DEG_TO_RAD*(theta-270.0))*1/cos(DEG_TO_RAD*(theta-270.0)), 1/cos(DEG_TO_RAD*(theta-270.0)), 0,
+           DEG_TO_RAD*(L-y)*tan(DEG_TO_RAD*(theta-270.0))*1/cos(DEG_TO_RAD*(theta-270.0)), 0, -1/cos(DEG_TO_RAD*(theta-270.0));}
   else if (wall_f == 3 && wall_s == 3){
     H  << 1,0,0,
-           eq(12), eq(10), 0,
-           eq(8), eq(4), 0;}
+           DEG_TO_RAD*x*tan(DEG_TO_RAD*(theta-270.0))*1/cos(DEG_TO_RAD*(theta-270.0)), 1/cos(DEG_TO_RAD*(theta-270.0)), 0,
+           DEG_TO_RAD*x* 1/tan(DEG_TO_RAD*(theta-270.0)) * 1/sin(DEG_TO_RAD*(theta-270.0)), -1/sin(DEG_TO_RAD*(theta-270.0)), 0;}
   return;
 }
 
@@ -215,14 +213,14 @@ void getVelocities(float pwmR, float pwmL, float& vR, float& vL, float &vT, floa
   wAng = 1/b * (vR-vL);
 }
 
-void update_F(float dt)
+void update_F()
 {
   F << 1, 0, 0,
-       -vT * sin(q(0)) * dt, 1, 0,
-       vT * cos(q(0)) * dt, 1, 0;
+       -vT * sin(q(0) * DEG_TO_RAD), 1, 0,
+       vT * cos(q(0) * DEG_TO_RAD), 1, 0;
 }
 
-void update_Q(float dt)
+void update_Q()
 {
   Q << pow((1/b),2)*sumVar, 1/(2*b)*cos(q_est(0)*DEG_TO_RAD)*diffVar, 1/(2*b)*sin(q_est(0)*DEG_TO_RAD)*diffVar,
        1/(2*b)*cos(q_est(0)*DEG_TO_RAD)*diffVar, pow(cos(q_est(0)*DEG_TO_RAD),2)/4*sumVar, sin(q_est(0)*DEG_TO_RAD)* cos(q_est(0)*DEG_TO_RAD)/4*sumVar,
@@ -234,26 +232,47 @@ void aPrioriUpdate(float dt)
 {
   //get q^ estimate
   q_est(0) = q_est(0) + (wAng * dt);
-  q_est(1) = vT * cos(q(0));
-  q_est(2) = vT * sin(q(0));
+  q_est(1) += vT * cos(q(0) * DEG_TO_RAD);
+  q_est(2) += vT * sin(q(0) * DEG_TO_RAD);
 
   //P update
-  update_F(dt);
-  update_Q(dt);
+  update_F();
+  update_Q();
   P = ((F * P) * (~F)) + Q;
   
+}
+
+void updateSensor()
+{
+  float gz, head, fDist, sDist;
+  ReadIMU(gz, head);
+  
+  fDist = sensor.readRangeSingleMillimeters();
+  if (sensor.timeoutOccurred()) { Serial.print(" TIMEOUT"); }
+ 
+  sDist = sensor2.readRangeSingleMillimeters();
+  if (sensor2.timeoutOccurred()) { Serial.print(" TIMEOUT");  }
+  z << head, fDist, sDist;
 }
 
 void aPosterioriUpdate(float dt)
 {
   outputEstimate(z_est, q_est);
-  update_H(dt);
+  update_H();
+  updateSensor();
   BLA::Matrix<3> innovation = z - z_est;
   S = ((H * P) * (~H)) + R; //innovation covariance
   K = (P * (~H))*(S.Inverse()); //Kalman Gain
   q_est += (K * innovation); //A Posteriori State Estimate
   P = (I3 - (K*H))*P; //Update Covariance Estimate  
-  
+
+  Serial.print(z_est(0));
+  Serial.print(" ");
+  Serial.print(z_est(1));
+  Serial.print(" ");
+  Serial.print(z_est(2));
+  Serial.print(" ");
+  Serial.print("\n");
 }
 
 void outputEstimate(BLA::Matrix<3>& z_est, BLA::Matrix<3>& q_est)
@@ -395,13 +414,13 @@ void loop() {
   // put your main code here, to run repeatedly:
   int pwmR = 90;
   int pwmL = 90 ;
-  float gz, head, fDist, sDist;
-  ReadIMU(gz, head);
+  
   wall_f = det_wall(FRONT);
   wall_s = det_wall(SIDE);
-  update_H(dt);
-  outputEstimate(z_est, q_est);
-  q_est(0) += 1;
+  aPrioriUpdate(dt);
+  aPosterioriUpdate(dt);
+  //outputEstimate(z_est, q_est);
+  //q_est(0) += 1;
   /*
   q_est(0) = 45;
   q_est(0) = q_est(0) > 360 ? 0 : q_est(0);
@@ -409,9 +428,9 @@ void loop() {
   q_est(2) += 1.5;//sin(q_est(0) * DEG_TO_RAD);
   Serial.print(" Z: ");
   */
-  Serial.print(z_est(0)); Serial.print(" ");
-  Serial.print(z_est(1)); Serial.print(" ");
-  Serial.print(z_est(2)); Serial.print("\n");
+  Serial.print(q_est(0)); Serial.print(" ");
+  Serial.print(q_est(1)); Serial.print(" ");
+  Serial.print(q_est(2)); Serial.print("\n");
 
   /*
   Serial.print("Heading: ");
