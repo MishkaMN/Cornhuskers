@@ -1,18 +1,31 @@
 #include <ESP8266WiFi.h>
 #include <WebSocketsServer.h>
 
+#include "Drivetrain.h"
 #include "Sensors.h"
 
 VL53L0X fSensor, sSensor;
+Servo servoLeft, servoRight;
 
-const char* ssid     = "NotAKeylogger";
-const char* password = "GiveWifi";
-const int pinLed0 = 13; 
+const char* ssid     = "YikeNet_2G";
+const char* password = "luckytrain022";
 
 WebSocketsServer webSocket = WebSocketsServer(81);
 
+void parseCommand(String command, int* commandParts)
+{
+  char * strtokIndx;
+  char * comm_cstr = (char *)command.c_str();
+  strtokIndx = strtok(comm_cstr,", ");
+  commandParts[0] = atoi(strtokIndx);
+  strtokIndx = strtok(NULL,", ");
+  commandParts[1] = atoi(strtokIndx);
+  strtokIndx = strtok(NULL,", ");
+  commandParts[2] = atoi(strtokIndx);
+  Serial.print(commandParts[2]);
+}
+
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght) {
-    Serial.printf("[%u] get Message: %s\r\n", num, payload);
     switch(type) {
         case WStype_DISCONNECTED:      
             break;
@@ -25,13 +38,16 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         case WStype_TEXT:
             {
               String _payload = String((char *) &payload[0]);
+              int commandArgs[3];
+              
+              parseCommand(_payload, commandArgs);
+              drive(commandArgs[0], commandArgs[1], commandArgs[2], servoLeft, servoRight);
               
               float f,s, gz, head;
               ReadDistSensors(f,s,fSensor,sSensor);
               ReadIMU(gz,head);
               char data[64];
               sprintf(data, "Front:%f Side:%f Heading:%f", f, s, head);
-              Serial.print(_payload);
               webSocket.sendTXT(num, data);
             }   
             break;      
@@ -55,7 +71,7 @@ void setup() {
      Serial.print(".");
      delay(200);
   }
-    
+  
   Serial.println("");
   Serial.println("WiFi connected");  
   Serial.println("IP address: ");
@@ -66,6 +82,11 @@ void setup() {
   Serial.println("Start Websocket Server");
   webSocket.begin();
   webSocket.onEvent(webSocketEvent);
+
+  //Setup Servos:
+  servoLeft.attach(SERVO_LEFT);
+  servoRight.attach(SERVO_RIGHT);
+
 
   //Setup Distance Sensors
   pinMode(D3, OUTPUT);
