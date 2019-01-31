@@ -1,8 +1,8 @@
 import numpy as np
 import math
 
-L = 750
-W = 500
+L = 750.0
+W = 500.0
 # corners are ordered clkwise starting from origin
 corners = [[W, L], [W, 0], [0, 0], [0, L]]
 DEGREE_TO_RAD = ,math.pi/180
@@ -12,6 +12,23 @@ NORTH_WALL = 0
 EAST_WALL = 1
 SOUTH_WALL = 2
 WEST_WALL = 3
+
+
+sigmaR = 0.115 # mm/s
+sigmaL = 0.0538 # mm/s
+sumVar = sigmaR * sigmaR + sigmaL * sigmaL
+diffVar = sigmaR * sigmaR - sigmaL * sigmaL
+sigmaAngle = 15.3*DEGREE_TO_RAD
+sigmaFLaser = 3.91 # mm
+sigmaSLaser = 5.68 # mm
+b = 94 # mm
+
+# state, output vectors
+q = np.array([0, W/2, L/2])
+# initialized with initial position
+z = None
+# w is process noise and v is observation noise
+
 
 def det_wall(state, sensorType):
     # NOTE: the center of the vehicle is the intersection
