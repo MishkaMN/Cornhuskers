@@ -1,6 +1,6 @@
 #include <ESP8266WiFi.h>
 #include <WebSocketsServer.h>
-
+#include <Servo.h>
 #include "Drivetrain.h"
 #include "Sensors.h"
 
@@ -39,15 +39,22 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
             {
               String _payload = String((char *) &payload[0]);
               int commandArgs[3];
-              
-              parseCommand(_payload, commandArgs);
-              drive(commandArgs[0], commandArgs[1], commandArgs[2], servoLeft, servoRight);
-              
+
+              //Initial sensor readings
               float f,s, gz, head;
               ReadDistSensors(f,s,fSensor,sSensor);
               ReadIMU(gz,head);
               char data[64];
-              sprintf(data, "Front:%f Side:%f Heading:%f", f, s, head);
+              sprintf(data, "First Front:%f Side:%f Heading:%f", f, s, head);
+              webSocket.sendTXT(num, data);
+              
+              parseCommand(_payload, commandArgs);
+              drive(commandArgs[0], commandArgs[1], commandArgs[2], servoLeft, servoRight);
+
+              //final sensor readings
+              ReadDistSensors(f,s,fSensor,sSensor);
+              ReadIMU(gz,head);
+              sprintf(data, "Last Front:%f Side:%f Heading:%f", f, s, head);
               webSocket.sendTXT(num, data);
             }   
             break;      
