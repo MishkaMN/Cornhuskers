@@ -25,7 +25,7 @@ void parseCommand(String command, int* commandParts)
   Serial.print(commandParts[2]);
 }
 
-void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght) {
+void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t len) {
     switch(type) {
         case WStype_DISCONNECTED:      
             break;
@@ -60,10 +60,10 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
             break;      
         case WStype_BIN:
             {
-              hexdump(payload, lenght);
+              hexdump(payload, len);
             }
             // echo data back to browser
-            webSocket.sendBIN(num, payload, lenght);
+            webSocket.sendBIN(num, payload, len);
             break;
   
     }

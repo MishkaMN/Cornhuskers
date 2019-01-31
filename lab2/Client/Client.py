@@ -16,18 +16,15 @@ if __name__ == '__main__':
         ws = DummyClient(esp8266host)
         ws.connect()
         print("Ready")
-        
-        i = 0
+
         while(1):
             print("Send Command")
             command = input();
             ws.send(command)
 
-        ws.send("led0:0")
         ws.received_message()
         ws.close()
         exit()
 
     except KeyboardInterrupt:
-        ws.send("led0:0")
         ws.close()
