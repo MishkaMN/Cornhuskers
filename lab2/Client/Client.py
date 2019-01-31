@@ -21,19 +21,20 @@ class DummyClient(WebSocketClient):
     def received_message(self, msg):
         parts = str(msg).split(",")
         if(parts[0] == "First"):
-            self.z_init = [(-1*float(parts[1])+ 276.93)*math.pi/180, float(parts[2]), float(parts[3])]
-
+            self.z_init = [(-1*float(parts[1])+ 276.93)*math.pi/180.0, float(parts[2]), float(parts[3])]
+            #(-1*float(parts[1])+ 276.93)*
         if(parts[0] == "Command"):
             self.command = [int(parts[1]), int(parts[2]), float(int(parts[3]))/1000.0]
         if(parts[0] == "Last"):
-            self.z_final = [(-1*float(parts[1])+ 276.93)*math.pi/180, float(parts[2]), float(parts[3])]
+            self.z_final = [(-1*float(parts[1])+ 276.93)*math.pi/180.0, float(parts[2]), float(parts[3])]
+            #print(self.z_final)
             """ START FILTERING """
             print("State:")
             print(self.est_state)
             self.est_state, self.P = Kfilter.aPrioriUpdate(self.est_state, self.command[2], self.P, self.command[1], self.command[0])
-            print(self.est_state)
+            #print(self.est_state)
             self.est_state, self.P = Kfilter.aPosterioriUpdate(self.P, self.z_final, self.est_state, self.command[2])
-            #print("Filtered State")
+            print("Filtered State")
             print(self.est_state)
             #print(self.P)
             

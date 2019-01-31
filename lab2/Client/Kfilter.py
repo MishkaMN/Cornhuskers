@@ -157,7 +157,6 @@ def outputEstimate(q_est):
     theta = q_est.item(0)
     x = q_est.item(1)
     y = q_est.item(2)
-
     z_est = 0
     if(wall_f == NORTH_WALL and wall_s == SOUTH_WALL):
         z_est = np.array([q_est.item(0),
@@ -207,7 +206,6 @@ def outputEstimate(q_est):
         z_est = np.array([q_est.item(0),
             x / math.cos(theta - 3 * math.pi / 2),
             -x / math.sin(theta - 3 * math.pi / 2)])
-
     offset = np.array([0, 25, 30])
     z_est -= offset
     return z_est
@@ -240,7 +238,6 @@ def update_Q(state, dt):
 
 def aPrioriUpdate(est_state, dt, P, pwmR, pwmL):
     vR, vL, vT, wAng = getVelocities(pwmR, pwmL)
-    print(vL, vR, vT*math.cos(est_state[0])*dt)
     est_state[1] += vT*math.sin(est_state[0])*dt
     est_state[2] += vT*math.cos(est_state[0])*dt 
     est_state[0] = est_state[0] + (wAng*dt)
@@ -253,7 +250,6 @@ def aPrioriUpdate(est_state, dt, P, pwmR, pwmL):
 def aPosterioriUpdate(P, z, q_est, dt):
     z_est = outputEstimate(q_est)
     H = HJacobian_at(q_est)
-    z = np.array([0, 0, 0])
     innovation = z - z_est
     S = np.matmul(np.matmul(H,P),np.transpose(H))+R
     K = np.matmul(np.matmul(P,np.transpose(H)),np.linalg.inv(S))
