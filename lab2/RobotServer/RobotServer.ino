@@ -25,9 +25,14 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         case WStype_TEXT:
             {
               String _payload = String((char *) &payload[0]);
-
+              
+              float f,s, gz, head;
+              ReadDistSensors(f,s,fSensor,sSensor);
+              ReadIMU(gz,head);
+              char data[64];
+              sprintf(data, "Front:%f Side:%f Heading:%f", f, s, head);
               Serial.print(_payload);
-              webSocket.sendTXT(num, "Connected");
+              webSocket.sendTXT(num, data);
             }   
             break;      
         case WStype_BIN:
@@ -121,6 +126,4 @@ void setup() {
 void loop() {
   webSocket.loop();
   static float f,s;
-  ReadDistSensors(f,s,fSensor,sSensor);
-  Serial.print(f); Serial.print(" "); Serial.print(s); Serial.print("\n");
 }

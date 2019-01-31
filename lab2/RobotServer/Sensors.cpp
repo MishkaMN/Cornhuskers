@@ -1,4 +1,4 @@
-#include "Sensor.h"
+#include "Sensors.h"
 
 // This function read Nbytes bytes from I2C device at address Address. 
 // Put read bytes starting at register Register in the Data array. 
@@ -129,9 +129,9 @@ void ReadIMU(float& ret_gz, float& ret_heading)
 void ReadDistSensors(float& front, float& side, VL53L0X& sensor, VL53L0X& sensor2)
 {
   
-  front = sensor.readRangeSingleMillimeters();
-  if (sensor.timeoutOccurred()) { Serial.print(" TIMEOUT"); }
+  front = sensor2.readRangeSingleMillimeters();
+  if (sensor2.timeoutOccurred()) { Serial.print(" TIMEOUT"); }
   
-  side = sensor2.readRangeSingleMillimeters();
-  if (sensor2.timeoutOccurred()) { Serial.println(" TIMEOUT"); }
+  side = sensor.readRangeSingleMillimeters();
+  if (sensor.timeoutOccurred()) { Serial.println(" TIMEOUT"); }
 }
