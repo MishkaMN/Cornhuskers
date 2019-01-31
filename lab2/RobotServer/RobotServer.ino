@@ -45,16 +45,18 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t len) {
               ReadDistSensors(f,s,fSensor,sSensor);
               ReadIMU(gz,head);
               char data[64];
-              sprintf(data, "First Front:%f Side:%f Heading:%f", f, s, head);
+              sprintf(data, "First,%f,%f,%f", f, s, head);
               webSocket.sendTXT(num, data);
               
               parseCommand(_payload, commandArgs);
               drive(commandArgs[0], commandArgs[1], commandArgs[2], servoLeft, servoRight);
-
+              sprintf(data, "Command,%d,%d,%d", commandArgs[0], commandArgs[1], commandArgs[2]);
+              webSocket.sendTXT(num, data);
+              
               //final sensor readings
               ReadDistSensors(f,s,fSensor,sSensor);
               ReadIMU(gz,head);
-              sprintf(data, "Last Front:%f Side:%f Heading:%f", f, s, head);
+              sprintf(data, "Last,%f,%f,%f", f, s, head);
               webSocket.sendTXT(num, data);
             }   
             break;      
