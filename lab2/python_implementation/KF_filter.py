@@ -40,16 +40,15 @@ z = None
 def det_wall(state, sensorType):
     # NOTE: the center of the vehicle is the intersection
     # of the lines extended from front and right sensors
-    
+
     # theta is wrt true North
     theta, x, y = state
-
 
     if sensorType == 1:
         theta += math.pi/2
     if theta > 2*math.pi:
         theta -= 2*math.pi
-    
+
     dist_to_corners = [math.sqrt((corner_x - x)**2 + math.sqrt((corner_y - y)**2)) for (corner_x, corner_y) in corners]
 
     thetas = []
@@ -95,7 +94,7 @@ def HJacobian_at(state):
     elif wall_f == 0 and wall_s == 1:
         # case 0, 1
         return np.array([[1, 0, 0],
-            [(L-y)*sin(theta)/(2*cos(theta)), 0, -1/cos(theta)], 
+            [(L-y)*sin(theta)/(2*cos(theta)), 0, -1/cos(theta)],
             [(W-x)*sin(theta)/(2*cos(theta)), -1/cos(theta), 0]])
     elif wall_f == 0 and wall_s == 2:
         # case 0, 2
@@ -120,32 +119,32 @@ def HJacobian_at(state):
     elif wall_f == 2 and wall_s == 0:
         # case 2, 0
         return np.array([[1, 0, 0],
-            [-y*sin(theta)/(2*cos(theta)), 0, -1/cos(theta)], 
+            [-y*sin(theta)/(2*cos(theta)), 0, -1/cos(theta)],
             [-(-L+y)*cos(theta)/(2*sin(theta)), 0, 1/sin(theta)]]
     elif wall_f == 2 and wall_s == 2:
         # case 2, 2
-        return np.array([[1, 0, 0], 
-            [-y*sin(theta)/(2*cos(theta)), 0, -1/cos(theta)], 
+        return np.array([[1, 0, 0],
+            [-y*sin(theta)/(2*cos(theta)), 0, -1/cos(theta)],
             [-y*cos(theta)/(2*sin(theta)), 0, 1/sin(theta)]])
     elif wall_f == 2 and wall_s == 3:
         # case 2, 3
-        return np.array([[1, 0, 0], 
-            [-y*sin(theta)/(2*cos(theta)), 0, -1/cos(theta)], 
+        return np.array([[1, 0, 0],
+            [-y*sin(theta)/(2*cos(theta)), 0, -1/cos(theta)],
             [-x*sin(theta)/(2*cos(theta)), -1/cos(theta), 0]])
     elif wall_f == 3 and wall_s == 0:
         # case 3, 0
         return np.array([[1, 0, 0],
-            [x*cos(theta)/(2*sin(theta)), -1/sin(theta), 0], 
+            [x*cos(theta)/(2*sin(theta)), -1/sin(theta), 0],
             [-(-L+y)*cos(theta)/(2*sin(theta)), 0, 1/sin(theta)]])
     elif wall_f == 3 and wall_s == 1:
         # case 3, 1
-        return np.array([[1, 0, 0], 
-            [x*sin(theta)/(2*sin(theta)), -1/sin(theta), 0], 
+        return np.array([[1, 0, 0],
+            [x*sin(theta)/(2*sin(theta)), -1/sin(theta), 0],
             [(W-x)*sin(theta)/(2*cos(theta)), -1/cos(theta), 0]])
     elif wall_f == 3 and wall_s == 3:
         # case 3, 3
         return np.array([[1, 0, 0],
-            [x*cos(theta)/(2*sin(theta)), -1/sin(theta), 0], 
+            [x*cos(theta)/(2*sin(theta)), -1/sin(theta), 0],
             [-x*sin(theta)/(2*cos(theta)), -1/cos(theta), 0]]
 
 def outputEstimate(q_est):
@@ -264,9 +263,6 @@ def aPosterioriUpdate(P, R, q_est, dt):
     P = (np.eye(3) - (K*H))*P
 
     return (q_est, P)
-
-
-
 
 class Robot:
     pass
