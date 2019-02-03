@@ -44,6 +44,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t len) {
               float f,s, gz, head;
               ReadDistSensors(f,s,fSensor,sSensor);
               ReadIMU(gz,head);
+              Serial.print(head); Serial.print("\n");
               char data[64];
               sprintf(data, "First,%f,%f,%f", f, s, head);
               webSocket.sendTXT(num, data);
@@ -155,5 +156,5 @@ void setup() {
 
 void loop() {
   webSocket.loop();
-  static float f,s;
+  float f,s, gz, head;
 }

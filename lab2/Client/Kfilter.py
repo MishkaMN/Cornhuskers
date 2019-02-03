@@ -15,10 +15,6 @@ EAST_WALL = 1
 SOUTH_WALL = 2
 WEST_WALL = 3
 
-# test input
-pwmL = 90
-pwmR = 90
-
 sigmaR = 0.115 # mm/s
 sigmaL = 0.0538 # mm/s
 sumVar = sigmaR * sigmaR + sigmaL * sigmaL
@@ -214,15 +210,17 @@ def getVelocities(pwmR, pwmL):
     vR = -140*math.tanh(-0.048*(pwmR - 91.8))
     vL = 139*math.tanh(-0.047*(pwmL - 92.6))
     vT = .5*(vL+vR)
-    wAng = 1/b*(vR-vL)
+    wAng = 1/b*(vL-vR)
+    print("wang")
+    print(wAng)
     return (vR, vL, vT, wAng)
 
-def update_F(state, dt):
+def update_F(state, dt, pwmR, pwmL):
     theta, x, y = state
     _, _, vT, _ = getVelocities(pwmR, pwmL)
     return np.array([[1, 0, 0], 
         [-vT*math.sin(theta)*dt, 1, 0], 
-        [vT*math.cos(theta)*dt, 1, 0]])
+        [vT*math.cos(theta)*dt, 0, 1]])
 
 def update_Q(state, dt):
     theta, x, y = state
@@ -238,22 +236,45 @@ def update_Q(state, dt):
 
 def aPrioriUpdate(est_state, dt, P, pwmR, pwmL):
     vR, vL, vT, wAng = getVelocities(pwmR, pwmL)
+    print("THETA:   FIRST")
+    print(est_state[0] * 180.0/math.pi)
     est_state[1] += vT*math.sin(est_state[0])*dt
     est_state[2] += vT*math.cos(est_state[0])*dt 
     est_state[0] = est_state[0] + (wAng*dt)
-    F = update_F(est_state, dt)
+    F = update_F(est_state, dt, pwmR, pwmL)
+    #print("F:")
+    #print(F)
     Q = update_Q(est_state, dt)
+    #print("Q:")
+    #print(Q)
     P = ((F*P)*np.transpose(F))+Q
-
+    """
+    print("P:")
+    print(P)
+    """
+    print("THETA:   AFTER")
+    print(est_state[0] * 180.0/math.pi)
+    
     return (est_state, P)
 
 def aPosterioriUpdate(P, z, q_est, dt):
+    
     z_est = outputEstimate(q_est)
     H = HJacobian_at(q_est)
+    #print("H:")
+    #print(H)
     innovation = z - z_est
-    S = np.matmul(np.matmul(H,P),np.transpose(H))+R
+    #print("S:")
+    S = np.add(np.matmul(np.matmul(H,P),np.transpose(H)),R)
+    #print(S)
     K = np.matmul(np.matmul(P,np.transpose(H)),np.linalg.inv(S))
+    print("K:")
+    print(K)
     q_est += (np.matmul(K,innovation))
-    P = (np.eye(3) - (K*H))*P
+    #print("q_est")
+    #print(q_est)
+    #print("P_post")
+    P = (np.eye(3) - .01*(K*H))*P
+    #print(P)
 
     return (q_est, P)

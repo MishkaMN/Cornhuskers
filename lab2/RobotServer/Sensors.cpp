@@ -91,12 +91,12 @@ void ReadIMU(float& ret_gz, float& ret_heading)
   // Create 16 bits values from 8 bits data
 
   //offsets
-  int16_t offs_x = 115;
-  int16_t offs_y = 28; 
+  int16_t offs_x = 100;
+  int16_t offs_y = -10; 
   
   // Magnetometer
   int16_t mx=(Mag[1]<<8 | Mag[0]) + offs_x;
-  int16_t my=(Mag[3]<<8 | Mag[2]) - offs_y;
+  int16_t my=(Mag[3]<<8 | Mag[2]) + offs_y;
   int16_t mz=(Mag[5]<<8 | Mag[4]);
 
   float heading = atan2(my, mx);
@@ -121,7 +121,7 @@ void ReadIMU(float& ret_gz, float& ret_heading)
   float headingDegrees = heading * 180/PI; 
 
   ret_heading = headingDegrees;
-  
+
   // End of line
   delay(100); 
 }
