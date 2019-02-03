@@ -23,8 +23,7 @@ class DummyClient(WebSocketClient):
     def received_message(self, msg):
         parts = str(msg).split(",")
         if(parts[0] == "Last"):
-            print(parts[1])
-            theta = (-1*float(parts[1]) + 290.0) * math.pi/180.0;
+            theta = float(parts[1]) - 290.
             sideSense = (float(parts[2])-41.7)/.972
             frontSense = (float(parts[3])-62.4)/.937
             self.z_final = [theta, frontSense, sideSense]
