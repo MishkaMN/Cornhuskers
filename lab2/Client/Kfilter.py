@@ -91,7 +91,7 @@ def HJacobian_at(state):
         if wall_s == NORTH_WALL:
             # case 0, 0
             return np.array([[1, 0, 0],
-                [(L-y)*sin(theta)**2, 0, -1/cos(theta)],
+                [(L-y)*sin(theta)/(cos(theta)**2), 0, -1/cos(theta)],
                 [-(-L+y)*cos(theta)/(sin(theta)**2), 0, 1/sin(theta)]])
         elif wall_s == EAST_WALL:
         # case 0, 1
@@ -147,7 +147,7 @@ def HJacobian_at(state):
         elif wall_s == EAST_WALL:
             # case 3, 1
             return np.array([[1, 0, 0],
-                [x*sin(theta)/(sin(theta)**2), -1/sin(theta), 0],
+                [x*cos(theta)/(sin(theta)**2), -1/sin(theta), 0],
                 [(W-x)*sin(theta)/(cos(theta)**2), -1/cos(theta), 0]])
         elif wall_s == WEST_WALL:
             # case 3, 3
@@ -218,8 +218,21 @@ def outputEstimate(q_est):
     return z_est
 
 def getVelocities(pwmR, pwmL):
-    vR = -140*math.tanh(-0.048*(pwmR - 91.8))
-    vL = 139*math.tanh(-0.047*(pwmL - 92.6))
+    # DO NOT CHANGE
+    print('pwmR, pwmL', pwmR, pwmL)
+    vR = abs(140*math.tanh(-0.048*(pwmR - 91.8)))
+    vL = abs(139*math.tanh(-0.047*(pwmL - 92.6)))
+    if pwmL < 90 and pwmR > 90:
+        pass
+    elif pwmL < 90 and pwmR < 90:
+        vL *= -1
+    elif pwmL > 90 and pwmR < 90:
+        vR *= -1
+        vL *= -1
+    elif pwmL > 90 and pwmR > 90:
+        vR *= -1
+    print('here vL, vR: ', vL, vR)
+
     vT = .5*(vL+vR)
     wAng = 1/b*(vL-vR)
     return (vR, vL, vT, wAng)
@@ -243,53 +256,50 @@ def update_Q(state, dt):
             cos(theta)*sin(theta)*(dt**2)/4*sumVar,
             (sin(theta)**2)*(dt**2)/4*sumVar]])
 
-def aPrioriUpdate(est_state, dt, P, pwmR, pwmL):
+def aPrioriUpdate(q_est, dt, P, pwmR, pwmL):
     vR, vL, vT, wAng = getVelocities(pwmR, pwmL)
-    #print("THETA:   FIRST")
-    #print(est_state[0] * 180.0/math.pi)
-    est_state[1] += vT*math.sin(est_state[0])*dt
-    est_state[2] += vT*math.cos(est_state[0])*dt 
-    est_state[0] = est_state[0] + (wAng*dt)
-    F = update_F(est_state, dt, pwmR, pwmL)
-    #print("F:")
-    #print(F)
-    Q = update_Q(est_state, dt)
-    #print("Q:")
-    #print(Q)
+    print("THETA:   FIRST")
+    print(q_est[0] * 180.0/math.pi)
+    # print('wAng: ', wAng)
+    q_est[1] += vT*math.sin(q_est[0])*dt
+    q_est[2] += vT*math.cos(q_est[0])*dt 
+    q_est[0] = q_est[0] + (wAng*dt)
+    F = update_F(q_est, dt, pwmR, pwmL)
+    print("F:")
+    print(F)
+    Q = update_Q(q_est, dt)
+    print("Q:")
+    print(Q)
     P = ((F*P)*np.transpose(F))+Q
     """
     print("P:")
     print(P)
     """
-    #print("THETA:   AFTER")
-    #print(est_state[0] * 180.0/math.pi)
+    print("THETA:   AFTER")
+    print(q_est[0] * 180.0/math.pi)
     
-    return (est_state, P)
+    return (q_est, P)
 
 def aPosterioriUpdate(P, z, q_est, dt):
     z_est = outputEstimate(q_est)
     H = HJacobian_at(q_est)
     #print("H:")
     #print(H)
-    #print("ZEES")
-    #print(z)
-    #print(z_est)
+    print("z")
+    print(z)
+    print('z_est')
+    print(z_est)
     innovation = z - z_est
-    #print("S:")
+    print("innovation: ", innovation)
     S = ((H*P)*np.transpose(H))+R
-    #print(S)
-    K = np.matmul(np.matmul(P,np.transpose(H)),np.linalg.inv(S))
-    """
+    
+    print('S:', S)
+    K = P*np.transpose(H)*np.linalg.inv(S)
+    
     print("K:")
     print(K)
-    """
-    q_est += (np.matmul(.01*K,innovation))
-    """
-    print("q_est")
-    print(q_est)
-    print("P_post")
-    """
-    P = (np.eye(3) - (K*H))*P
-    #print(P)
+    q_est += (np.matmul(K,innovation))
 
+    P = (np.eye(3) - (K*H))*P
+   
     return (q_est, P)
