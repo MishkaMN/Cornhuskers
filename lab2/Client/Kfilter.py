@@ -227,14 +227,14 @@ def update_F(state, dt):
 def update_Q(state, dt):
     theta, x, y = state
     return np.array([[((dt/b)**2)*(sumVar),
-        dt**2*math.cos(theta)/(2*b)*diffVar,
-        dt**2*math.sin(theta)/(2*b)*diffVar], 
-        [dt**2*math.cos(theta)/(2*b)*diffVar,
-            cos(theta)**2*dt**2/4*sumVar,
-            cos(theta)*sin(theta)*dt**2/4*sumVar],
-        [dt**2*sin(theta)/(2*b)*diffVar,
-            cos(theta)*sin(theta)*dt**2/4*sumVar,
-            sin(theta)**2*dt**2/4*sumVar]])
+        ((dt**2)*math.cos(theta))/(2*b)*diffVar,
+        ((dt**2)*math.sin(theta))/(2*b)*diffVar], 
+        [((dt**2)*math.cos(theta))/(2*b)*diffVar,
+            (cos(theta)**2*(dt**2))/4*sumVar,
+            cos(theta)*sin(theta)*(dt**2)/4*sumVar],
+        [(dt**2)*sin(theta)/(2*b)*diffVar,
+            cos(theta)*sin(theta)*(dt**2)/4*sumVar,
+            (sin(theta)**2)*(dt**2)/4*sumVar]])
 
 def aPrioriUpdate(est_state, dt, P, pwmR, pwmL):
     vR, vL, vT, wAng = getVelocities(pwmR, pwmL)
