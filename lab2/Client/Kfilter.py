@@ -246,7 +246,7 @@ def update_F(state, dt, pwmR, pwmL):
     _, _, vT, _, Radius = getVelocities(pwmR, pwmL)
     return np.array([[1, 0, 0], 
         [vT/wAng*math.sin(theta), 1, 0], 
-        [vT/wAng*math.cos(theta), 0, 1]])
+        [-vT/wAng*math.cos(theta), 0, 1]])
 
 def update_Q(state, dt):
     theta, x, y = state
@@ -266,7 +266,7 @@ def aPrioriUpdate(q_est, dt, P, pwmR, pwmL):
     print(q_est[0] * 180.0/math.pi)
     # print('wAng: ', wAng)
     q_est[1] -= vT/wAng *(math.cos(wAng*dt + q_est[0]) - math.cos(q_est[0]))
-    q_est[2] +=  vT/wAng *(math.sin(wAng*dt + q_est[0]) - math.sin(q_est[0]))
+    q_est[2] -=  vT/wAng *(math.sin(wAng*dt + q_est[0]) - math.sin(q_est[0]))
     q_est[0] +=  (wAng*dt)
     
     F = update_F(q_est, dt, pwmR, pwmL)
