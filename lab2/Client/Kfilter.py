@@ -233,6 +233,8 @@ def getVelocities(pwmR, pwmL):
         vR *= -1
     print('here vL, vR: ', vL, vR)
 
+    # INCLUDE CATCH CASE WHERE vL = vR
+    # HERE
 
     Radius = b/2 * (vL + vR)/ (vL - vR)
     vT = .5*(vL+vR)
@@ -243,8 +245,8 @@ def update_F(state, dt, pwmR, pwmL):
     theta, x, y = state
     _, _, vT, _, Radius = getVelocities(pwmR, pwmL)
     return np.array([[1, 0, 0], 
-        [vT*math.sin(theta)*dt, 1, 0], 
-        [-vT*math.cos(theta)*dt, 0, 1]])
+        [vT/wAng*math.sin(theta), 1, 0], 
+        [vT/wAng*math.cos(theta), 0, 1]])
 
 def update_Q(state, dt):
     theta, x, y = state
@@ -263,9 +265,9 @@ def aPrioriUpdate(q_est, dt, P, pwmR, pwmL):
     print("THETA:   FIRST")
     print(q_est[0] * 180.0/math.pi)
     # print('wAng: ', wAng)
-    q_est[1] += 2*math.sin(q_est[0] + wAng*dt/2)*Radius*math.sin(wAng*dt/2)
-    q_est[2] +=  -2*math.cos(q_est[0] + wAng*dt/2)*Radius*math.sin(wAng*dt/2) 
-    q_est[0] = q_est[0] + (wAng*dt)
+    q_est[1] -= vT/wAng *(math.cos(wAng*dt + q_est[0]) - math.cos(q_est[0]))
+    q_est[2] +=  vT/wAng *(math.sin(wAng*dt + q_est[0]) - math.sin(q_est[0]))
+    q_est[0] +=  (wAng*dt)
     
     F = update_F(q_est, dt, pwmR, pwmL)
     print("F:")
