@@ -25,8 +25,9 @@ class DummyClient(WebSocketClient):
         if(parts[0] == "Last"):
             print(parts[1])
             theta = (-1*float(parts[1]) + 290.0) * math.pi/180.0;
-            print(theta)
-            self.z_final = [theta, float(parts[2]), float(parts[3])]
+            sideSense = (float(parts[2])-41.7)/.972
+            frontSense = (float(parts[3])-62.4)/.937
+            self.z_final = [theta, frontSense, sideSense]
             #print(self.z_final)
             """ START FILTERING """
             #print("State:")
@@ -34,7 +35,7 @@ class DummyClient(WebSocketClient):
             pwmL, pwmR, dt = command.split(" ")
             self.est_state, self.P = Kfilter.aPrioriUpdate(self.est_state, float(dt)/1000.0, self.P, float(pwmR), float(pwmL))
             #print(self.est_state)
-            self.est_state, self.P = Kfilter.aPosterioriUpdate(self.P, self.z_final, self.est_state, self.command[2])
+            self.est_state, self.P = Kfilter.aPosterioriUpdate(self.P, self.z_final, self.est_state, float(dt)/1000.0)
             #print("Filtered State")
             print(self.est_state[0]*180.0/math.pi, self.est_state[1], self.est_state[2])
             #print(self.P)
