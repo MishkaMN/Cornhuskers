@@ -57,7 +57,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t len) {
               //final sensor readings
               ReadDistSensors(f,s,fSensor,sSensor);
               ReadIMU(gz,head);
-              sprintf(data, "Last,%f,%f,%f", f, s, head);
+              sprintf(data, "Last,%f,%f,%f", f, s, (-1*head+ 290.0)*DEG_TO_RAD);
               webSocket.sendTXT(num, data);
             }   
             break;      
@@ -157,4 +157,6 @@ void setup() {
 void loop() {
   webSocket.loop();
   float f,s, gz, head;
+  ReadIMU(gz,head);
+  Serial.print((-1*head+ 290.0)*DEG_TO_RAD); Serial.print("\n");
 }

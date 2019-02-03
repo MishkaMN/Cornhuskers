@@ -15,7 +15,6 @@ EAST_WALL = 1
 SOUTH_WALL = 2
 WEST_WALL = 3
 
-
 sigmaR = 0.115 # mm/s
 sigmaL = 0.0538 # mm/s
 sumVar = sigmaR * sigmaR + sigmaL * sigmaL
@@ -74,6 +73,8 @@ def det_wall(state, sensorType):
             w = math.floor((idx+1)/2)
             return NORTH_WALL if w == 4 else w
 
+    print("NO WALL")
+
 
 FRONT = 0
 SIDE = 1
@@ -86,66 +87,75 @@ def HJacobian_at(state):
     wall_f = det_wall(state, FRONT)
     wall_s = det_wall(state, SIDE)
     # Assume handling only
-    if wall_f == NORTH_WALL and wall_s == NORTH_WALL:
-        # case 0, 0
-        return np.array([[1, 0, 0],
-            [(L-y)*sin(theta)**2, 0, -1/cos(theta)],
-            [-(-L+y)*cos(theta)/(sin(theta)**2), 0, 1/sin(theta)]])
-    elif wall_f == NORTH_WALL and wall_s == EAST_WALL:
+    if wall_f == NORTH_WALL:
+        if wall_s == NORTH_WALL:
+            # case 0, 0
+            return np.array([[1, 0, 0],
+                [(L-y)*sin(theta)/(cos(theta)**2), 0, -1/cos(theta)],
+                [-(-L+y)*cos(theta)/(sin(theta)**2), 0, 1/sin(theta)]])
+        elif wall_s == EAST_WALL:
         # case 0, 1
-        return np.array([[1, 0, 0],
-            [(L-y)*sin(theta)/(cos(theta)**2), 0, -1/cos(theta)],
-            [(W-x)*sin(theta)/(cos(theta)**2), -1/cos(theta), 0]])
-    elif wall_f == NORTH_WALL and wall_s == SOUTH_WALL:
-        # case 0, 2
-        return np.array([[1, 0, 0],
-            [(L-y)*sin(theta)/(cos(theta)**2), 0, -1/cos(theta)],
-            [-y*cos(theta)/(sin(theta)**2), 0, 1/sin(theta)]])
-    elif wall_f == EAST_WALL and wall_s == EAST_WALL:
-        # case 1, 1
-        return np.array([[1, 0, 0],
-            [-(W-x)*cos(theta)/(sin(theta)**2), -1/sin(theta), 0],
-            [(W-x)*sin(theta)/(cos(theta)**2), -1/cos(theta), 0]])
-    elif wall_f == EAST_WALL and wall_s == SOUTH_WALL:
+            return np.array([[1, 0, 0],
+                [(L-y)*sin(theta)/(cos(theta)**2), 0, -1/cos(theta)],
+                [(W-x)*sin(theta)/(cos(theta)**2), -1/cos(theta), 0]])
+        elif wall_s == SOUTH_WALL:
+            # case 0, 2
+            return np.array([[1, 0, 0],
+                [(L-y)*sin(theta)/(cos(theta)**2), 0, -1/cos(theta)],
+                [-y*cos(theta)/(sin(theta)**2), 0, 1/sin(theta)]])
+
+    elif wall_f == EAST_WALL:
+        if wall_s == EAST_WALL:
+            # case 1, 1
+            return np.array([[1, 0, 0],
+                [-(W-x)*cos(theta)/(sin(theta)**2), -1/sin(theta), 0],
+                [(W-x)*sin(theta)/(cos(theta)**2), -1/cos(theta), 0]])
+        elif wall_s == SOUTH_WALL:
         # case 1, 2
-        return np.array([[1, 0, 0],
-            [-(W-x)*cos(theta)/(sin(theta)**2), -1/sin(theta), 0],
-            [-y*cos(theta)/(sin(theta)**2), 0, 1/sin(theta)]])
-    elif wall_f == EAST_WALL and wall_s == WEST_WALL:
-        # case 1, 3
-        return np.array([[1, 0, 0],
-            [-(W-x)*cos(theta)/(sin(theta)**2), -1/sin(theta), 0],
-            [-x*sin(theta)/(cos(theta)**2), -1/cos(theta), 0]])
-    elif wall_f == SOUTH_WALL and wall_s == NORTH_WALL:
-        # case 2, 0
-        return np.array([[1, 0, 0],
-            [-y*sin(theta)/(cos(theta)**2), 0, -1/cos(theta)],
-            [-(-L+y)*cos(theta)/(sin(theta)**2), 0, 1/sin(theta)]])
-    elif wall_f == SOUTH_WALL and wall_s == SOUTH_WALL:
-        # case 2, 2
-        return np.array([[1, 0, 0],
-            [-y*sin(theta)/(cos(theta)**2), 0, -1/cos(theta)],
-            [-y*cos(theta)/(sin(theta)**2), 0, 1/sin(theta)]])
-    elif wall_f == SOUTH_WALL and wall_s == WEST_WALL:
-        # case 2, 3
-        return np.array([[1, 0, 0],
-            [-y*sin(theta)/(cos(theta)**2), 0, -1/cos(theta)],
-            [-x*sin(theta)/(cos(theta)**2), -1/cos(theta), 0]])
-    elif wall_f == WEST_WALL and wall_s == NORTH_WALL:
-        # case 3, 0
-        return np.array([[1, 0, 0],
-            [x*cos(theta)/(sin(theta)**2), -1/sin(theta), 0],
-            [-(-L+y)*cos(theta)/(sin(theta)**2), 0, 1/sin(theta)]])
-    elif wall_f == WEST_WALL and wall_s == EAST_WALL:
-        # case 3, 1
-        return np.array([[1, 0, 0],
-            [x*sin(theta)/(sin(theta)**2), -1/sin(theta), 0],
-            [(W-x)*sin(theta)/(cos(theta)**2), -1/cos(theta), 0]])
-    elif wall_f == WEST_WALL and wall_s == WEST_WALL:
-        # case 3, 3
-        return np.array([[1, 0, 0],
-            [x*cos(theta)/(sin(theta)**2), -1/sin(theta), 0],
-            [-x*sin(theta)/(cos(theta)**2), -1/cos(theta), 0]])
+            return np.array([[1, 0, 0],
+                [-(W-x)*cos(theta)/(sin(theta)**2), -1/sin(theta), 0],
+                [-y*cos(theta)/(sin(theta)**2), 0, 1/sin(theta)]])
+        elif wall_s == WEST_WALL:
+            # case 1, 3
+            return np.array([[1, 0, 0],
+                [-(W-x)*cos(theta)/(sin(theta)**2), -1/sin(theta), 0],
+                [-x*sin(theta)/(cos(theta)**2), -1/cos(theta), 0]])
+
+    if wall_f == SOUTH_WALL:
+        if wall_s == NORTH_WALL:
+            # case 2, 0
+            return np.array([[1, 0, 0],
+                [-y*sin(theta)/(cos(theta)**2), 0, -1/cos(theta)],
+                [-(-L+y)*cos(theta)/(sin(theta)**2), 0, 1/sin(theta)]])
+        elif wall_s == SOUTH_WALL:
+            # case 2, 2
+            return np.array([[1, 0, 0],
+                [-y*sin(theta)/(cos(theta)**2), 0, -1/cos(theta)],
+                [-y*cos(theta)/(sin(theta)**2), 0, 1/sin(theta)]])
+        elif wall_s == WEST_WALL:
+            # case 2, 3
+            return np.array([[1, 0, 0],
+                [-y*sin(theta)/(cos(theta)**2), 0, -1/cos(theta)],
+                [-x*sin(theta)/(cos(theta)**2), -1/cos(theta), 0]])
+    
+    if wall_f == WEST_WALL:
+        if wall_s == NORTH_WALL:
+            # case 3, 0
+            return np.array([[1, 0, 0],
+                [x*cos(theta)/(sin(theta)**2), -1/sin(theta), 0],
+                [-(-L+y)*cos(theta)/(sin(theta)**2), 0, 1/sin(theta)]])
+        elif wall_s == EAST_WALL:
+            # case 3, 1
+            return np.array([[1, 0, 0],
+                [x*cos(theta)/(sin(theta)**2), -1/sin(theta), 0],
+                [(W-x)*sin(theta)/(cos(theta)**2), -1/cos(theta), 0]])
+        elif wall_s == WEST_WALL:
+            # case 3, 3
+            return np.array([[1, 0, 0],
+                [x*cos(theta)/(sin(theta)**2), -1/sin(theta), 0],
+                [-x*sin(theta)/(cos(theta)**2), -1/cos(theta), 0]])
+    
+    print("INVALID STATE")
 
 def outputEstimate(q_est):
     wall_f = det_wall(q_est, FRONT)
@@ -208,21 +218,33 @@ def outputEstimate(q_est):
     return z_est
 
 def getVelocities(pwmR, pwmL):
-    vR = -140*math.tanh(-0.048*(pwmR - 91.8))
-    vL = 139*math.tanh(-0.047*(pwmL - 92.6))
+    # DO NOT CHANGE
+    print('pwmR, pwmL', pwmR, pwmL)
+    vR = abs(140*math.tanh(-0.048*(pwmR - 91.8)))
+    vL = abs(139*math.tanh(-0.047*(pwmL - 92.6)))
+    if pwmL < 90 and pwmR > 90:
+        pass
+    elif pwmL < 90 and pwmR < 90:
+        vL *= -1
+    elif pwmL > 90 and pwmR < 90:
+        vR *= -1
+        vL *= -1
+    elif pwmL > 90 and pwmR > 90:
+        vR *= -1
+    print('here vL, vR: ', vL, vR)
+
+
+    Radius = b/2 * (vL + vR)/ (vL - vR)
     vT = .5*(vL+vR)
     wAng = 1/b*(vL-vR)
-    Radius = b/2*(vL + vR)/(vL-vR)
-    print("wang")
-    print(wAng)
     return (vR, vL, vT, wAng, Radius)
 
 def update_F(state, dt, pwmR, pwmL):
     theta, x, y = state
     _, _, vT, _, Radius = getVelocities(pwmR, pwmL)
     return np.array([[1, 0, 0], 
-        [math.cos(theta)*Radius, 1, 0], 
-        [math.sin(theta)*Radius, 0, 1]])
+        [vT*math.sin(theta)*dt, 1, 0], 
+        [-vT*math.cos(theta)*dt, 0, 1]])
 
 def update_Q(state, dt):
     theta, x, y = state
@@ -236,50 +258,51 @@ def update_Q(state, dt):
             cos(theta)*sin(theta)*(dt**2)/4*sumVar,
             (sin(theta)**2)*(dt**2)/4*sumVar]])
 
-def aPrioriUpdate(est_state, dt, P, pwmR, pwmL):
+def aPrioriUpdate(q_est, dt, P, pwmR, pwmL):
     vR, vL, vT, wAng, Radius = getVelocities(pwmR, pwmL)
     print("THETA:   FIRST")
-    print(est_state[0] * 180.0/math.pi)
-    #est_state[1] += vT*math.cos(est_state[0])*dt
-    #est_state[2] += vT*math.sin(est_state[0])*dt 
-    dTheta = wAng*dt
-    est_state[0] = est_state[0] + (dTheta)
-    est_state[1] += vT*math.cos(est_state[0] + dTheta/2)*2*Rdt
-    est_state[2] += vT*math.sin(est_state[0])*dt
-    F = update_F(est_state, dt, pwmR, pwmL)
-    #print("F:")
-    #print(F)
-    Q = update_Q(est_state, dt)
-    #print("Q:")
-    #print(Q)
+    print(q_est[0] * 180.0/math.pi)
+    # print('wAng: ', wAng)
+    q_est[1] += 2*math.sin(q_est[0] + wAng*dt/2)*Radius*math.sin(wAng*dt/2)
+    q_est[2] +=  -2*math.cos(q_est[0] + wAng*dt/2)*Radius*math.sin(wAng*dt/2) 
+    q_est[0] = q_est[0] + (wAng*dt)
+    
+    F = update_F(q_est, dt, pwmR, pwmL)
+    print("F:")
+    print(F)
+    Q = update_Q(q_est, dt)
+    print("Q:")
+    print(Q)
     P = ((F*P)*np.transpose(F))+Q
     """
     print("P:")
     print(P)
     """
     print("THETA:   AFTER")
-    print(est_state[0] * 180.0/math.pi)
+    print(q_est[0] * 180.0/math.pi)
     
-    return (est_state, P)
+    return (q_est, P)
 
 def aPosterioriUpdate(P, z, q_est, dt):
-    
     z_est = outputEstimate(q_est)
     H = HJacobian_at(q_est)
     #print("H:")
     #print(H)
+    print("z")
+    print(z)
+    print('z_est')
+    print(z_est)
     innovation = z - z_est
-    #print("S:")
-    S = np.add(np.matmul(np.matmul(H,P),np.transpose(H)),R)
-    #print(S)
-    K = np.matmul(np.matmul(P,np.transpose(H)),np.linalg.inv(S))
+    print("innovation: ", innovation)
+    S = ((H*P)*np.transpose(H))+R
+    
+    print('S:', S)
+    K = P*np.transpose(H)*np.linalg.inv(S)
+    
     print("K:")
     print(K)
     q_est += (np.matmul(K,innovation))
-    #print("q_est")
-    #print(q_est)
-    #print("P_post")
-    P = (np.eye(3) - .01*(K*H))*P
-    #print(P)
 
+    P = (np.eye(3) - (K*H))*P
+   
     return (q_est, P)
