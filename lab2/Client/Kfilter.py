@@ -211,8 +211,6 @@ def getVelocities(pwmR, pwmL):
     vL = 139*math.tanh(-0.047*(pwmL - 92.6))
     vT = .5*(vL+vR)
     wAng = 1/b*(vL-vR)
-    print("wang")
-    print(wAng)
     return (vR, vL, vT, wAng)
 
 def update_F(state, dt, pwmR, pwmL):
@@ -236,8 +234,8 @@ def update_Q(state, dt):
 
 def aPrioriUpdate(est_state, dt, P, pwmR, pwmL):
     vR, vL, vT, wAng = getVelocities(pwmR, pwmL)
-    print("THETA:   FIRST")
-    print(est_state[0] * 180.0/math.pi)
+    #print("THETA:   FIRST")
+    #print(est_state[0] * 180.0/math.pi)
     est_state[1] += vT*math.sin(est_state[0])*dt
     est_state[2] += vT*math.cos(est_state[0])*dt 
     est_state[0] = est_state[0] + (wAng*dt)
@@ -252,8 +250,8 @@ def aPrioriUpdate(est_state, dt, P, pwmR, pwmL):
     print("P:")
     print(P)
     """
-    print("THETA:   AFTER")
-    print(est_state[0] * 180.0/math.pi)
+    #print("THETA:   AFTER")
+    #print(est_state[0] * 180.0/math.pi)
     
     return (est_state, P)
 
@@ -263,18 +261,27 @@ def aPosterioriUpdate(P, z, q_est, dt):
     H = HJacobian_at(q_est)
     #print("H:")
     #print(H)
+    #print("ZEES")
+    #print(z)
+    #print(z_est)
     innovation = z - z_est
+    print("INNOVATIONS")
+    print(innovation)
     #print("S:")
     S = np.add(np.matmul(np.matmul(H,P),np.transpose(H)),R)
     #print(S)
     K = np.matmul(np.matmul(P,np.transpose(H)),np.linalg.inv(S))
+    """
     print("K:")
     print(K)
+    """
     q_est += (np.matmul(K,innovation))
-    #print("q_est")
-    #print(q_est)
-    #print("P_post")
-    P = (np.eye(3) - .01*(K*H))*P
+    """
+    print("q_est")
+    print(q_est)
+    print("P_post")
+    """
+    P = (np.eye(3) - (K*H))*P
     #print(P)
 
     return (q_est, P)
