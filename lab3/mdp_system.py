@@ -2,9 +2,9 @@ import numpy as np
 
 headings = range(12)
 UP = headings[-1] + headings[:2]
-RIGHT = range(2, 5)
-DOWN = range(5, 8)
-LEFT = range(8, 11)
+RIGHT = headings[2:5]
+DOWN = headings[5:8]
+LEFT = headings[8:11]
 
 STAY = 0
 FORWARD = 1
@@ -17,6 +17,21 @@ class Environment:
     def __init__(self, W, L):
         self.W = W
         self.L = L
+        self.robot = Robot(0, 0, 0, 0.1)
+
+    def step(self, translate, rotate):
+        # translate: either move forwards or backwards
+        if translate == STAY:
+            return
+        self.robot.prerotate()
+        new_x, new_y = self.robot.attempt_move(translate)
+        if self.checkLoc(new_x, new_y):
+            self.robot.move(new_x, new_y)
+        self.robot.rotate(rotate)
+
+    # TODO: implement policy iteration/value iteration
+    def run(self):
+        pass
 
 class Robot:
     def __init__(self, x, y, heading, p_e):
@@ -40,23 +55,30 @@ class Robot:
         elif dice == 1:
             self.heading -= 1
         
-    def move(self, translate, rotate):
-        if action == STAY:
-            return
-        
-        self.prerotate()
-        
+    def attempt_move(self, translate):
+        if translate == STAY:
+            return (self.x, self.y)
+         
         if self.heading in UP:
-            self.y = self.y + 1 if translate == FORWARD else self.y - 1
+            if translate == FORWARD:
+                return (self.x, self.y+1)
+            return (self.x, self.y-1)
         elif self.heading in RIGHT:
-            self.x = self.x + 1 if translate == FORWARD else self.x - 1
+            if translate == FORWARD:
+                return (self.x+1, self.y)
+            return (self.x-1, self.y)
         elif self.heading in DOWN:
-            self.y = self.y - 1 if translate == FORWARD else self.y + 1
+            if translate == FORWARD:
+                return (self.x, self.y-1)
+            return (self.x, self.y+1)
         elif self.heading in LEFT:
-            self.x = self.x - 1 if translate == FORWARD else self.x + 1
-        finally:
+            if translate == FORWARD:
+                return (self.x-1, self.y)
+            return (self.x+1, self.y)
+        else:
             raise ValueError('Invalid translation')
 
+    def rotate(self, rotate):
         if rotate == CLOCKWISE:
             self.heading += 1
             self.heading = self.heading % 12
@@ -64,12 +86,13 @@ class Robot:
             self.heading -= 1
             if self.heading == -1:
                 self.heading = 11
-        finally:
+        else:
             raise ValueError('Invalid rotation')
 
-    def checkBounds(self, W, L):
-        pass
-
-    def rotate(self):
-        pass
+    def move(self, x, y)
+        if abs(self.x-x) + abs(self.y-y) > 1:
+            raise ValueError('Robot cannot move this far')
+        self.x = x
+        self.y = y
+ 
 
