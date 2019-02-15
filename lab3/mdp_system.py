@@ -1,7 +1,7 @@
 import numpy as np
 
 headings = range(12)
-UP = headings[-1] + headings[:2]
+UP = headings[-1:] + headings[:2]
 RIGHT = headings[2:5]
 DOWN = headings[5:8]
 LEFT = headings[8:11]
@@ -13,11 +13,64 @@ BACKWARD = 2
 CLOCKWISE = -1
 CCLOCKWISE = -2
 
+# Test
+W = 5
+L = 6
+rewards = [1]*W*L
+
+class State:
+    def __init__(self, x, y, row, col, reward):
+        # x: x coordinate in the grid-view
+        # y: y coordinate in the grid-view
+        self.x = x
+        self.y = y
+        self.reward = reward
+        #
+        self.iden = self.x+self.y*L
+
+        # arrayIdx
+    def __repr__(self):
+        return "State(grid_x: {}, grid_y: {}, reward: {}, id: {})".format(self.x, self.y, self.reward, self.iden)
+
+    def __str__(self):
+        return "({}, {})".format(self.x, self.y)
+
+class Action:
+    STAY = 0
+    UP = 1
+    RIGHT = 2
+    DOWN = 3
+    LEFT = 4
+    actions = [STAY, UP, RIGHT, DOWN, LEFT]
+
+class StateTransitionBlock:
+    def __init__(self, state, next_state, action):
+        self.state = state
+        self.next_state = next_state
+        self.action = action
+
 class Environment:
-    def __init__(self, W, L):
+    def __init__(self, W, L, rewards):
         self.W = W
         self.L = L
         self.robot = Robot(0, 0, 0, 0.1)
+        # states in the environment in array-view
+        self.states = [[State(x, W-1-y, y, x, rewards[y*self.W+x]) 
+            for x in range(self.L)] for y in range(self.W)]
+
+    def printEnv(self):
+        for y in range(self.W):
+            line = ''
+            for x in range(self.L):
+                state = self.states[y][x]
+                line += str(state)
+                if state.x == self.robot.x and state.y == self.robot.y:
+                    line += '(R)'
+                else:
+                    line += '   '
+                
+            print(line)
+            print('\n')
 
     def step(self, translate, rotate):
         # translate: either move forwards or backwards
@@ -32,6 +85,20 @@ class Environment:
     # TODO: implement policy iteration/value iteration
     def run(self):
         pass
+
+    def checkLoc(x, y):
+        # check whether x and y (in grid view) are traversable
+        pass
+
+    def flattenStates(self):
+        flatten = []
+        for col in reversed(self.states):
+            flatten += col
+        return flatten
+
+    def stateAt(self, x, y):
+        # return the state at x and y (in grid view)
+        return self.states[W-1-y][x] 
 
 class Robot:
     def __init__(self, x, y, heading, p_e):
@@ -89,10 +156,33 @@ class Robot:
         else:
             raise ValueError('Invalid rotation')
 
-    def move(self, x, y)
+    def move(self, x, y):
         if abs(self.x-x) + abs(self.y-y) > 1:
             raise ValueError('Robot cannot move this far')
         self.x = x
         self.y = y
  
+def transition_prob(p_e, s, s_prime, a):
+    # p_e: numpy 3D matrix containing state transition probabilities
+    # layout is using grid-view indices (i.e. state.iden)
+    return p_e[s.iden][s_prime.iden][a]
 
+def get_next_state(p_e, s, a):
+    possible_next_states = p_e[s.iden, :, a]
+    
+    # pick next state based on probabilities
+    return np.random.choice(possible_next_states)
+
+if __name__ == '__main__':
+    env = Environment(W, L, rewards)
+    flattenStates = env.flattenStates()
+    print(flattenStates[10:20])
+    STM = np.array(
+        [[[(idx_k, idx_j, idx_k)  for (idx_k, a) in enumerate(Action.actions)] 
+            for (idx_j, s_prime) in enumerate(flattenStates)] 
+            for (idx_k, s) in enumerate(flattenStates)]
+    )
+    
+    env.printEnv()
+    # print('%r' % env.stateAt(1, 2))
+    print(transition_prob(STM, env.stateAt(1, 2), env.stateAt(2, 3), Action.UP))
