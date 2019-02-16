@@ -22,6 +22,7 @@ class Policy:
                 flatten += j
         return flatten
 
+    # 2.3(a) generates initial policy
     def gen_initial(self):
         goal = []
         for h in goal_h:
@@ -30,12 +31,74 @@ class Policy:
         for state in self.flattenStates():
             if not state in goal:
                 if state.h in UP:
-                    pass
+                    if state.x < goal_x and state.y < goal_y:
+                        self.policy[state.x][state.y][state.h] = Action.FORWARD_CLK
+                    elif state.x == goal_x and state.y < goal_y:
+                        self.policy[state.x][state.y][state.h] = Action.FORWARD_NOROT
+                    elif state.x > goal_x and state.y < goal_y:
+                        self.policy[state.x][state.y][state.h] = Action.FORWARD_CCLK
+                    elif state.x < goal_x and state.y > goal_y:
+                        self.policy[state.x][state.y][state.h] = Action.BACKWARD_CCLK
+                    elif state.x > goal_x and state.y > goal_y:
+                        self.policy[state.x][state.y][state.h] = Action.BACKWARD_CCLK
+                    elif state.x == goal_x and state.y > goal_y:
+                        self.policy[state.x][state.y][state.h] = Action.BACKWARD_NOROT
+                    elif state.x < goal_x and state.y == goal_y:
+                        self.policy[state.x][state.y][state.h] = Action.FORWARD_CLK
+                    elif state.x > goal_x and state.y == goal_y:
+                        self.policy[state.x][state.y][state.h] = Action.FORWARD_CCLK
                 elif state.h in LEFT:
-                    pass
+                    if state.x < goal_x and state.y < goal_y:
+                        self.policy[state.x][state.y][state.h] = Action.BACKWARD_CCLK
+                    elif state.x == goal_x and state.y < goal_y:
+                        self.policy[state.x][state.y][state.h] = Action.FORWARD_CLK
+                    elif state.x > goal_x and state.y < goal_y:
+                        self.policy[state.x][state.y][state.h] = Action.FORWARD_CLK
+                    elif state.x < goal_x and state.y > goal_y:
+                        self.policy[state.x][state.y][state.h] = Action.BACKWARD_CLK
+                    elif state.x > goal_x and state.y > goal_y:
+                        self.policy[state.x][state.y][state.h] = Action.FORWARD_CCLK
+                    elif state.x == goal_x and state.y > goal_y:
+                        self.policy[state.x][state.y][state.h] = Action.FORWARD_CCLK
+                    elif state.x < goal_x and state.y == goal_y:
+                        self.policy[state.x][state.y][state.h] = Action.BACKWARD_NOROT
+                    elif state.x > goal_x and state.y == goal_y:
+                        self.policy[state.x][state.y][state.h] = Action.FORWARD_NOROT
                 elif state.h in RIGHT:
+                    if state.x < goal_x and state.y < goal_y:
+                        self.policy[state.x][state.y][state.h] = Action.FORWARD_CCLK
+                    elif state.x == goal_x and state.y < goal_y:
+                        self.policy[state.x][state.y][state.h] = Action.FORWARD_CCLK
+                    elif state.x > goal_x and state.y < goal_y:
+                        self.policy[state.x][state.y][state.h] = Action.BACKWARD_CLK
+                    elif state.x < goal_x and state.y > goal_y:
+                        self.policy[state.x][state.y][state.h] = Action.FORWARD_CLK
+                    elif state.x > goal_x and state.y > goal_y:
+                        self.policy[state.x][state.y][state.h] = Action.BACKWARD_CCLK
+                    elif state.x == goal_x and state.y > goal_y:
+                        self.policy[state.x][state.y][state.h] = Action.FORWARD_CLK
+                    elif state.x < goal_x and state.y == goal_y:
+                        self.policy[state.x][state.y][state.h] = Action.FORWARD_NOROT
+                    elif state.x > goal_x and state.y == goal_y:
+                        self.policy[state.x][state.y][state.h] = Action.FORWARD_NOROT
                     pass
                 elif state.h in DOWN:
+                    if state.x < goal_x and state.y < goal_y:
+                        self.policy[state.x][state.y][state.h] = Action.BACKWARD_CCLK
+                    elif state.x == goal_x and state.y < goal_y:
+                        self.policy[state.x][state.y][state.h] = Action.BACKWARD_NOROT
+                    elif state.x > goal_x and state.y < goal_y:
+                        self.policy[state.x][state.y][state.h] = Action.BACKWARD_CLK
+                    elif state.x < goal_x and state.y > goal_y:
+                        self.policy[state.x][state.y][state.h] = Action.FORWARD_CCLK
+                    elif state.x > goal_x and state.y > goal_y:
+                        self.policy[state.x][state.y][state.h] = Action.FORWARD_CLK
+                    elif state.x == goal_x and state.y > goal_y:
+                        self.policy[state.x][state.y][state.h] = Action.FORWARD_NOROT
+                    elif state.x < goal_x and state.y == goal_y:
+                        self.policy[state.x][state.y][state.h] = Action.FORWARD_CCLK
+                    elif state.x > goal_x and state.y == goal_y:
+                        self.policy[state.x][state.y][state.h] = Action.FORWARD_CLK
                     pass
             else:
                 self.policy[state.x][state.y][state.h] = Action.STAY;
@@ -47,5 +110,3 @@ if __name__ == '__main__':
     states = [[[State(x, y, h, rewards[y][x]) for x in range(L)] for y in range(W)] for h in headings]
     pol = Policy(states)
     pol.gen_initial()
-    for i in headings:
-        print(4,4,i,pol.policy[4][4][i])
