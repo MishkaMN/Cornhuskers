@@ -1,5 +1,7 @@
-2.1(a) State space is the all possible (x, y) coordinates in the grid space that robot lives in. The cardinality of the state space is |L||W|
+2.1(a) State space is the all possible (x, y) coordinates and heading the robot in the grid spacei. The cardinality of the state space is 12|L||W| = 432 for the case where L = W = 6.
 
-2.1(b) Actions include {stay still, up, right, down, left}
+2.1(b) Actions include {stay still} + {forwards, backwards} x {rotate clockwise, rotate counterclockwise}. Some actions are not available in some states. For instance, in the middle states, the action stay still + rotate clockwise and stay still + rotate counterclockwise are not available.
 
-2.1(c)
+2.1(c) function implemented in transition_prob()
+
+2.1(d)
