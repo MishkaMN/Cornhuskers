@@ -1,0 +1,5 @@
+2.1(a) State space is the all possible (x, y) coordinates in the grid space that robot lives in. The cardinality of the state space is |L||W|
+
+2.1(b) Actions include {stay still, up, right, down, left}
+
+2.1(c)

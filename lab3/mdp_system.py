@@ -13,13 +13,8 @@ BACKWARD = 2
 CLOCKWISE = -1
 CCLOCKWISE = -2
 
-# Test
-W = 5
-L = 6
-rewards = [1]*W*L
-
 class State:
-    def __init__(self, x, y, row, col, reward):
+    def __init__(self, x, y, reward):
         # x: x coordinate in the grid-view
         # y: y coordinate in the grid-view
         self.x = x
@@ -33,7 +28,7 @@ class State:
         return "State(grid_x: {}, grid_y: {}, reward: {}, id: {})".format(self.x, self.y, self.reward, self.iden)
 
     def __str__(self):
-        return "({}, {})".format(self.x, self.y)
+        return "({}, {}, {})".format(self.x, self.y, self.reward)
 
 class Action:
     STAY = 0
@@ -55,7 +50,7 @@ class Environment:
         self.L = L
         self.robot = Robot(0, 0, 0, 0.1)
         # states in the environment in array-view
-        self.states = [[State(x, W-1-y, y, x, rewards[y*self.W+x]) 
+        self.states = [[State(x, self.W-1-y, rewards[y*self.W+x]) 
             for x in range(self.L)] for y in range(self.W)]
 
     def printEnv(self):
@@ -98,7 +93,7 @@ class Environment:
 
     def stateAt(self, x, y):
         # return the state at x and y (in grid view)
-        return self.states[W-1-y][x] 
+        return self.states[self.W-1-y][x] 
 
 class Robot:
     def __init__(self, x, y, heading, p_e):
@@ -171,18 +166,44 @@ def get_next_state(p_e, s, a):
     possible_next_states = p_e[s.iden, :, a]
     
     # pick next state based on probabilities
-    return np.random.choice(possible_next_states)
+    return np.random.choice(range(len(possible_next_states)),
+            possible_next_states)
+
+def calc_reward(env, inputs):
+    # inputs are states that are traversed
+    net_reward = 0
+    for state in inputs:
+        net_reward += state.reward
+    return net_reward
 
 if __name__ == '__main__':
+    # Problem 2.1
+    # Test
+    W = 6
+    L = 6
+
+    # rewards = range(W*L)
+    # env = Environment(W, L, rewards)
+    # flattenStates = env.flattenStates()
+
+    # STM = np.array(
+    #     [[[(idx_i, idx_j, idx_k)  for idx_k in range(len(Action.actions))] 
+    #         for idx_j in range(len(flattenStates))] 
+    #         for idx_i in range(len(flattenStates))]
+    # )
+
+    # Problem 2.2
+    rewards = [-100, -100, -100, -100, -100, -100,
+    -100, 0, 0, -10, 1, -100,
+    -100, 0, 0, -10, 0, -100,
+    -100, 0, 0, 0, 0, -100,
+    -100, 0, 0, 0, 0, -100,
+    -100, -100, -100, -100, -100, -100
+    ]
+
     env = Environment(W, L, rewards)
-    flattenStates = env.flattenStates()
-    print(flattenStates[10:20])
-    STM = np.array(
-        [[[(idx_k, idx_j, idx_k)  for (idx_k, a) in enumerate(Action.actions)] 
-            for (idx_j, s_prime) in enumerate(flattenStates)] 
-            for (idx_k, s) in enumerate(flattenStates)]
-    )
-    
-    env.printEnv()
-    # print('%r' % env.stateAt(1, 2))
-    print(transition_prob(STM, env.stateAt(1, 2), env.stateAt(2, 3), Action.UP))
+    inputs = [env.stateAt(1, 1), env.stateAt(1, 2),
+        env.stateAt(2, 2), env.stateAt(2, 3),
+        env.stateAt(3, 3), env.stateAt(3, 4),
+        env.stateAt(4, 4)]
+    print(calc_reward(env, inputs))
