@@ -18,3 +18,7 @@ rewards = np.flipud(np.array([
     [-100,    0,    0,    0,    0, -100],
     [-100, -100, -100, -100, -100, -100]
 ]));
+
+goal_x = 4
+goal_y = 4
+goal_h = headings

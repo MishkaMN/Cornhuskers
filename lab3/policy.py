@@ -2,10 +2,6 @@ from state import State
 from action import Action
 from env_params import *
 
-goal_x = 4
-goal_y = 4
-goal_h = headings
-
 class Policy:
     def __init__(self, states):
         self.states = states
@@ -110,3 +106,4 @@ if __name__ == '__main__':
     states = [[[State(x, y, h, rewards[y][x]) for x in range(L)] for y in range(W)] for h in headings]
     pol = Policy(states)
     pol.gen_initial()
+    print(pol.policy)
