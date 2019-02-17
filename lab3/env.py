@@ -188,7 +188,6 @@ class Environment:
             return Action.STAY;  
 
     def get_init_policy(self):
-        print('goal: ', self.goal_state)
         # populate an init policy that moves closer to goal state
         init_policy = [ [ [ self.action_to_take(self.stateAt(x, y, h), self.goal_state)
             for x in range(L) ]for y in range(W)] for h in headings]
