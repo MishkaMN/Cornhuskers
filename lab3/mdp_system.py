@@ -40,8 +40,9 @@ if __name__ == '__main__':
         # env.robot.move(next_state.x, next_state.y, next_state.heading)
         # print('robot pos: ', env.robot.x, env.robot.y, env.robot.heading)
         # route.append((env.robot.x, env.robot.y, env.robot.heading))
-    print(env.policy_eval(State(robot.x, robot.y, robot.heading, 0),
-        policy, gamma))
+    #print(env.policy_eval(State(robot.x, robot.y, robot.heading, 0),
+    #    policy, gamma))
+    print(env.value_iteration(State(robot.x, robot.y, robot.heading, 0), policy))
     # seq = [(robot.x, robot.y, robot.heading)]
     # for i in range(10):
     #     action = policy[env.robot.heading][env.robot.y][env.robot.x]
