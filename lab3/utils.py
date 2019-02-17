@@ -1,5 +1,5 @@
 headings = range(12)
-UP = headings[-1:] + headings[:2]
+UP = [11, 0, 1]
 RIGHT = headings[2:5]
 DOWN = headings[5:8]
 LEFT = headings[8:11]
