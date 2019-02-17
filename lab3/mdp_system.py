@@ -1,18 +1,7 @@
 import numpy as np
 from utils import *
 from env import Environment
-from robot import Action
-
-def transition_prob(p_e, s, s_prime, a):
-    # p_e: numpy 3D matrix containing state transition probabilities
-    # layout is using grid-view indices (i.e. state.iden)
-    return p_e[s.iden][s_prime.iden][a]
-
-def get_next_state(p_e, s, a):
-    possible_next_states = p_e[s.iden, :, a]
-    # pick next state based on probabilities
-    return np.random.choice(range(len(possible_next_states)),
-            possible_next_states)
+from robot import *
 
 def calc_reward(env, inputs):
     # inputs are states that are traversed
@@ -24,14 +13,6 @@ def calc_reward(env, inputs):
 if __name__ == '__main__':
     # Problem 2.1
     # rewards = range(W*L)
-    # env = Environment(W, L, rewards)
-    # flattenStates = env.flattenStates()
-
-    # STM = np.array(
-    #     [[[(idx_i, idx_j, idx_k)  for idx_k in range(len(Action.actions))] 
-    #         for idx_j in range(len(flattenStates))] 
-    #         for idx_i in range(len(flattenStates))]
-    # )
 
     # Problem 2.2
     rewards = [-100, -100, -100, -100, -100, -100,
@@ -42,10 +23,16 @@ if __name__ == '__main__':
     -100, -100, -100, -100, -100, -100
     ]
 
-    env = Environment(W, L, rewards)
-    print(env.get_next_state(Action.FORWARD_CLK))
+    robot = Robot(1, 4, 6, 0)
+    env = Environment(W, L, rewards, robot)
     
-    # flattenStates = env.flattenStates()
+    policy = env.get_init_policy()
 
-    # Problem 2.3
-    # assume initial policy theta_0 of taking the action ta
+    # print(policy.shape)
+    for i in range(10):
+        action = policy[env.robot.heading][env.robot.y][env.robot.x]
+        print('action:', action)
+        next_state = env.get_next_state(action)
+        # print('next_state: ', next_state)
+        env.robot.move(next_state.x, next_state.y, next_state.heading)
+        print('robot pos: ', env.robot.x, env.robot.y, env.robot.heading)

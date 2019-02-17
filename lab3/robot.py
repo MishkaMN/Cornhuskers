@@ -19,15 +19,14 @@ cclk_actions = [Action.FORWARD_CCLK, Action.BACKWARD_CCLK];
 actions = [Action.STAY, Action.FORWARD_NOROT, Action.FORWARD_CLK, Action.FORWARD_CCLK, Action.BACKWARD_NOROT, Action.BACKWARD_CLK, Action.BACKWARD_CCLK]
 
 class Robot:
-    def __init__(self, state, p_e):
+    def __init__(self, x, y, heading, p_e):
         # p_e: prerotate probability
         
         # 11, 0, 1 --> north
         # 2, 3, 4 --> east 
-        self.state = state
-        self.x = self.state.x
-        self.y = self.state.y
-        self.heading = self.state.heading
+        self.x = x
+        self.y = y
+        self.heading = heading
         self.p_e = p_e
 
     def prerotate(self):
@@ -75,8 +74,7 @@ class Robot:
         else:
             raise ValueError('Invalid rotation')
 
-    def move(self, x, y):
-        if abs(self.x-x) + abs(self.y-y) > 1:
-            raise ValueError('Robot cannot move this far')
+    def move(self, x, y, heading):
         self.x = x
         self.y = y
+        self.heading = heading

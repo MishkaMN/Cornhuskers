@@ -1,4 +1,3 @@
-from robot import Robot, Action
 from utils import *
 import numpy as np
 from robot import *
@@ -27,6 +26,7 @@ class State:
         return False
 
     def __eq__(self, other):
+        print('equating')
         # only compare the x and y coordinates of state
         return self.x == other.x and self.y == other.y
 
@@ -38,7 +38,7 @@ class State:
         return "({}, {}, {}, {})".format(self.x, self.y, self.heading, self.reward)
 
 class Environment:
-    def __init__(self, W, L, rewards):
+    def __init__(self, W, L, rewards, robot):
         self.W = W
         self.L = L
         
@@ -62,7 +62,7 @@ class Environment:
         if not self.goal_state:
             raise ValueError('There is no goal state in rewards')
 
-        self.robot = Robot(self.stateAt(1, 4, heading=6), 0.1)
+        self.robot = robot
 
     def printEnv(self, heading=None):
         for h in headings:
@@ -106,12 +106,12 @@ class Environment:
                 flatten += col
         return flatten
 
-    def stateAt(self, x, y, heading=0):
+    def stateAt(self, x, y, heading):
         # return the state at x and y (in grid view)
         return self.states[heading][self.W-1-y][x] 
 
     def action_to_take(self, state, goal_state):
-        if state != goal_state:
+        if state.x != goal_state.x or state.y != goal_state.y:
             goal_x = goal_state.x
             goal_y = goal_state.y
             # actions = [STAY, FORWARD_NOROT, FORWARD_CLK, FORWARD_CCLK,
@@ -149,7 +149,7 @@ class Environment:
                 elif state.x == goal_x and state.y > goal_y:
                     return Action.FORWARD_CCLK
                 elif state.x > goal_x and state.y > goal_y:
-                    return Action.FORWARD_CCLKWISE
+                    return Action.FORWARD_CCLK
             elif state.heading in RIGHT:
                 if state.x < goal_x and state.y < goal_y:
                     return Action.FORWARD_CCLK
@@ -184,20 +184,21 @@ class Environment:
                     return Action.FORWARD_NOROT
                 elif state.x > goal_x and state.y > goal_y:
                     return Action.FORWARD_CLK 
-            else:
-                return Action.STAY;  
+        else:
+            return Action.STAY;  
 
-    def populate_init_policy(self):
+    def get_init_policy(self):
+        print('goal: ', self.goal_state)
         # populate an init policy that moves closer to goal state
-        init_policy = [ [ [ [self.action_to_take(self.states[h][y][x], self.goal_state)] ] 
-            for x in range(L) for y in range(W)] for h in headings]
+        init_policy = [ [ [ self.action_to_take(self.stateAt(x, y, h), self.goal_state)
+            for x in range(L) ]for y in range(W)] for h in headings]
         
         return init_policy
 
     def get_p(self, a, s_new):
         #100 percent chance to stay in current spot
         if a == Action.STAY:
-            if s_new.x == self.robot.x and s_new.y == self.robot.y and s_new.h and self.robot.heading:
+            if s_new.x == self.robot.x and s_new.y == self.robot.y and s_new.heading == self.robot.heading:
                 return 1
             else:
                 return 0
@@ -267,3 +268,9 @@ class Environment:
 
         idx = np.random.choice(len(pmf), p=pmf);
         return pos[idx]
+
+    def get_reward_at(self, x, y, h):
+        return self.stateAt(x,y,h).reward
+    
+    def get_reward_at(self, s_prime):
+        return self.stateAt(s_prime.x,s_prime.y,s_prime.h).reward
