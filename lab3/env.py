@@ -307,7 +307,7 @@ class Environment:
                 policy, gamma, depth=depth+1))
         return value
 
-    def value_iteration(self, state, policy, theta=0.0001, gamma=1.0):
+    def value_iteration(self, state, policy, theta=0.1, gamma= 0.8):
         """
         Value Iteration Algorithm.
         
@@ -323,7 +323,7 @@ class Environment:
             A tuple (policy, V) of the optimal policy and the optimal value function.
         """
         
-        def one_step_lookahead(state, V):
+        def one_step_lookahead(state, V, policy):
             """
             Helper function to calculate the value for all action in a given state.
             
@@ -337,44 +337,47 @@ class Environment:
             #print('?')
             A = np.zeros(nA)
             next_states = self.get_possible_next_states(state, policy)
+            #print('len', len(next_states))
             for a in range(nA):
-                for idx, (next_state, prob) in enumerate(next_states):
-                    A[a] += prob * (next_state.reward + gamma * V[idx])
+                for (next_state, prob) in next_states:
+                    A[a] += prob * (next_state.reward + gamma * V[next_state.iden])
                     #print(A[a])
             return A
-
-        V = np.zeros(nS)    
+ 
+        V = np.zeros(nS)   
+        flat_states = self.flattenStates()
         
         while True:
             # Stopping condition
             delta = 0
             # Update each state...
             #print('?')
-            next_states = self.get_possible_next_states(state, policy)
-            for idx, (s,prob) in enumerate(next_states):
-                print(s)
+            #next_states = self.get_possible_next_states(state, policy)
+            for s in range(nS):
+                # print('next_state', s)
                 # Do a one-step lookahead to find the best action
-                A = one_step_lookahead(s, V, policy)
+                A = one_step_lookahead(flat_states[s], V, policy)
                 best_action_value = np.max(A)
                 # Calculate delta across all states seen so far
-                print('V:', V[idx])
-                delta = max(delta, np.abs(best_action_value - V[idx]))
+                print('V:', V[s])
+                delta = max(delta, np.abs(best_action_value - V[s]))
                 print('delta', delta)
                 # Update the value function. Ref: Sutton book eq. 4.10. 
-                V[idx] = best_action_value        
+                V[s] = best_action_value        
             # Check if we can stop 
             if delta < theta:
                 break
 
         # Create a deterministic policy using the optimal value function
-        policy = np.zeros([nS, nA])
-        for idx, s in enumerate(next_states):
+        policyz = np.zeros([nS, nA])
+        
+        for s in range(nS):
             # One step lookahead to find the best action for this state
-            A = one_step_lookahead(s, V)
+            A = one_step_lookahead(flat_states[s], V, policy)
             best_action = np.argmax(A)
             # Always take the best action
-            policy[s, best_action] = 1.0
+            policyz[s, best_action] = 1.0
         
-        return policy, V
+        return policyz, V
 
 
