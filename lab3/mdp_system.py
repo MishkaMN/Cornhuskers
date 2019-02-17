@@ -4,6 +4,7 @@ from env import Environment
 from robot import *
 from visualizer import Visualizer
 
+
 def calc_reward(env, inputs):
     # inputs are states that are traversed
     net_reward = 0
@@ -41,3 +42,4 @@ if __name__ == '__main__':
         seq.append(( env.robot.x, env.robot.y, env.robot.heading))
     vis = Visualizer(seq)
     vis.show()
+    
