@@ -1,6 +1,7 @@
 import numpy as np
 from utils import *
 from env import Environment
+from robot import Action
 
 def transition_prob(p_e, s, s_prime, a):
     # p_e: numpy 3D matrix containing state transition probabilities
@@ -9,7 +10,6 @@ def transition_prob(p_e, s, s_prime, a):
 
 def get_next_state(p_e, s, a):
     possible_next_states = p_e[s.iden, :, a]
-    
     # pick next state based on probabilities
     return np.random.choice(range(len(possible_next_states)),
             possible_next_states)
@@ -43,8 +43,9 @@ if __name__ == '__main__':
     ]
 
     env = Environment(W, L, rewards)
-    flattenStates = env.flattenStates()
+    print(env.get_next_state(Action.FORWARD_CLK))
+    
+    # flattenStates = env.flattenStates()
 
-    env.printEnv(heading=0)
     # Problem 2.3
     # assume initial policy theta_0 of taking the action ta

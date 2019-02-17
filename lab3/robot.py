@@ -1,15 +1,22 @@
 from utils import *
 
-class Action:
+from enum import Enum
+
+class Action(Enum):
     STAY = 0
-    FORWARDS_NOROT = 1
-    FORWARDS_CLKWISE = 2
-    FORWARDS_CCLKWISE = 3
-    BACKWARDS_NOROT = 4
-    BACKWARDS_CLKWISE= 5
-    BACKWARDS_CCLKWISE = 6
-    actions = [STAY, FORWARDS_NOROT, FORWARDS_CLKWISE, FORWARDS_CCLKWISE,
-        BACKWARDS_NOROT, BACKWARDS_CLKWISE, BACKWARDS_CCLKWISE]
+    FORWARD_NOROT = 1
+    FORWARD_CLK = 2
+    FORWARD_CCLK = 3
+    BACKWARD_NOROT = 4
+    BACKWARD_CLK = 5
+    BACKWARD_CCLK = 6
+    
+fw_actions = [Action.FORWARD_NOROT, Action.FORWARD_CLK, Action.FORWARD_CCLK]
+bw_actions = [Action.BACKWARD_NOROT, Action.BACKWARD_CLK, Action.BACKWARD_CCLK]
+clk_actions = [Action.FORWARD_CLK, Action.BACKWARD_CLK];
+cclk_actions = [Action.FORWARD_CCLK, Action.BACKWARD_CCLK];
+#  2.1(b) Action space, N_a = 7;
+actions = [Action.STAY, Action.FORWARD_NOROT, Action.FORWARD_CLK, Action.FORWARD_CCLK, Action.BACKWARD_NOROT, Action.BACKWARD_CLK, Action.BACKWARD_CCLK]
 
 class Robot:
     def __init__(self, state, p_e):

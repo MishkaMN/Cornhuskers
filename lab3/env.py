@@ -1,5 +1,7 @@
 from robot import Robot, Action
 from utils import *
+import numpy as np
+from robot import *
 
 class State:
     def __init__(self, x, y, heading, reward):
@@ -60,7 +62,7 @@ class Environment:
         if not self.goal_state:
             raise ValueError('There is no goal state in rewards')
 
-        self.robot = Robot(self.stateAt(0, 0), 0.1)
+        self.robot = Robot(self.stateAt(1, 4, heading=6), 0.1)
 
     def printEnv(self, heading=None):
         for h in headings:
@@ -112,76 +114,76 @@ class Environment:
         if state != goal_state:
             goal_x = goal_state.x
             goal_y = goal_state.y
-            # actions = [STAY, FORWARDS_NOROT, FORWARDS_CLKWISE, FORWARDS_CCLKWISE,
-            # BACKWARDS_NOROT, BACKWARDS_CLKWISE, BACKWARDS_CCLKWISE]
+            # actions = [STAY, FORWARD_NOROT, FORWARD_CLK, FORWARD_CCLK,
+            # BACKWARD_NOROT, BACKWARD_CLK, BAC_CCLK]
             if state.heading in UP:
                 if state.x < goal_x and state.y < goal_y:
-                    return Action.FORWARDS_CLKWISE
+                    return Action.FORWARD_CLK
                 elif state.x == goal_x and state.y < goal_y:
-                    return Action.FORWARDS_NOROT
+                    return Action.FORWARD_NOROT
                 elif state.x > goal_x and state.y < goal_y:
-                    return Action.FORWARDS_CCLKWISE
+                    return Action.FORWARD_CCLK
                 elif state.x < goal_x and state.y == goal_y:
-                    return Action.FORWARDS_CLKWISE
+                    return Action.FORWARD_CLK
                 elif state.x > goal_x and state.y == goal_y:
-                    return Action.FORWARDS_CCLKWISE
+                    return Action.FORWARD_CCLK
                 elif state.x < goal_x and state.y > goal_y:
-                    return Action.BACKWARDS_CCLKWISE
+                    return Action.BACKWARD_CCLK
                 elif state.x == goal_x and state.y > goal_y:
-                    return Action.BACKWARDS_NOROT
+                    return Action.BACKWARD_NOROT
                 elif state.x > goal_x and state.y > goal_y:
-                    return Action.BACKWARDS_CLKWISE            
+                    return Action.BACKWARD_CLK            
             elif state.heading in LEFT:
                 if state.x < goal_x and state.y < goal_y:
-                    return Action.BACKWARDS_CCLKWISE
+                    return Action.BACKWARD_CCLK
                 elif state.x == goal_x and state.y < goal_y:
-                    return Action.FORWARDS_CLKWISE
+                    return Action.FORWARD_CLK
                 elif state.x > goal_x and state.y < goal_y:
-                    return Action.FORWARDS_CLKWISE
+                    return Action.FORWARD_CLK
                 elif state.x < goal_x and state.y == goal_y:
-                    return Action.BACKWARDS_NOROT
+                    return Action.BACKWARD_NOROT
                 elif state.x > goal_x and state.y == goal_y:
-                    return Action.FORWARDS_NOROT
+                    return Action.FORWARD_NOROT
                 elif state.x < goal_x and state.y > goal_y:
-                    return Action.BACKWARDS_CLKWISE
+                    return Action.BACKWARD_CLK
                 elif state.x == goal_x and state.y > goal_y:
-                    return Action.FORWARDS_CCLKWISE
+                    return Action.FORWARD_CCLK
                 elif state.x > goal_x and state.y > goal_y:
                     return Action.FORWARD_CCLKWISE
             elif state.heading in RIGHT:
                 if state.x < goal_x and state.y < goal_y:
-                    return Action.FORWARDS_CCLKWISE
+                    return Action.FORWARD_CCLK
                 elif state.x == goal_x and state.y < goal_y:
-                    return Action.FORWARDS_CCLKWISE
+                    return Action.FORWARD_CCLK
                 elif state.x > goal_x and state.y < goal_y:
-                    return Action.BACKWARDS_CLKWISE
+                    return Action.BACKWARD_CLK
                 elif state.x < goal_x and state.y == goal_y:
-                    return Action.FORWARDS_NOROT
+                    return Action.FORWARD_NOROT
                 elif state.x > goal_x and state.y == goal_y:
-                    return Action.BACKWARDS_NOROT
+                    return Action.BACKWARD_NOROT
                 elif state.x < goal_x and state.y > goal_y:
-                    return Action.FORWARDS_CLKWISE
+                    return Action.FORWARD_CLK
                 elif state.x == goal_x and state.y > goal_y:
-                    return Action.FORWARDs_CLKWISE
+                    return Action.FORWARD_CLK
                 elif state.x > goal_x and state.y > goal_y:
-                    return Action.BACKWARDS_CCLKWISE
+                    return Action.BACKWARD_CCLK
             elif state.heading in DOWN:
                 if state.x < goal_x and state.y < goal_y:
-                    return Action.BACKWARDS_CCLKWISE
+                    return Action.BACKWARD_CCLK
                 elif state.x == goal_x and state.y < goal_y:
-                    return Action.BACKWARDS_NOROT
+                    return Action.BACKWARD_NOROT
                 elif state.x > goal_x and state.y < goal_y:
-                    return Action.BACKWARDS_CLKWISE
+                    return Action.BACKWARD_CLK
                 elif state.x < goal_x and state.y == goal_y:
-                    return Action.FORWARDS_CCLKWISE
+                    return Action.FORWARD_CCLK
                 elif state.x > goal_x and state.y == goal_y:
-                    return Action.FORWARDS_CLKWISE
+                    return Action.FORWARD_CLK
                 elif state.x < goal_x and state.y > goal_y:
-                    return Action.FORWARDS_CCLKWISE
+                    return Action.FORWARD_CCLK
                 elif state.x == goal_x and state.y > goal_y:
-                    return Action.FORWARDS_NOROT
+                    return Action.FORWARD_NOROT
                 elif state.x > goal_x and state.y > goal_y:
-                    return Action.FORWARDS_CLKWISE 
+                    return Action.FORWARD_CLK 
             else:
                 return Action.STAY;  
 
@@ -191,3 +193,77 @@ class Environment:
             for x in range(L) for y in range(W)] for h in headings]
         
         return init_policy
+
+    def get_p(self, a, s_new):
+        #100 percent chance to stay in current spot
+        if a == Action.STAY:
+            if s_new.x == self.robot.x and s_new.y == self.robot.y and s_new.h and self.robot.heading:
+                return 1
+            else:
+                return 0
+
+        #If robot moves
+        else:
+            #prerotation chances
+            chance = np.array([self.robot.p_e, 1.0 - 2.0*self.robot.p_e, self.robot.p_e])
+            head = np.array([(self.robot.heading - 1) % 12, self.robot.heading, (self.robot.heading + 1) % 12])
+
+            #get candidate states by x,y
+            s_primes = np.zeros([3,3])
+            for idx,h in enumerate(head):
+                if h in UP:
+                    if a in fw_actions and self.robot.y <= W-1:
+                        s_primes[idx][:] = np.array([self.robot.x, self.robot.y+1, h])
+                    elif a in bw_actions and self.robot.y > 0:
+                        s_primes[idx][:] = np.array([self.robot.x, self.robot.y-1, h])
+                    else:
+                        s_primes[idx][:] = np.array([self.robot.x, self.robot.y, h])
+                elif h in LEFT:
+                    if a in fw_actions and self.robot.x > 0:
+                        s_primes[idx][:] = np.array([self.robot.x-1, self.robot.y, h])
+                    elif a in bw_actions and self.robot.x < L-1:
+                        s_primes[idx][:] = np.array([self.robot.x+1, self.robot.y, h])
+                    else:
+                        s_primes[idx][:] = np.array([self.robot.x, self.robot.y, h])
+                elif h in RIGHT:
+                    if a in fw_actions and self.robot.x <= L-1:
+                        s_primes[idx][:] = np.array([self.robot.x+1, self.robot.y, h])
+                    elif a in bw_actions and self.robot.x > 0:
+                        s_primes[idx][:] = np.array([self.robot.x-1, self.robot.y, h])
+                    else:
+                        s_primes[idx][:] = np.array([self.robot.x, self.robot.y, h])
+                elif h in DOWN:
+                    if a in fw_actions and self.robot.y > 0:
+                        s_primes[idx][:] = np.array([self.robot.x, self.robot.y-1, h])
+                    elif a in bw_actions and self.robot.y <= W - 1:
+                        s_primes[idx][:] = np.array([self.robot.x, self.robot.y+1, h])
+                    else:
+                        s_primes[idx][:] = np.array([self.robot.x, self.robot.y, h])
+
+            #update candidate states with new heading if necessary     
+            if(a in clk_actions):
+                s_primes[:,2] += 1
+            elif(a in cclk_actions):
+                s_primes[:,2] += -1
+            s_primes[:,2] %= 12
+
+            #return nonzero chance if any candidates match the argument
+            for idx,row in enumerate(s_primes):
+                if s_new.x == row[0] and s_new.y == row[1] and s_new.heading == row[2]:
+                    return chance[idx]
+                else:
+                    continue
+        return 0
+
+    def get_next_state(self, a):
+        pmf = []
+        pos = []
+        for st in self.flattenStates():
+            p = self.get_p(a, st)
+
+            if p > 0:
+                pmf.append(p)
+                pos.append(st)
+
+        idx = np.random.choice(len(pmf), p=pmf);
+        return pos[idx]
