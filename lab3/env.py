@@ -2,6 +2,9 @@ from utils import *
 import numpy as np
 from robot import *
 
+# max iteration for value function
+max_iteration = 20
+
 class State:
     def __init__(self, x, y, heading, reward):
         # x: x coordinate in the grid-view
@@ -188,17 +191,16 @@ class Environment:
             return Action.STAY;  
 
     def get_init_policy(self):
-        print('goal: ', self.goal_state)
         # populate an init policy that moves closer to goal state
         init_policy = [ [ [ self.action_to_take(self.stateAt(x, y, h), self.goal_state)
             for x in range(L) ]for y in range(W)] for h in headings]
         
         return init_policy
 
-    def get_p(self, a, s_new):
+    def get_p(self, s, s_new, a):
         #100 percent chance to stay in current spot
         if a == Action.STAY:
-            if s_new.x == self.robot.x and s_new.y == self.robot.y and s_new.heading == self.robot.heading:
+            if s.x == s_new.x and s.y == s_new.y and s.heading == s_new.heading:
                 return 1
             else:
                 return 0
@@ -207,39 +209,39 @@ class Environment:
         else:
             #prerotation chances
             chance = np.array([self.robot.p_e, 1.0 - 2.0*self.robot.p_e, self.robot.p_e])
-            head = np.array([(self.robot.heading - 1) % 12, self.robot.heading, (self.robot.heading + 1) % 12])
+            head = np.array([(s.heading - 1) % 12, s.heading, (s.heading + 1) % 12])
 
             #get candidate states by x,y
             s_primes = np.zeros([3,3])
             for idx,h in enumerate(head):
                 if h in UP:
-                    if a in fw_actions and self.robot.y <= W-1:
-                        s_primes[idx][:] = np.array([self.robot.x, self.robot.y+1, h])
-                    elif a in bw_actions and self.robot.y > 0:
-                        s_primes[idx][:] = np.array([self.robot.x, self.robot.y-1, h])
+                    if a in fw_actions and s.y <= W-1:
+                        s_primes[idx][:] = np.array([s.x, s.y+1, h])
+                    elif a in bw_actions and s.y > 0:
+                        s_primes[idx][:] = np.array([s.x, s.y-1, h])
                     else:
-                        s_primes[idx][:] = np.array([self.robot.x, self.robot.y, h])
+                        s_primes[idx][:] = np.array([s.x, s.y, h])
                 elif h in LEFT:
-                    if a in fw_actions and self.robot.x > 0:
-                        s_primes[idx][:] = np.array([self.robot.x-1, self.robot.y, h])
-                    elif a in bw_actions and self.robot.x < L-1:
-                        s_primes[idx][:] = np.array([self.robot.x+1, self.robot.y, h])
+                    if a in fw_actions and s.x > 0:
+                        s_primes[idx][:] = np.array([s.x-1, s.y, h])
+                    elif a in bw_actions and s.x < L-1:
+                        s_primes[idx][:] = np.array([s.x+1, s.y, h])
                     else:
-                        s_primes[idx][:] = np.array([self.robot.x, self.robot.y, h])
+                        s_primes[idx][:] = np.array([s.x, s.y, h])
                 elif h in RIGHT:
-                    if a in fw_actions and self.robot.x <= L-1:
-                        s_primes[idx][:] = np.array([self.robot.x+1, self.robot.y, h])
-                    elif a in bw_actions and self.robot.x > 0:
-                        s_primes[idx][:] = np.array([self.robot.x-1, self.robot.y, h])
+                    if a in fw_actions and s.x <= L-1:
+                        s_primes[idx][:] = np.array([s.x+1, s.y, h])
+                    elif a in bw_actions and s.x > 0:
+                        s_primes[idx][:] = np.array([s.x-1, s.y, h])
                     else:
-                        s_primes[idx][:] = np.array([self.robot.x, self.robot.y, h])
+                        s_primes[idx][:] = np.array([s.x, s.y, h])
                 elif h in DOWN:
-                    if a in fw_actions and self.robot.y > 0:
-                        s_primes[idx][:] = np.array([self.robot.x, self.robot.y-1, h])
-                    elif a in bw_actions and self.robot.y <= W - 1:
-                        s_primes[idx][:] = np.array([self.robot.x, self.robot.y+1, h])
+                    if a in fw_actions and s.y > 0:
+                        s_primes[idx][:] = np.array([s.x, s.y-1, h])
+                    elif a in bw_actions and s.y <= W - 1:
+                        s_primes[idx][:] = np.array([s.x, s.y+1, h])
                     else:
-                        s_primes[idx][:] = np.array([self.robot.x, self.robot.y, h])
+                        s_primes[idx][:] = np.array([s.x, s.y, h])
 
             #update candidate states with new heading if necessary     
             if(a in clk_actions):
@@ -260,7 +262,7 @@ class Environment:
         pmf = []
         pos = []
         for st in self.flattenStates():
-            p = self.get_p(a, st)
+            p = self.get_p(State(self.x, self.y, self.heading, -1), st, a)
 
             if p > 0:
                 pmf.append(p)
@@ -269,8 +271,38 @@ class Environment:
         idx = np.random.choice(len(pmf), p=pmf);
         return pos[idx]
 
+    def get_possible_next_states(self, state, policy):
+        possible_states = []
+        for st in self.flattenStates():
+            
+            p = self.get_p(state, st, policy[state.heading][state.y][state.x])
+
+            if p > 0:
+                possible_states.append((st, p))
+        return possible_states
+
     def get_reward_at(self, x, y, h):
         return self.stateAt(x,y,h).reward
     
     def get_reward_at(self, s_prime):
         return self.stateAt(s_prime.x,s_prime.y,s_prime.h).reward
+
+    def policy_eval(self, state, policy, gamma, depth=1):
+        #print('policy_eval')
+        # print('policy_eval: %d' % depth)
+        if depth == max_iteration:
+            return 0
+
+        # value at state with depth and discount factor gamma
+        value = 0
+        next_states = self.get_possible_next_states(state, policy)
+        #print('current state: ', state)
+        for (next_state, prob) in next_states:
+            #print('next_state: ', next_state)
+            #print('prob: ', prob)
+            #print('discount factor: ', (gamma**depth))
+            value += prob*state.reward+(gamma**depth)*(self.policy_eval(next_state, \
+                policy, gamma, depth=depth+1))
+
+        return value
+
