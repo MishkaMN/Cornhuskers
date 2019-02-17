@@ -24,6 +24,10 @@ class State:
             return True
         return False
 
+    def __eq__(self, other):
+        # only compare the x and y coordinates of state
+        return self.x == other.x and self.y == other.y
+
     def __repr__(self):
         return "State(grid_x: {}, grid_y: {}, heading: {}, reward: {}, \
             id: {})".format(self.x, self.y, self.heading, self.reward, self.iden)
@@ -46,9 +50,10 @@ class Environment:
                 x_states = []
                 for x in range(self.L):
                     # find goal state
+                    state = State(x, self.W-1-y, h, rewards[y*self.W+x])
+                    x_states.append(state)
                     if rewards[y*self.W+x] == 1:
-                        self.goal_state = (x, self.W-1-y)
-                    x_states.append(State(x, self.W-1-y, h, rewards[y*self.W+x]))
+                        self.goal_state = state
                 y_states.append(x_states)
             self.states.append(y_states)
 
@@ -103,15 +108,86 @@ class Environment:
         # return the state at x and y (in grid view)
         return self.states[heading][self.W-1-y][x] 
 
-    def action_to_take(self, x, y, heading, goal_x, goal_y):
-
-        # if self.state.facing_a_wall():
-            # reorient the robot to face the direction that
-            # would require longer to reach the goal state
-            # so that there is more time to adjust the orientation
-            # of the robot
-        pass
+    def action_to_take(self, state, goal_state):
+        if state != goal_state:
+            goal_x = goal_state.x
+            goal_y = goal_state.y
+            # actions = [STAY, FORWARDS_NOROT, FORWARDS_CLKWISE, FORWARDS_CCLKWISE,
+            # BACKWARDS_NOROT, BACKWARDS_CLKWISE, BACKWARDS_CCLKWISE]
+            if state.heading in UP:
+                if state.x < goal_x and state.y < goal_y:
+                    return Action.FORWARDS_CLKWISE
+                elif state.x == goal_x and state.y < goal_y:
+                    return Action.FORWARDS_NOROT
+                elif state.x > goal_x and state.y < goal_y:
+                    return Action.FORWARDS_CCLKWISE
+                elif state.x < goal_x and state.y == goal_y:
+                    return Action.FORWARDS_CLKWISE
+                elif state.x > goal_x and state.y == goal_y:
+                    return Action.FORWARDS_CCLKWISE
+                elif state.x < goal_x and state.y > goal_y:
+                    return Action.BACKWARDS_CCLKWISE
+                elif state.x == goal_x and state.y > goal_y:
+                    return Action.BACKWARDS_NOROT
+                elif state.x > goal_x and state.y > goal_y:
+                    return Action.BACKWARDS_CLKWISE            
+            elif state.heading in LEFT:
+                if state.x < goal_x and state.y < goal_y:
+                    return Action.BACKWARDS_CCLKWISE
+                elif state.x == goal_x and state.y < goal_y:
+                    return Action.FORWARDS_CLKWISE
+                elif state.x > goal_x and state.y < goal_y:
+                    return Action.FORWARDS_CLKWISE
+                elif state.x < goal_x and state.y == goal_y:
+                    return Action.BACKWARDS_NOROT
+                elif state.x > goal_x and state.y == goal_y:
+                    return Action.FORWARDS_NOROT
+                elif state.x < goal_x and state.y > goal_y:
+                    return Action.BACKWARDS_CLKWISE
+                elif state.x == goal_x and state.y > goal_y:
+                    return Action.FORWARDS_CCLKWISE
+                elif state.x > goal_x and state.y > goal_y:
+                    return Action.FORWARD_CCLKWISE
+            elif state.heading in RIGHT:
+                if state.x < goal_x and state.y < goal_y:
+                    return Action.FORWARDS_CCLKWISE
+                elif state.x == goal_x and state.y < goal_y:
+                    return Action.FORWARDS_CCLKWISE
+                elif state.x > goal_x and state.y < goal_y:
+                    return Action.BACKWARDS_CLKWISE
+                elif state.x < goal_x and state.y == goal_y:
+                    return Action.FORWARDS_NOROT
+                elif state.x > goal_x and state.y == goal_y:
+                    return Action.BACKWARDS_NOROT
+                elif state.x < goal_x and state.y > goal_y:
+                    return Action.FORWARDS_CLKWISE
+                elif state.x == goal_x and state.y > goal_y:
+                    return Action.FORWARDs_CLKWISE
+                elif state.x > goal_x and state.y > goal_y:
+                    return Action.BACKWARDS_CCLKWISE
+            elif state.heading in DOWN:
+                if state.x < goal_x and state.y < goal_y:
+                    return Action.BACKWARDS_CCLKWISE
+                elif state.x == goal_x and state.y < goal_y:
+                    return Action.BACKWARDS_NOROT
+                elif state.x > goal_x and state.y < goal_y:
+                    return Action.BACKWARDS_CLKWISE
+                elif state.x < goal_x and state.y == goal_y:
+                    return Action.FORWARDS_CCLKWISE
+                elif state.x > goal_x and state.y == goal_y:
+                    return Action.FORWARDS_CLKWISE
+                elif state.x < goal_x and state.y > goal_y:
+                    return Action.FORWARDS_CCLKWISE
+                elif state.x == goal_x and state.y > goal_y:
+                    return Action.FORWARDS_NOROT
+                elif state.x > goal_x and state.y > goal_y:
+                    return Action.FORWARDS_CLKWISE 
+            else:
+                return Action.STAY;  
 
     def populate_init_policy(self):
         # populate an init policy that moves closer to goal state
-        pass
+        init_policy = [ [ [ [self.action_to_take(self.states[h][y][x], self.goal_state)] ] 
+            for x in range(L) for y in range(W)] for h in headings]
+        
+        return init_policy
