@@ -15,15 +15,12 @@ class Visualizer:
     
 
     def make_arena(self):
-        arena = np.array([[X,X,X,X,X,X,X,X,X],    
-                     [X,O,O,O,O,O,P,O,X],    
-                     [X,O,O,O,O,O,O,O,X],    
-                     [X,O,O,O,O,O,O,O,X],    
-                     [X,O,O,O,O,O,O,O,X],
-                     [X,O,O,O,O,P,O,O,X],
-                     [X,O,O,O,O,P,O,G,X],
-                     [X,O,O,O,O,P,O,O,X],
-                     [X,X,X,X,X,X,X,X,X]])
+        arena = np.array([[X,X,X,X,X,X],    
+                     [X,O,O,P,G,X],    
+                     [X,O,O,P,O,X],    
+                     [X,O,O,O,O,X],    
+                     [X,O,O,O,O,X],
+                     [X,X,X,X,X,X]])
         arena = np.flip(arena,0)
         return arena
 
@@ -37,13 +34,13 @@ class Visualizer:
         #Adjust ticks and grid lines
         
         fig = plt.figure();
-        plt.xlim((0,9))
-        plt.ylim((0,9))
+        plt.xlim((0,6))
+        plt.ylim((0,6))
         ax = plt.gca();
-        ax.set_xticks(np.arange(0.5, 9.5, 1));
-        ax.set_yticks(np.arange(0.5, 9.5, 1));
-        ax.set_xticklabels(np.arange(0, 9, 1));
-        ax.set_yticklabels(np.arange(0, 9, 1));
+        ax.set_xticks(np.arange(0.5, 6.5, 1));
+        ax.set_yticks(np.arange(0.5, 6.5, 1));
+        ax.set_xticklabels(np.arange(0, 6, 1));
+        ax.set_yticklabels(np.arange(0, 6, 1));
         arena = self.make_arena()
         ax.pcolor(arena, edgecolors='k', linestyle= 'dashed', linewidths=0.2, cmap='RdYlGn', vmin=0.0, vmax=3.0)
         minor_locator = AutoMinorLocator(2)
@@ -69,11 +66,11 @@ class Visualizer:
     def showPolicy(self,policy):
 
         fig = plt.figure();
-        plt.xlim((0,9))
-        plt.ylim((0,9))
+        plt.xlim((0,6))
+        plt.ylim((0,6))
         ax = plt.gca();
-        ax.set_xticks(np.arange(0.5, 9.5, 1));
-        ax.set_yticks(np.arange(0.5, 9.5, 1));
+        ax.set_xticks(np.arange(0.5, 6.5, 1));
+        ax.set_yticks(np.arange(0.5, 6.5, 1));
         ax.set_xticklabels(np.arange(0, 6, 1));
         ax.set_yticklabels(np.arange(0, 6, 1));
         arena = self.make_arena()
