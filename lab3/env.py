@@ -288,9 +288,6 @@ class Environment:
             if p > 0:
                 pmf.append(p)
                 pos.append(st)
-
-        print('pmf: ', pmf)
-        print('pos: ', pos)
         idx = np.random.choice(len(pmf), p=pmf);
         return pos[idx]
 
@@ -385,7 +382,7 @@ class Environment:
             #print('?')
             #next_states = self.get_possible_next_states(state, policy)
             for s in range(nS):
-                print('Loading for current delta: {0:.2f}, {1:.2f}%'.format(delta, s/nS * 100))
+                # print('Loading for current delta: {0:.2f}, {1:.2f}%'.format(delta, s/nS * 100))
                 # print('next_state', s)
                 # Do a one-step lookahead to find the best action
                 A = one_step_lookahead(flat_states[s], V)
@@ -396,7 +393,7 @@ class Environment:
                 # Update the value function. Ref: Sutton book eq. 4.10. 
                 V[s] = best_action_value        
             # Check if we can stop 
-            print('delta', delta)
+            # print('delta', delta)
             if delta < theta:
                 break
 
@@ -404,7 +401,7 @@ class Environment:
         policyz = np.zeros([nH,W,L])
         
         for s in range(nS):
-            print('Finishing Policy: {0:.2f}%'.format(s/nS * 100))
+            # print('Finishing Policy: {0:.2f}%'.format(s/nS * 100))
             # One step lookahead to find the best action for this state
             A = one_step_lookahead(flat_states[s], V)
             # print('A: ', A)
@@ -412,7 +409,7 @@ class Environment:
             #print('best_action: ', best_action)
             # Always take the best action
             policyz[flat_states[s].heading][flat_states[s].y][flat_states[s].x] = best_action
-        
+        print("Finished Value Iteration")
         return policyz, V
 
 

@@ -30,10 +30,8 @@ if __name__ == '__main__':
     robot = Robot(1, 4, 6, 0)
     env = Environment(W, L, rewards, robot)
     
-    start = time.time()
     policy = env.get_init_policy()
 
-    route = []
     # for i in range(10):
         # action = policy[env.robot.heading][env.robot.y][env.robot.x]
         # print('action:', action)
@@ -53,11 +51,9 @@ if __name__ == '__main__':
     #global opt_values
     start = time.time()
     #opt_policy, opt_vals = env.find_optimal_policy(policy, gamma)
-    print((time.time()-start)/1000, "Seconds")
+    
     opt_p, opt_v = env.value_iteration(State(robot.x, robot.y, robot.heading, 0), policy)
-    print(opt_p)
-
-    route = [(robot.x, robot.y, robot.heading)]
+    print((time.time()-start), "Seconds")
 
 #    for i in range (6):
 #        for j in range(6):
@@ -80,12 +76,13 @@ if __name__ == '__main__':
         action = actions[tmp.astype(int)]
         print('action:', action)
         next_state = env.get_next_state(action)
-        print('next_state: ', next_state)
+        #print('next_state: ', next_state)
         env.robot.move(next_state.x, next_state.y, next_state.heading)
-        print('robot pos: ', env.robot.x, env.robot.y, env.robot.heading)
+        #print('robot pos: ', env.robot.x, env.robot.y, env.robot.heading)
         seq.append(( env.robot.x, env.robot.y, env.robot.heading))
-        if env.robot.x ==4 and env.robot.y ==4:
+        if env.robot.x == 4 and env.robot.y == 4:
             i = 1
+    print(seq)
     vis = Visualizer(seq)
     vis.show()
     
