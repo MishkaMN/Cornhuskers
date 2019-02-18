@@ -32,9 +32,9 @@ if __name__ == '__main__':
     start = time.time()
     policy = env.get_init_policy()
     
-    seq = [(robot.x, robot.y, robot.heading)]
-    vis = Visualizer(seq)
-    vis.showPolicy(policy)
+    # seq = [(robot.x, robot.y, robot.heading)]
+    # vis = Visualizer(seq)
+    # vis.showPolicy(policy)
 
     global opt_policy
     global opt_values

@@ -1,6 +1,7 @@
 from utils import *
 import numpy as np
 from robot import *
+import pdb
 
 # max iteration for value function
 max_iteration = 20
@@ -268,8 +269,6 @@ class Environment:
                 pmf.append(p)
                 pos.append(st)
 
-        print('pmf: ', pmf)
-        print('pos: ', pos)
         idx = np.random.choice(len(pmf), p=pmf);
         return pos[idx]
 
@@ -314,6 +313,25 @@ class Environment:
 
         return value
 
+    def alternatePolicyEval(self, policy, gamma, theta=0.00001):
+        V = np.zeros((len(headings), W, L))
+
+        while True:
+            delta = 0
+            for h_idx, h_layer in enumerate(self.states):
+                for y_idx, y_row in enumerate(h_layer):
+                    for x_idx, s in enumerate(y_row):
+                        v = 0
+                        possible_states = self.get_possible_next_states(s, policy)
+                        for new_s, prob in possible_states:
+                            v += prob*(new_s.reward+gamma*V[new_s.heading][new_s.y][new_s.x])
+                        delta = max(delta, np.abs(v - V[s.heading][s.y][s.x]))
+                        V[s.heading][s.y][s.x] = v
+            # Stop evaluating once our value function change is below a threshold
+            if delta < theta:
+                break
+        return V
+
     def find_optimal_policy(self, init_policy, gamma):
         optimal_policy = init_policy
         optimal_values = np.zeros(optimal_policy.shape)
@@ -322,13 +340,16 @@ class Environment:
             for y_idx, y_row in enumerate(h_layer):
                 for x_idx, s in enumerate(y_row): 
                     outcomes = []
+
+                    value_functions = self.alternatePolicyEval(optimal_policy, gamma)
                     # pick the best action with maximum expected reward
                     for a in actions:
                         value = 0
                         possible_states = self.get_possible_states_from_action(s, a)
                         # print(possible_states)
+
                         for new_s, prob in possible_states:
-                            value += prob*(new_s.reward+gamma*self.policy_eval(new_s, optimal_policy, gamma))
+                            value += prob*(new_s.reward+gamma*value_functions[new_s.heading][new_s.y][new_s.x])
                             outcomes.append(value)
                     action_idx = np.argmax(outcomes)
                     if action_idx == 0:
