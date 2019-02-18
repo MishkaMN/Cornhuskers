@@ -3,7 +3,7 @@ import numpy as np
 from matplotlib.ticker import AutoMinorLocator
 import matplotlib.animation as animation
 from robot import *
-
+import time 
 X = 0
 O = 2
 G = 3
@@ -25,6 +25,7 @@ class Visualizer:
         return arena
 
     def show(self):
+
         x = []
         y = []
         h = []
@@ -48,7 +49,7 @@ class Visualizer:
         plt.grid(which='minor')
         line, = ax.plot([], [], lw=2)
 
-
+        time.sleep(5)
         def animate(st):
             x.append(st[0]+.5)
             y.append(st[1]+.5)
@@ -59,7 +60,7 @@ class Visualizer:
             ax.quiver(x,y, U, V)
 
 
-        ani = animation.FuncAnimation(fig, animate, frames=self.sequence, interval=500)
+        ani = animation.FuncAnimation(fig, animate, frames=self.sequence, interval=200)
         plt.show()
 
     """"

@@ -30,6 +30,7 @@ class State:
         return "({}, {}, {}, {})".format(self.x, self.y, self.heading, self.reward)
 
 class Environment:
+
     def __init__(self, W, L, rewards, robot):
         self.W = W
         self.L = L
@@ -44,6 +45,7 @@ class Environment:
                 x_states = []
                 for x in range(self.L):
                     # find goal state
+                    # print(rewards[y*self.W+x],self.W-1-y,x)
                     state = State(x, self.W-1-y, h, rewards[y*self.W+x])
                     x_states.append(state)
                     if rewards[y*self.W+x] == 1:
@@ -151,6 +153,27 @@ class Environment:
         
         return init_policy
 
+    def get_policy_graph(self, policy):
+        policy_map = []
+        for h in range(nH):
+            for y in range(W):
+                for x in range(L):
+                    if policy[h][y][x] == Action.STAY:
+                        policy_map[h][y][x] = 'S'
+                    elif policy[h][y][x] == Action.FORWARD_NOROT:
+                        policy_map[h][y][x] = 'FNR'
+                    elif policy[h][y][x] == Action.FORWARD_CLK:
+                        policy_map[h][y][x] = 'FC'
+                    elif policy[h][y][x] == Action.FORWARD_CCLK:
+                        policy_map[h][y][x] = 'FCC'
+                    elif policy[h][y][x] == Action.BACKWARD_NOROT:
+                        policy_map[h][y][x] = 'BNR'
+                    elif policy[h][y][x] == Action.BACKWARD_CLK:
+                        policy_map[h][y][x] = 'BC'
+                    elif policy[h][y][x] == Action.BACKWARD_CCLK:
+                        policy_map[h][y][x] = 'BCC'
+        return policy_map
+
     def get_p(self, s, s_new, a):
         #100 percent chance to stay in current spot
         if a == Action.STAY:
@@ -164,7 +187,6 @@ class Environment:
             #prerotation chances
             chance = np.array([self.robot.p_e, 1.0 - 2.0*self.robot.p_e, self.robot.p_e])
             head = np.array([(s.heading - 1) % 12, s.heading, (s.heading + 1) % 12])
-
             #get candidate states by x,y
             s_primes = np.zeros([3,3])
             for idx,h in enumerate(head):
@@ -227,6 +249,7 @@ class Environment:
 
     def get_possible_next_states(self, state, policy):
         possible_states = []
+        #print('?')
         for st in self.flattenStates():
             
             p = self.get_p(state, st, policy[state.heading][state.y][state.x])
@@ -304,3 +327,82 @@ class Environment:
                 print("Number of policies changed {}".format(np.sum(np.not_equal(policy, old_policy))))
             if stable:
                 return policy, V
+
+    def value_iteration(self, state, policy, theta=10, gamma= 0.8):
+        """
+        Value Iteration Algorithm.
+        
+        Args:
+            env: OpenAI env. env.P represents the transition probabilities of the environment.
+                env.P[s][a] is a list of transition tuples (prob, next_state, reward, done).
+                env.nS is a number of states in the environment. 
+                env.nA is a number of actions in the environment.
+            theta: We stop evaluation once our value function change is less than theta for all states.
+            discount_factor: Gamma discount factor.
+            
+        Returns:
+            A tuple (policy, V) of the optimal policy and the optimal value function.
+        """
+        
+        def one_step_lookahead(state, V):
+            """
+            Helper function to calculate the value for all action in a given state.
+            
+            Args:
+                state: The state to consider (int)
+                V: The value to use as an estimator, Vector of length nS
+            
+            Returns:
+                A vector of length nA containing the expected value of each action.
+            """
+            #print('?')
+            A = np.zeros(nA)
+            for idx, a in enumerate(actions):
+                #print('action', a)
+                next_states = self.get_possible_states_from_action(state, a)
+                #print('state', state)
+                #print('next', next_states)
+                for (next_state, prob) in next_states:
+                    A[idx] += prob * (next_state.reward + gamma * V[next_state.iden])
+                    #print('A[{0}]: {1}'.format(a,A[idx]))
+            return A
+ 
+        V = np.zeros(nS)   
+        flat_states = self.flattenStates()
+        
+        while True:
+            # Stopping condition
+            delta = 0
+            # Update each state...
+            #print('?')
+            #next_states = self.get_possible_next_states(state, policy)
+            for s in range(nS):
+                print('Loading for current delta: {0:.2f}, {1:.2f}%'.format(delta, s/nS * 100))
+                # print('next_state', s)
+                # Do a one-step lookahead to find the best action
+                A = one_step_lookahead(flat_states[s], V)
+                best_action_value = np.max(A)
+                # Calculate delta across all states seen so far
+                # print('V:', V[s])
+                delta = max(delta, np.abs(best_action_value - V[s]))
+                # Update the value function. Ref: Sutton book eq. 4.10. 
+                V[s] = best_action_value        
+            # Check if we can stop 
+            # print('delta', delta)
+            if delta < theta:
+                break
+
+        # Create a deterministic policy using the optimal value function
+        policyz = np.zeros([nH,W,L])
+        
+        for s in range(nS):
+            print('Finishing Policy: {0:.2f}%'.format(s/nS * 100))
+            # One step lookahead to find the best action for this state
+            A = one_step_lookahead(flat_states[s], V)
+            # print('A: ', A)
+            best_action = np.argmax(A)
+            #print('best_action: ', best_action)
+            # Always take the best action
+            policyz[flat_states[s].heading][flat_states[s].y][flat_states[s].x] = best_action
+        print("Finished Value Iteration")
+        return policyz, V

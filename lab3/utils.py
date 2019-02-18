@@ -17,6 +17,8 @@ L = 6
 
 nS = W*L*len(headings)
 nA = 7
+nH = len(headings)
+
 
 # Print iterations progress
 def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█'):
@@ -38,3 +40,4 @@ def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, 
     # Print New Line on Complete
     if iteration == total: 
         print()
+
