@@ -215,7 +215,7 @@ class Environment:
             s_primes = np.zeros([3,3])
             for idx,h in enumerate(head):
                 if h in UP:
-                    if a in fw_actions and s.y <= W-1:
+                    if a in fw_actions and s.y < W-1:
                         s_primes[idx][:] = np.array([s.x, s.y+1, h])
                     elif a in bw_actions and s.y > 0:
                         s_primes[idx][:] = np.array([s.x, s.y-1, h])
@@ -229,7 +229,7 @@ class Environment:
                     else:
                         s_primes[idx][:] = np.array([s.x, s.y, h])
                 elif h in RIGHT:
-                    if a in fw_actions and s.x <= L-1:
+                    if a in fw_actions and s.x < L-1:
                         s_primes[idx][:] = np.array([s.x+1, s.y, h])
                     elif a in bw_actions and s.x > 0:
                         s_primes[idx][:] = np.array([s.x-1, s.y, h])
@@ -238,7 +238,7 @@ class Environment:
                 elif h in DOWN:
                     if a in fw_actions and s.y > 0:
                         s_primes[idx][:] = np.array([s.x, s.y-1, h])
-                    elif a in bw_actions and s.y <= W - 1:
+                    elif a in bw_actions and s.y < W - 1:
                         s_primes[idx][:] = np.array([s.x, s.y+1, h])
                     else:
                         s_primes[idx][:] = np.array([s.x, s.y, h])
