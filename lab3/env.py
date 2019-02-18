@@ -412,31 +412,3 @@ class Environment:
             policyz[flat_states[s].heading][flat_states[s].y][flat_states[s].x] = best_action
         print("Finished Value Iteration")
         return policyz, V
-
-
-
-    def find_optimal_policy(self, init_policy, gamma):
-        optimal_policy = init_policy
-        optimal_values = np.zeros(optimal_policy.shape)
-
-        for h_idx, h_layer in enumerate(self.states):
-            for y_idx, y_row in enumerate(h_layer):
-                for x_idx, s in enumerate(y_row): 
-                    outcomes = []
-                    # pick the best action with maximum expected reward
-                    for a in actions:
-                        value = 0
-                        possible_states = self.get_possible_states_from_action(s, a)
-                        # print(possible_states)
-                        for new_s, prob in possible_states:
-                            value += prob*(new_s.reward+gamma*self.policy_eval(new_s, optimal_policy, gamma))
-                            outcomes.append(value)
-                    action_idx = np.argmax(outcomes)
-                    if action_idx == 0:
-                        action_idx += 1
-
-                    optimal_values[h_idx][y_idx][x_idx] = outcomes[action_idx]
-                    optimal_policy[h_idx][y_idx][x_idx] = actions[action_idx]
-                    print("{}, {}, {}, {}".format(s.x,s.y,s.heading,optimal_policy[h_idx][y_idx][x_idx]))
-        return optimal_policy, optimal_values
-
