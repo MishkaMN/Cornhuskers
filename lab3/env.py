@@ -17,18 +17,6 @@ class State:
 
         self.iden = self.x+self.y*L+heading*(W*L)
 
-    def facing_a_wall(self):
-        # return true the state is facing a wall
-
-        # facing top wall
-        if (self.y == 0 or self.y == W-1) and \
-            (self.heading in UP or self.heading in DOWN):
-            return True
-        if (self.x == 0 or self.x == L-1) and \
-            (self.heading in LEFT or self.heading in RIGHT):
-            return True
-        return False
-
     def __eq__(self, other):
         print('equating')
         # only compare the x and y coordinates of state
@@ -67,41 +55,6 @@ class Environment:
             raise ValueError('There is no goal state in rewards')
 
         self.robot = robot
-
-    def printEnv(self, heading=None):
-        for h in headings:
-            if h is not None and h != heading:
-                continue
-            print('heading: %d' % h)
-            for y in range(self.W):
-                line = ''
-                for x in range(self.L):
-                    state = self.states[h][y][x]
-                    line += str(state)
-                    if state.x == self.robot.x \
-                        and state.y == self.robot.y \
-                        and state.heading == self.robot.heading:
-                        line += '(R)'
-                    else:
-                        line += '   '
-                
-                print(line)
-                print('\n')
-            print('\n')
-
-    def step(self, translate, rotate):
-        # translate: either move forwards or backwards
-        if translate == STAY:
-            return
-        self.robot.prerotate()
-        new_x, new_y = self.robot.attempt_move(translate)
-        if self.checkLoc(new_x, new_y):
-            self.robot.move(new_x, new_y)
-        self.robot.rotate(rotate)
-
-    # TODO: implement policy iteration/value iteration
-    def run(self):
-        pass
 
     def flattenStates(self):
         flatten = []
@@ -343,11 +296,9 @@ class Environment:
                 opt_a = actions[np.argmax(action_values)]
 
                 if(action != opt_a):
-                    #print("Policy Changed")
                     stable = False
                 policy[st.heading][st.y][st.x] = opt_a
                 printProgressBar(((idx+1)/432.0)*100, 100, prefix = 'Recalculating Progress:', suffix = 'Complete', length = 50)
-                #print("Recalculating Policy: {0:.2f}%".format(idx/432.0*100))
             print("Recalculation {0:.2f} seconds".format(time.time()-start))
             if not stable:
                 print("Number of policies changed {}".format(np.sum(np.not_equal(policy, old_policy))))

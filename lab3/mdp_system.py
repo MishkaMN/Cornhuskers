@@ -4,6 +4,7 @@ from env import *
 from robot import *
 from visualizer import Visualizer
 import time
+import pickle
 
 def calc_reward(env, inputs):
     # inputs are states that are traversed
@@ -15,7 +16,6 @@ def calc_reward(env, inputs):
 if __name__ == '__main__':
     # Problem 2.1
     # rewards = range(W*L)
-
     # Problem 2.2
     rewards = [-100, -100, -100, -100, -100, -100,
     -100, 0, 0, -10, 1, -100,
@@ -24,9 +24,11 @@ if __name__ == '__main__':
     -100, 0, 0, 0, 0, -100,
     -100, -100, -100, -100, -100, -100
     ]
-    gamma = 0.9
 
-    robot = Robot(1, 4, 6, 0)
+    gamma = float(input("Discount Factor:"))
+    error_prob = float(input("Error Probability:"))
+
+    robot = Robot(1, 4, 6, error_prob)
     env = Environment(W, L, rewards, robot)
     
     start = time.time()
@@ -34,20 +36,29 @@ if __name__ == '__main__':
 
     global opt_policy
     global opt_values
-    start = time.time()
-    opt_policy, opt_vals = env.find_opt_policy(policy, gamma)
-    print((time.time()-start), "Seconds")
-    route = [(robot.x, robot.y, robot.heading)]
 
-#    for i in range (6):
-#        for j in range(6):
-#            for k in range(12):
-#                for i2 in range (6):
-#                    for j2 in range(6):
-#                        for k2 in range(12):
-#                            for a in actions:
-#                                if(env.get_p(env.stateAt(i,j,k), env.stateAt(i2,j2,k2), a) > 0):
-#                                    print(((i,j,k), a, (i2,j2,k2), env.get_p(env.stateAt(i,j,k), env.stateAt(i2,j2,k2), a)))
+    iterType = input("Iteration type (policy, value):")
+    loadFile = input("Load from file? (y/n):")
+    if(loadFile == "y"):
+        opt_policy = pickle.load("{}Iter_{}_policy.p".format(iterType,env.robot.p_e))
+        opt_values = pickle.load("{}Iter_{}_values.p".format(iterType,env.robot.p_e))
+    elif(loadFile == "n"):
+        start = time.time()
+        if(iterType == "policy"):
+            opt_policy, opt_values = env.find_opt_policy(policy, gamma)
+        elif(iterType == "value"):
+            ###Value iteration here
+            exit()
+        else:
+            raise ValueError("Unspecified iteration method selected")
+        print((time.time()-start), "Seconds")
+        route = [(robot.x, robot.y, robot.heading)]
+    else:
+        raise ValueError("Invalid input")
+
+    if(loadFile == "n"):
+        pickle.dump(opt_policy, open( "{}Iter_{}_policy.p".format(iterType,env.robot.p_e), "wb" )) 
+        pickle.dump(opt_values, open( "{}Iter_{}_values.p".format(iterType,env.robot.p_e), "wb" ))
 
     for i in range(10):
         action = opt_policy[env.robot.heading][env.robot.y][env.robot.x]
@@ -60,17 +71,3 @@ if __name__ == '__main__':
 
     vis = Visualizer(route)
     vis.show()
-
-    # seq = [(robot.x, robot.y, robot.heading)]
-    # for i in range(10):
-    #     action = policy[env.robot.heading][env.robot.y][env.robot.x]
-    #     # print('action:', action)
-    #     next_state = env.get_next_state(action)
-    #     # print('next_state: ', next_state)
-    #     env.robot.move(next_state.x, next_state.y, next_state.heading)
-    #     # print('robot pos: ', env.robot.x, env.robot.y, env.robot.heading)
-    #     seq.append(( env.robot.x, env.robot.y, env.robot.heading))
-    # vis = Visualizer(seq)
-    # vis.show()
-    
-

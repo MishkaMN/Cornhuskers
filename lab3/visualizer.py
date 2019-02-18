@@ -62,6 +62,7 @@ class Visualizer:
         ani = animation.FuncAnimation(fig, animate, frames=self.sequence, interval=500)
         plt.show()
 
+    """"
     def showPolicy(self,policy):
 
         fig = plt.figure();
@@ -113,3 +114,4 @@ class Visualizer:
             
         ax.quiver(X,Y,U,V)
         plt.show()
+    """
