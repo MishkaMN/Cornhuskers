@@ -35,7 +35,7 @@ if __name__ == '__main__':
     global opt_policy
     global opt_values
     start = time.time()
-    opt_policy, opt_vals = env.find_optimal_policy(policy, gamma)
+    opt_policy, opt_vals = env.alt_find_opt_policy(policy, gamma)
     print((time.time()-start)/1000, "Seconds")
     route = [(robot.x, robot.y, robot.heading)]
 
