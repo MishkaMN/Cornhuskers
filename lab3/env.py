@@ -192,8 +192,8 @@ class Environment:
 
     def get_init_policy(self):
         # populate an init policy that moves closer to goal state
-        init_policy = [ [ [ self.action_to_take(self.stateAt(x, y, h), self.goal_state)
-            for x in range(L) ]for y in range(W)] for h in headings]
+        init_policy = np.array([ [ [ self.action_to_take(self.stateAt(x, y, h), self.goal_state)
+            for x in range(L) ]for y in range(W)] for h in headings])
         
         return init_policy
 
@@ -262,12 +262,14 @@ class Environment:
         pmf = []
         pos = []
         for st in self.flattenStates():
-            p = self.get_p(State(self.x, self.y, self.heading, -1), st, a)
+            p = self.get_p(State(self.robot.x, self.robot.y, self.robot.heading, -1), st, a)
 
             if p > 0:
                 pmf.append(p)
                 pos.append(st)
 
+        print('pmf: ', pmf)
+        print('pos: ', pos)
         idx = np.random.choice(len(pmf), p=pmf);
         return pos[idx]
 
@@ -276,6 +278,15 @@ class Environment:
         for st in self.flattenStates():
             
             p = self.get_p(state, st, policy[state.heading][state.y][state.x])
+
+            if p > 0:
+                possible_states.append((st, p))
+        return possible_states
+
+    def get_possible_states_from_action(self, state, action):
+        possible_states = []
+        for st in self.flattenStates():
+            p = self.get_p(state, st, action)
 
             if p > 0:
                 possible_states.append((st, p))
@@ -296,13 +307,34 @@ class Environment:
         # value at state with depth and discount factor gamma
         value = 0
         next_states = self.get_possible_next_states(state, policy)
-        #print('current state: ', state)
+        print('next_state: ', next_states)
         for (next_state, prob) in next_states:
-            #print('next_state: ', next_state)
-            #print('prob: ', prob)
-            #print('discount factor: ', (gamma**depth))
             value += prob*state.reward+(gamma**depth)*(self.policy_eval(next_state, \
                 policy, gamma, depth=depth+1))
 
         return value
 
+    def find_optimal_policy(self, init_policy, gamma):
+        optimal_policy = init_policy
+        optimal_values = np.zeros(optimal_policy.shape)
+
+        for h_idx, h_layer in enumerate(self.states):
+            for y_idx, y_row in enumerate(h_layer):
+                for x_idx, s in enumerate(y_row): 
+                    outcomes = []
+                    # pick the best action with maximum expected reward
+                    for a in actions:
+                        value = 0
+                        possible_states = self.get_possible_states_from_action(s, a)
+                        # print(possible_states)
+                        for new_s, prob in possible_states:
+                            value += prob*(new_s.reward+gamma*self.policy_eval(new_s, optimal_policy, gamma))
+                            outcomes.append(value)
+                    action_idx = np.argmax(outcomes)
+                    if action_idx == 0:
+                        action_idx += 1
+
+                    optimal_values[h_idx][y_idx][x_idx] = outcomes[action_idx]
+                    optimal_policy[h_idx][y_idx][x_idx] = actions[action_idx]
+                    print("{}, {}, {}, {}".format(s.x,s.y,s.heading,optimal_policy[h_idx][y_idx][x_idx]))
+        return optimal_policy, optimal_values
