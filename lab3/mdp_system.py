@@ -35,8 +35,8 @@ if __name__ == '__main__':
     global opt_policy
     global opt_values
     start = time.time()
-    opt_policy, opt_vals = env.alt_find_opt_policy(policy, gamma)
-    print((time.time()-start)/1000, "Seconds")
+    opt_policy, opt_vals = env.find_opt_policy(policy, gamma)
+    print((time.time()-start), "Seconds")
     route = [(robot.x, robot.y, robot.heading)]
 
 #    for i in range (6):
@@ -59,7 +59,7 @@ if __name__ == '__main__':
         route.append((env.robot.x, env.robot.y, env.robot.heading))
 
     vis = Visualizer(route)
-    vis.showPolicy(opt_policy)
+    vis.show()
 
     # seq = [(robot.x, robot.y, robot.heading)]
     # for i in range(10):

@@ -2,7 +2,7 @@ from utils import *
 import numpy as np
 from robot import *
 import pdb
-
+import time
 # max iteration for value function
 max_iteration = 20
 
@@ -297,48 +297,34 @@ class Environment:
     def get_reward_at(self, s_prime):
         return self.stateAt(s_prime.x,s_prime.y,s_prime.h).reward
 
-    def policy_eval(self, state, policy, gamma, depth=1):
-        #print('policy_eval')
-        # print('policy_eval: %d' % depth)
-        if depth == max_iteration:
-            return 0
-
-        # value at state with depth and discount factor gamma
-        value = 0
-        next_states = self.get_possible_next_states(state, policy)
-        print('next_state: ', next_states)
-        for (next_state, prob) in next_states:
-            value += prob*state.reward+(gamma**depth)*(self.policy_eval(next_state, \
-                policy, gamma, depth=depth+1))
-
-        return value
-
-    def alternatePolicyEval(self, policy, gamma, theta=10):
+    def policy_eval(self, policy, gamma, theta=10):
         V = np.zeros((len(headings), W, L))
 
         while True:
+            start = time.time()
             delta = 0
-            for h_idx, h_layer in enumerate(self.states):
-                for y_idx, y_row in enumerate(h_layer):
-                    for x_idx, s in enumerate(y_row):
-                        v = 0
-                        possible_states = self.get_possible_next_states(s, policy)
-                        for new_s, prob in possible_states:
-                            v += prob*(new_s.reward+gamma*V[new_s.heading][new_s.y][new_s.x])
-                        delta = max(delta, np.abs(v - V[s.heading][s.y][s.x]))
-                        V[s.heading][s.y][s.x] = v
-            # Stop evaluating once our value function change is below a threshold
-                    print("Evaluating Policy: {0:.2f}%".format((y_idx + h_idx*12)/72.0))
+            it = 0
+            print("Begin evaluation...")
+            for s in self.flattenStates():
+                it = it + 1
+                v = 0
+                possible_states = self.get_possible_next_states(s, policy)
+                for new_s, prob in possible_states:
+                    v += prob*(new_s.reward+gamma*V[new_s.heading][new_s.y][new_s.x])
+                delta = max(delta, np.abs(v - V[s.heading][s.y][s.x]))
+                V[s.heading][s.y][s.x] = v
+                # Stop evaluating once our value function change is below a threshold
             print("delta: ", delta)
+            print("Evaluation {0:.2f} seconds".format(time.time()-start))
             if delta < theta:
                 break
         return V
 
-    def alt_find_opt_policy(self, init_policy, gamma):
+    def find_opt_policy(self, init_policy, gamma):
         policy = init_policy.copy()
 
         def one_step_look(state, V):
-            A = np.zeros(7)
+            A = np.zeros(len(actions))
             for idx,a in enumerate(actions):
                 possible_states = self.get_possible_states_from_action(state, a)
                 for (s_new, prob) in possible_states:
@@ -346,55 +332,24 @@ class Environment:
             return A
 
         while True:
-            V = self.alternatePolicyEval(policy, gamma);
+            start = time.time()
+            V = self.policy_eval(policy, gamma);
             stable = True
-
+            old_policy = policy.copy()
+            printProgressBar(0, 100, prefix = 'Progress:', suffix = 'Complete', length = 50)
             for idx,st in enumerate(self.flattenStates()):
-                action = np.argmax(policy[st.heading][st.y][st.x])
+                action = policy[st.heading][st.y][st.x]
                 action_values = one_step_look(st, V)
-                opt_a = np.argmax(action_values)
+                opt_a = actions[np.argmax(action_values)]
 
                 if(action != opt_a):
+                    #print("Policy Changed")
                     stable = False
                 policy[st.heading][st.y][st.x] = opt_a
-                print("Recalculating Policy: {0:.2f}%".format(idx/432.0))
+                printProgressBar(((idx+1)/432.0)*100, 100, prefix = 'Recalculating Progress:', suffix = 'Complete', length = 50)
+                #print("Recalculating Policy: {0:.2f}%".format(idx/432.0*100))
+            print("Recalculation {0:.2f} seconds".format(time.time()-start))
+            if not stable:
+                print("Number of policies changed {}".format(np.sum(np.not_equal(policy, old_policy))))
             if stable:
                 return policy, V
-
-    def find_optimal_policy(self, init_policy, gamma):
-        optimal_policy = init_policy
-        optimal_values = np.zeros(optimal_policy.shape)
-
-        changed = 1
-        iterNum = 0
-        while changed == 1:
-            last_policy = optimal_policy.copy()
-            value_functions = self.alternatePolicyEval(optimal_policy, gamma)
-            percentComplete = 0.0;
-            for h_idx, h_layer in enumerate(self.states):
-                for y_idx, y_row in enumerate(h_layer):
-                    for x_idx, s in enumerate(y_row): 
-                        outcomes = []
-                        # pick the best action with maximum expected reward
-                        for a in actions:
-                            value = 0
-                            possible_states = self.get_possible_states_from_action(s, a)
-                            # print(possible_states)
-                            for new_s, prob in possible_states:
-                                value += prob*(new_s.reward+gamma*value_functions[new_s.heading][new_s.y][new_s.x])
-                                outcomes.append(value)
-                        action_idx = np.argmax(outcomes)
-                        #if action_idx == 0 and (s.x == 4 and s.y == 4):
-                        #    action_idx += 1
-                        optimal_values[h_idx][y_idx][x_idx] = outcomes[action_idx]
-                        optimal_policy[h_idx][y_idx][x_idx] = actions[action_idx]
-                    percentComplete = percentComplete + 1.0/(6.0*12.0)
-                    print("{0:.2f}%".format(percentComplete))
-            print("Iteration #: {}".format(iterNum))
-            iterNum = iterNum+1
-            print("Policies different in {} states".format(np.sum(np.not_equal(last_policy,optimal_policy))))
-            if np.array_equal(last_policy,optimal_policy):
-                changed = 0
-            else:
-                print("Policies different in {} states".format(np.sum(np.not_equal(last_policy,optimal_policy))))
-        return optimal_policy, optimal_values
