@@ -60,6 +60,7 @@ if __name__ == '__main__':
         pickle.dump(opt_policy, open( "{}Iter_{}_policy.p".format(iterType,env.robot.p_e), "wb" )) 
         pickle.dump(opt_values, open( "{}Iter_{}_values.p".format(iterType,env.robot.p_e), "wb" ))
 
+
     for i in range(10):
         action = opt_policy[env.robot.heading][env.robot.y][env.robot.x]
         print('action:', action)
