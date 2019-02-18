@@ -56,6 +56,7 @@ class Environment:
                 x_states = []
                 for x in range(self.L):
                     # find goal state
+                    # print(rewards[y*self.W+x],self.W-1-y,x)
                     state = State(x, self.W-1-y, h, rewards[y*self.W+x])
                     x_states.append(state)
                     if rewards[y*self.W+x] == 1:
@@ -382,7 +383,7 @@ class Environment:
             #print('?')
             #next_states = self.get_possible_next_states(state, policy)
             for s in range(nS):
-                # print('Loading for current delta: {0:.2f}, {1:.2f}%'.format(delta, s/nS * 100))
+                print('Loading for current delta: {0:.2f}, {1:.2f}%'.format(delta, s/nS * 100))
                 # print('next_state', s)
                 # Do a one-step lookahead to find the best action
                 A = one_step_lookahead(flat_states[s], V)
@@ -401,7 +402,7 @@ class Environment:
         policyz = np.zeros([nH,W,L])
         
         for s in range(nS):
-            # print('Finishing Policy: {0:.2f}%'.format(s/nS * 100))
+            print('Finishing Policy: {0:.2f}%'.format(s/nS * 100))
             # One step lookahead to find the best action for this state
             A = one_step_lookahead(flat_states[s], V)
             # print('A: ', A)

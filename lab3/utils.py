@@ -11,8 +11,8 @@ CLOCKWISE = -1
 CCLOCKWISE = -2
 
 # Test
-W = 6
-L = 6
+W = 9
+L = 9
 
 nS = W*L*len(headings)
 nA = 7

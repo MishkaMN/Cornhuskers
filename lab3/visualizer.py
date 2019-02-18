@@ -3,7 +3,7 @@ import numpy as np
 from matplotlib.ticker import AutoMinorLocator
 import matplotlib.animation as animation
 from robot import *
-
+import time 
 X = 0
 O = 2
 G = 3
@@ -15,16 +15,20 @@ class Visualizer:
     
 
     def make_arena(self):
-        arena = np.array([[X,X,X,X,X,X],    
-                     [X,O,O,P,G,X],    
-                     [X,O,O,P,O,X],    
-                     [X,O,O,O,O,X],    
-                     [X,O,O,O,O,X],
-                     [X,X,X,X,X,X]])
+        arena = np.array([[X,X,X,X,X,X,X,X,X],    
+                     [X,O,O,O,O,O,P,O,X],    
+                     [X,O,O,O,O,O,O,O,X],    
+                     [X,O,O,O,O,O,O,O,X],    
+                     [X,O,O,O,O,O,O,O,X],
+                     [X,O,O,O,O,P,O,O,X],
+                     [X,O,O,O,O,P,O,G,X],
+                     [X,O,O,O,O,P,O,O,X],
+                     [X,X,X,X,X,X,X,X,X]])
         arena = np.flip(arena,0)
         return arena
 
     def show(self):
+
         x = []
         y = []
         h = []
@@ -33,13 +37,13 @@ class Visualizer:
         #Adjust ticks and grid lines
         
         fig = plt.figure();
-        plt.xlim((0,6))
-        plt.ylim((0,6))
+        plt.xlim((0,9))
+        plt.ylim((0,9))
         ax = plt.gca();
-        ax.set_xticks(np.arange(0.5, 6.5, 1));
-        ax.set_yticks(np.arange(0.5, 6.5, 1));
-        ax.set_xticklabels(np.arange(0, 6, 1));
-        ax.set_yticklabels(np.arange(0, 6, 1));
+        ax.set_xticks(np.arange(0.5, 9.5, 1));
+        ax.set_yticks(np.arange(0.5, 9.5, 1));
+        ax.set_xticklabels(np.arange(0, 9, 1));
+        ax.set_yticklabels(np.arange(0, 9, 1));
         arena = self.make_arena()
         ax.pcolor(arena, edgecolors='k', linestyle= 'dashed', linewidths=0.2, cmap='RdYlGn', vmin=0.0, vmax=3.0)
         minor_locator = AutoMinorLocator(2)
@@ -48,7 +52,7 @@ class Visualizer:
         plt.grid(which='minor')
         line, = ax.plot([], [], lw=2)
 
-
+        time.sleep(5)
         def animate(st):
             x.append(st[0]+.5)
             y.append(st[1]+.5)
@@ -59,17 +63,17 @@ class Visualizer:
             ax.quiver(x,y, U, V)
 
 
-        ani = animation.FuncAnimation(fig, animate, frames=self.sequence, interval=500)
+        ani = animation.FuncAnimation(fig, animate, frames=self.sequence, interval=200)
         plt.show()
 
     def showPolicy(self,policy):
 
         fig = plt.figure();
-        plt.xlim((0,6))
-        plt.ylim((0,6))
+        plt.xlim((0,9))
+        plt.ylim((0,9))
         ax = plt.gca();
-        ax.set_xticks(np.arange(0.5, 6.5, 1));
-        ax.set_yticks(np.arange(0.5, 6.5, 1));
+        ax.set_xticks(np.arange(0.5, 9.5, 1));
+        ax.set_yticks(np.arange(0.5, 9.5, 1));
         ax.set_xticklabels(np.arange(0, 6, 1));
         ax.set_yticklabels(np.arange(0, 6, 1));
         arena = self.make_arena()

@@ -18,16 +18,19 @@ if __name__ == '__main__':
     # rewards = range(W*L)
 
     # Problem 2.2
-    rewards = [-100, -100, -100, -100, -100, -100,
-    -100, 0, 0, -10, 1, -100,
-    -100, 0, 0, -10, 0, -100,
-    -100, 0, 0, 0, 0, -100,
-    -100, 0, 0, 0, 0, -100,
-    -100, -100, -100, -100, -100, -100
+    rewards = [-100, -100, -100, -100, -100, -100, -100, -100, -100,
+    -100, 0, 0, 0, 0, 0, -10, 0, -100,
+    -100, 0, 0, 0, 0, 0, 0, 0, -100,
+    -100, 0, 0, 0, 0, 0, 0, 0, -100,
+    -100, 0, 0, 0, 0, 0, 0, 0, -100,
+    -100, 0, 0, 0, 0, -10, 0, 0, -100,
+    -100, 0, 0, 0, 0, -10, 0, 1, -100,
+    -100, 0, 0, 0, 0, -10, 0, 0, -100,
+    -100, -100, -100, -100, -100, -100, -100, -100,-100
     ]
     gamma = 0.9
 
-    robot = Robot(1, 4, 6, 0)
+    robot = Robot(1, 2, 4, 0.1)
     env = Environment(W, L, rewards, robot)
     
     policy = env.get_init_policy()
@@ -71,7 +74,9 @@ if __name__ == '__main__':
 
     seq = [(robot.x, robot.y, robot.heading)]
     i = 0
-    while i == 0:
+    #input("Start the Animation?")
+    while i < 100:
+
         tmp = opt_p[env.robot.heading][env.robot.y][env.robot.x]
         action = actions[tmp.astype(int)]
         print('action:', action)
@@ -80,8 +85,8 @@ if __name__ == '__main__':
         env.robot.move(next_state.x, next_state.y, next_state.heading)
         #print('robot pos: ', env.robot.x, env.robot.y, env.robot.heading)
         seq.append(( env.robot.x, env.robot.y, env.robot.heading))
-        if env.robot.x == 4 and env.robot.y == 4:
-            i = 1
+        #if env.robot.x == 4 and env.robot.y == 4:
+        i = i+ 1
     print(seq)
     vis = Visualizer(seq)
     vis.show()
