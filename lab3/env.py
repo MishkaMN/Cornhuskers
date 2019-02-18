@@ -232,7 +232,6 @@ class Environment:
             #prerotation chances
             chance = np.array([self.robot.p_e, 1.0 - 2.0*self.robot.p_e, self.robot.p_e])
             head = np.array([(s.heading - 1) % 12, s.heading, (s.heading + 1) % 12])
-
             #get candidate states by x,y
             s_primes = np.zeros([3,3])
             for idx,h in enumerate(head):
@@ -330,14 +329,14 @@ class Environment:
         # value at state with depth and discount factor gamma
         value = 0
         next_states = self.get_possible_next_states(state, policy)
-        print('next_state: ', next_states)
+        #print('next_state: ', next_states)
         for (next_state, prob) in next_states:
             value += prob*state.reward+(gamma**depth)*(self.policy_eval(next_state, \
                 policy, gamma, depth=depth+1))
         return value
 
 
-    def value_iteration(self, state, policy, theta=100, gamma= 0.8):
+    def value_iteration(self, state, policy, theta=10, gamma= 0.8):
         """
         Value Iteration Algorithm.
         
@@ -366,11 +365,14 @@ class Environment:
             """
             #print('?')
             A = np.zeros(nA)
-            for a in range(nA):
+            for idx, a in enumerate(actions):
+                #print('action', a)
                 next_states = self.get_possible_states_from_action(state, a)
-                #print('next_states', next_states)
+                #print('state', state)
+                #print('next', next_states)
                 for (next_state, prob) in next_states:
-                    A[a] += prob * (next_state.reward + gamma * V[next_state.iden])
+                    A[idx] += prob * (next_state.reward + gamma * V[next_state.iden])
+                    #print('A[{0}]: {1}'.format(a,A[idx]))
             return A
  
         V = np.zeros(nS)   
@@ -383,7 +385,7 @@ class Environment:
             #print('?')
             #next_states = self.get_possible_next_states(state, policy)
             for s in range(nS):
-                print('Loading for current delta: {0:.2f}, {0:.2f}%'.format(delta, s/nS * 100))
+                print('Loading for current delta: {0:.2f}, {1:.2f}%'.format(delta, s/nS * 100))
                 # print('next_state', s)
                 # Do a one-step lookahead to find the best action
                 A = one_step_lookahead(flat_states[s], V)
@@ -402,14 +404,15 @@ class Environment:
         policyz = np.zeros([nH,W,L])
         
         for s in range(nS):
+            print('Finishing Policy: {0:.2f}%'.format(s/nS * 100))
             # One step lookahead to find the best action for this state
             A = one_step_lookahead(flat_states[s], V)
-            print('A: ', A)
+            # print('A: ', A)
             best_action = np.argmax(A)
-            print('best_action: ', best_action)
+            #print('best_action: ', best_action)
             # Always take the best action
-            policy[flat_states[s].heading][flat_states[s].y][flat_states[s].x] = best_action
-        policyz = policy
+            policyz[flat_states[s].heading][flat_states[s].y][flat_states[s].x] = best_action
+        
         return policyz, V
 
 
