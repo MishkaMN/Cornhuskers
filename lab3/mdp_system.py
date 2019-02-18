@@ -5,6 +5,7 @@ from robot import *
 from visualizer import Visualizer
 
 
+
 def calc_reward(env, inputs):
     # inputs are states that are traversed
     net_reward = 0
@@ -42,7 +43,13 @@ if __name__ == '__main__':
         # route.append((env.robot.x, env.robot.y, env.robot.heading))
     #print(env.policy_eval(State(robot.x, robot.y, robot.heading, 0),
     #    policy, gamma))
-    print(env.value_iteration(State(robot.x, robot.y, robot.heading, 0), policy))
+    opt_p, opt_v = env.value_iteration(State(robot.x, robot.y, robot.heading, 0), policy)
+    
+    #print('opt_p', opt_p)
+    print(env.get_policy_graph(opt_p))
+    #print('opt_v', opt_v)
+    
+
     # seq = [(robot.x, robot.y, robot.heading)]
     # for i in range(10):
     #     action = policy[env.robot.heading][env.robot.y][env.robot.x]

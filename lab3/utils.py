@@ -16,3 +16,8 @@ L = 6
 
 nS = W*L*len(headings)
 nA = 7
+
+nH = len(headings)
+
+
+

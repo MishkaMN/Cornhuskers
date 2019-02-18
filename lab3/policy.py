@@ -21,8 +21,9 @@ class Policy:
             for j in i:
                 flatten += j
         return flatten
-
+    
     # 2.3(a) generates initial policy
+    # legacy
     def gen_initial(self):
         goal = []
         for h in goal_h:
@@ -104,6 +105,8 @@ class Policy:
                 self.policy[state.x][state.y][state.h] = Action.STAY;
 
         return goal
+
+    
 
 # Unit testing only
 if __name__ == '__main__':

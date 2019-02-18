@@ -198,6 +198,27 @@ class Environment:
         
         return init_policy
 
+    def get_policy_graph(self, policy):
+        policy_map = []
+        for h in range(nH):
+            for y in range(W):
+                for x in range(L):
+                    if policy[h][y][x] == Action.STAY:
+                        policy_map[h][y][x] = 'S'
+                    elif policy[h][y][x] == Action.FORWARD_NOROT:
+                        policy_map[h][y][x] = 'FNR'
+                    elif policy[h][y][x] == Action.FORWARD_CLK:
+                        policy_map[h][y][x] = 'FC'
+                    elif policy[h][y][x] == Action.FORWARD_CCLK:
+                        policy_map[h][y][x] = 'FCC'
+                    elif policy[h][y][x] == Action.BACKWARD_NOROT:
+                        policy_map[h][y][x] = 'BNR'
+                    elif policy[h][y][x] == Action.BACKWARD_CLK:
+                        policy_map[h][y][x] = 'BC'
+                    elif policy[h][y][x] == Action.BACKWARD_CCLK:
+                        policy_map[h][y][x] = 'BCC'
+        return policy_map
+
     def get_p(self, s, s_new, a):
         #100 percent chance to stay in current spot
         if a == Action.STAY:
@@ -283,6 +304,17 @@ class Environment:
                 possible_states.append((st, p))
         return possible_states
 
+    def get_possible_next_states_by_a(self, state, a):
+        possible_states = []
+        #print('?')
+        for st in self.flattenStates():
+            
+            p = self.get_p(state, st, a)
+
+            if p > 0:
+                possible_states.append((st, p))
+        return possible_states
+
     def get_reward_at(self, x, y, h):
         return self.stateAt(x,y,h).reward
     
@@ -307,7 +339,7 @@ class Environment:
                 policy, gamma, depth=depth+1))
         return value
 
-    def value_iteration(self, state, policy, theta=0.1, gamma= 0.8):
+    def value_iteration(self, state, policy, theta=100, gamma= 0.8):
         """
         Value Iteration Algorithm.
         
@@ -323,7 +355,7 @@ class Environment:
             A tuple (policy, V) of the optimal policy and the optimal value function.
         """
         
-        def one_step_lookahead(state, V, policy):
+        def one_step_lookahead(state, V):
             """
             Helper function to calculate the value for all action in a given state.
             
@@ -336,12 +368,11 @@ class Environment:
             """
             #print('?')
             A = np.zeros(nA)
-            next_states = self.get_possible_next_states(state, policy)
-            #print('len', len(next_states))
             for a in range(nA):
+                next_states = self.get_possible_next_states_by_a(state, a)
+                #print('next_states', next_states)
                 for (next_state, prob) in next_states:
                     A[a] += prob * (next_state.reward + gamma * V[next_state.iden])
-                    #print(A[a])
             return A
  
         V = np.zeros(nS)   
@@ -354,30 +385,33 @@ class Environment:
             #print('?')
             #next_states = self.get_possible_next_states(state, policy)
             for s in range(nS):
+                print('Loading for current delta: {0:.2f}, {0:.2f}%'.format(delta, s/nS * 100))
                 # print('next_state', s)
                 # Do a one-step lookahead to find the best action
-                A = one_step_lookahead(flat_states[s], V, policy)
+                A = one_step_lookahead(flat_states[s], V)
                 best_action_value = np.max(A)
                 # Calculate delta across all states seen so far
-                print('V:', V[s])
+                # print('V:', V[s])
                 delta = max(delta, np.abs(best_action_value - V[s]))
-                print('delta', delta)
                 # Update the value function. Ref: Sutton book eq. 4.10. 
                 V[s] = best_action_value        
             # Check if we can stop 
+            print('delta', delta)
             if delta < theta:
                 break
 
         # Create a deterministic policy using the optimal value function
-        policyz = np.zeros([nS, nA])
+        policyz = np.zeros([nH,W,L])
         
         for s in range(nS):
             # One step lookahead to find the best action for this state
-            A = one_step_lookahead(flat_states[s], V, policy)
+            A = one_step_lookahead(flat_states[s], V)
+            print('A: ', A)
             best_action = np.argmax(A)
+            print('best_action: ', best_action)
             # Always take the best action
-            policyz[s, best_action] = 1.0
-        
+            policy[flat_states[s].heading][flat_states[s].y][flat_states[s].x] = best_action
+        policyz = policy
         return policyz, V
 
 
