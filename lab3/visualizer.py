@@ -51,6 +51,7 @@ class Visualizer:
 
         time.sleep(5)
         def animate(st):
+            time.sleep(5)
             x.append(st[0]+.5)
             y.append(st[1]+.5)
             h.append(st[2])
