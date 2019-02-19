@@ -46,9 +46,9 @@ class Environment:
                 for x in range(self.L):
                     # find goal state
                     # print(rewards[y*self.W+x],self.W-1-y,x)
-                    state = State(x, self.W-1-y, h, rewards[y*self.W+x])
+                    state = State(x, self.W-1-y, h, rewards[h][y][x])
                     x_states.append(state)
-                    if rewards[y*self.W+x] == 1:
+                    if rewards[h][y][x] == 1:
                         self.goal_state = state
                 y_states.append(x_states)
             self.states.append(y_states)
@@ -152,27 +152,6 @@ class Environment:
             for x in range(L) ]for y in range(W)] for h in headings])
         
         return init_policy
-
-    def get_policy_graph(self, policy):
-        policy_map = []
-        for h in range(nH):
-            for y in range(W):
-                for x in range(L):
-                    if policy[h][y][x] == Action.STAY:
-                        policy_map[h][y][x] = 'S'
-                    elif policy[h][y][x] == Action.FORWARD_NOROT:
-                        policy_map[h][y][x] = 'FNR'
-                    elif policy[h][y][x] == Action.FORWARD_CLK:
-                        policy_map[h][y][x] = 'FC'
-                    elif policy[h][y][x] == Action.FORWARD_CCLK:
-                        policy_map[h][y][x] = 'FCC'
-                    elif policy[h][y][x] == Action.BACKWARD_NOROT:
-                        policy_map[h][y][x] = 'BNR'
-                    elif policy[h][y][x] == Action.BACKWARD_CLK:
-                        policy_map[h][y][x] = 'BC'
-                    elif policy[h][y][x] == Action.BACKWARD_CCLK:
-                        policy_map[h][y][x] = 'BCC'
-        return policy_map
 
     def get_p(self, s, s_new, a):
         #100 percent chance to stay in current spot
@@ -296,7 +275,7 @@ class Environment:
                 break
         return V
 
-    def find_opt_policy(self, init_policy, gamma):
+    def policy_iteration(self, init_policy, gamma):
         policy = init_policy.copy()
 
         def one_step_look(state, V):
