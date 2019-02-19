@@ -6,6 +6,12 @@
 
 2.1(d) function implemented in get_next_state() method in the Environment class in file env.py.
 
+2.3(e) The trajectory found in 2.3(c) had a value of roughly -3
+
+2.3(h) The trajectory found in value of roughly 10.722
+
+2.3(i) It took approximately 400 seconds to complete the policy iteration
+
 2.4(a) Function implemented in value_iteration():
 
       	Value Iteration Algorithm.
@@ -34,6 +40,6 @@
 
 2.4(c) For example: With Gamma 0.9, p_e = 0, it takes 2mins. This result is significantly (one third) faster than policy iteration with same conditions.
 
-2.5(a) 	PolicyIter: TODO
-		ValueIter: With p_e non zero, it takes almost 3 mins. Still significantly faster than Policy Iteration.
+2.5(a) 	PolicyIter: with p_e = 10%, the algorithm takes roughly 910 seconds
+	ValueIter: With p_e non zero, it takes almost 3 mins. Still significantly faster than Policy Iteration.
 
