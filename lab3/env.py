@@ -252,7 +252,7 @@ class Environment:
     def get_reward_at(self, s_prime):
         return self.stateAt(s_prime.x,s_prime.y,s_prime.h).reward
 
-    def policy_eval(self, policy, gamma, theta=10):
+    def policy_eval(self, policy, gamma, theta=0.5):
         V = np.zeros((len(headings), W, L))
 
         while True:

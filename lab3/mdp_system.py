@@ -84,7 +84,6 @@ if __name__ == '__main__':
     i = 0
     #input("Start the Animation?")
     while i < 100:
-
         action = opt_policy[env.robot.heading][env.robot.y][env.robot.x]
         print('action:', action)
         next_state = env.get_next_state(action)
