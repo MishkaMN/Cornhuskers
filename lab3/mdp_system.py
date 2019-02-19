@@ -52,7 +52,7 @@ if __name__ == '__main__':
             opt_policy, opt_values = env.value_iteration(State(robot.x, robot.y, robot.heading, 0), gamma)
         else:
             raise ValueError("Unspecified iteration method selected")
-        print((time.time()-start), "Seconds")
+        print((time.time()-start), "Seconds. Whole MDP.")
         route = [(robot.x, robot.y, robot.heading)]
     else:
         raise ValueError("Invalid input")
@@ -80,15 +80,12 @@ if __name__ == '__main__':
     # else:
     #     raise ValueError("Invalid input")
 
-    
-
     seq = [(robot.x, robot.y, robot.heading)]
     i = 0
     #input("Start the Animation?")
     while i < 100:
 
-        tmp = opt_policy[env.robot.heading][env.robot.y][env.robot.x]
-        action = actions[tmp.astype(int)]
+        action = opt_policy[env.robot.heading][env.robot.y][env.robot.x]
         print('action:', action)
         next_state = env.get_next_state(action)
         #print('next_state: ', next_state)

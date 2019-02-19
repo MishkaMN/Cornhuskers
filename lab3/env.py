@@ -153,27 +153,6 @@ class Environment:
         
         return init_policy
 
-    def get_policy_graph(self, policy):
-        policy_map = []
-        for h in range(nH):
-            for y in range(W):
-                for x in range(L):
-                    if policy[h][y][x] == Action.STAY:
-                        policy_map[h][y][x] = 'S'
-                    elif policy[h][y][x] == Action.FORWARD_NOROT:
-                        policy_map[h][y][x] = 'FNR'
-                    elif policy[h][y][x] == Action.FORWARD_CLK:
-                        policy_map[h][y][x] = 'FC'
-                    elif policy[h][y][x] == Action.FORWARD_CCLK:
-                        policy_map[h][y][x] = 'FCC'
-                    elif policy[h][y][x] == Action.BACKWARD_NOROT:
-                        policy_map[h][y][x] = 'BNR'
-                    elif policy[h][y][x] == Action.BACKWARD_CLK:
-                        policy_map[h][y][x] = 'BC'
-                    elif policy[h][y][x] == Action.BACKWARD_CCLK:
-                        policy_map[h][y][x] = 'BCC'
-        return policy_map
-
     def get_p(self, s, s_new, a):
         #100 percent chance to stay in current spot
         if a == Action.STAY:
@@ -391,16 +370,16 @@ class Environment:
                 break
 
         # Create a deterministic policy using the optimal value function
-        policyz = np.zeros([nH,W,L])
+        policy = init_policy.copy()
         printProgressBar(0, 100, prefix = 'Progress:', suffix = 'Complete', length = 50)
         for s in range(nS):
             # One step lookahead to find the best action for this state
             A = one_step_lookahead(flat_states[s], V)
 
-            best_action = np.argmax(A)
+            best_action = actions[np.argmax(A)]
             # Always take the best action
-            policyz[flat_states[s].heading][flat_states[s].y][flat_states[s].x] = best_action
+            policy[flat_states[s].heading][flat_states[s].y][flat_states[s].x] = best_action
             printProgressBar(((s+1)/nS)*100, 100, prefix = 'Policy Recalculation', suffix = 'Complete', length = 50)
 
         print("Finished Value Iteration")
-        return policyz, V
+        return policy, V
