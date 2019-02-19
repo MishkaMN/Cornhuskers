@@ -370,7 +370,7 @@ class Environment:
                 break
 
         # Create a deterministic policy using the optimal value function
-        policy = get_init_policy()
+        policy = self.get_init_policy()
         printProgressBar(0, 100, prefix = 'Progress:', suffix = 'Complete', length = 50)
         for s in range(nS):
             # One step lookahead to find the best action for this state
