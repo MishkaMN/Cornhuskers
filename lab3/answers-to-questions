@@ -6,6 +6,10 @@
 
 2.1(d) function implemented in get_next_state() method in the Environment class in file env.py.
 
+2.3(e) The trajectory found in 2.3(c) had a value of 10.722
+
+2.3(i) It took approximately 910 seconds to complete the policy iteration
+
 2.4(a) Function implemented in value_iteration():
 
       	Value Iteration Algorithm.
