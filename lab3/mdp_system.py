@@ -86,7 +86,10 @@ if __name__ == '__main__':
     while i < 1:
 
         tmp = opt_policy[env.robot.heading][env.robot.y][env.robot.x]
-        val = val + opt_values[env.robot.heading][env.robot.y][env.robot.x]
+        if(iterType == "value"):
+            val = val + opt_values[env.robot.heading + 6*((env.robot.y)*6+env.robot.x)]
+        else:
+            val = val + opt_values[env.robot.heading][env.robot.y][env.robot.x]
         action = tmp
         print(action)
         next_state = env.get_next_state(action)
