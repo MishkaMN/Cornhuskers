@@ -5,3 +5,39 @@
 2.1(c) function implemented in transition_prob()
 
 2.1(d)
+
+
+
+
+2.4(a) Function implemented in value_iteration():
+
+      	Value Iteration Algorithm.
+
+        Args:
+            state: Starting state of the robot (State, nS)
+            theta: We stop evaluation once our value function change is less than theta for all states. 
+            gamma: discount factor
+        Returns:
+            A tuple (policy, V) of the optimal policy and the optimal value function.
+                Policy: 3 dimensional array of items of Action class, nS
+                V: vector of nS.
+
+       It uses a helper function:
+
+            Helper function to calculate the value for all action in a given state.
+            
+            Args:
+                state: The state to consider (State)
+                V: The value to use as an estimator, Vector of length nS
+            
+            Returns:
+                A vector of length nA containing the expected value of each action.
+
+2.4(b) The function finds same trajectory under p_e = 0 and slight variations occur when p_e is nonzero. 
+
+2.4(c) For example: With Gamma 0.9, p_e = 0, it takes 2mins. This result is significantly (one third) faster than policy iteration with same conditions.
+
+2.5(a) 	PolicyIter: TODO
+		ValueIter: With p_e non zero, it takes almost 3 mins. Still significantly faster than Policy Iteration.
+
+		

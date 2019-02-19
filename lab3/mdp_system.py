@@ -19,7 +19,7 @@ if __name__ == '__main__':
     # rewards = range(W*L)
     # Problem 2.2
 
-    goal_state = State(4, 4, 6, 0)
+    goal_state = State(4, 4, 5, 0)
     robot_init_state = State(1, 4, 6, 0)
 
     rewards_2d = np.array([[-100, -100, -100, -100, -100, -100],
@@ -35,8 +35,9 @@ if __name__ == '__main__':
     for idx in range(len(headings)):
         rewards_3d[idx,:,:] = rewards_2d
         if idx == goal_state.heading:
-            rewards_3d[goal_state.heading, goal_state.y, goal_state.x] = 1
+            rewards_3d[goal_state.heading, W-goal_state.y-1, goal_state.x] = 1
 
+    # pdb.set_trace()
     gamma = float(input("Discount Factor:"))
     error_prob = float(input("Error Probability:"))
 
@@ -94,5 +95,3 @@ if __name__ == '__main__':
     print(route)
     vis = Visualizer(route)
     vis.show()
-    
-
