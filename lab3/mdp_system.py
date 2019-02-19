@@ -47,7 +47,7 @@ if __name__ == '__main__':
         if(iterType == "policy"):
             opt_policy, opt_values = env.find_opt_policy(policy, gamma)
         elif(iterType == "value"):
-            opt_policy, opt_values = env.value_iteration(State(robot.x, robot.y, robot.heading, 0), policy)
+            opt_policy, opt_values = env.value_iteration(State(robot.x, robot.y, robot.heading, 0), gamma)
         else:
             raise ValueError("Unspecified iteration method selected")
         print((time.time()-start), "Seconds")

@@ -328,20 +328,18 @@ class Environment:
             if stable:
                 return policy, V
 
-    def value_iteration(self, state, policy, theta=10, gamma= 0.8):
+    def value_iteration(self, state, gamma, theta=10):
         """
         Value Iteration Algorithm.
-        
+
         Args:
-            env: OpenAI env. env.P represents the transition probabilities of the environment.
-                env.P[s][a] is a list of transition tuples (prob, next_state, reward, done).
-                env.nS is a number of states in the environment. 
-                env.nA is a number of actions in the environment.
-            theta: We stop evaluation once our value function change is less than theta for all states.
-            discount_factor: Gamma discount factor.
-            
+            state: Starting state of the robot (State, nS)
+            theta: We stop evaluation once our value function change is less than theta for all states. 
+            gamma: discount factor
         Returns:
             A tuple (policy, V) of the optimal policy and the optimal value function.
+                Policy: 3 dimensional array of items of Action class, nS
+                V: vector of nS.
         """
         
         def one_step_lookahead(state, V):
@@ -349,22 +347,20 @@ class Environment:
             Helper function to calculate the value for all action in a given state.
             
             Args:
-                state: The state to consider (int)
+                state: The state to consider (State)
                 V: The value to use as an estimator, Vector of length nS
             
             Returns:
                 A vector of length nA containing the expected value of each action.
             """
-            #print('?')
             A = np.zeros(nA)
+            # Try each action's value
             for idx, a in enumerate(actions):
-                #print('action', a)
+                # get next state's possibility given an action a.
                 next_states = self.get_possible_states_from_action(state, a)
-                #print('state', state)
-                #print('next', next_states)
+                # using the prob, get each action's expected value using Bellman equation
                 for (next_state, prob) in next_states:
                     A[idx] += prob * (next_state.reward + gamma * V[next_state.iden])
-                    #print('A[{0}]: {1}'.format(a,A[idx]))
             return A
  
         V = np.zeros(nS)   
@@ -373,22 +369,22 @@ class Environment:
             # Stopping condition
             delta = 0
             # Update each state...
-            #print('?')
-            #next_states = self.get_possible_next_states(state, policy)
             printProgressBar(0, 100, prefix = 'Progress:', suffix = 'Complete', length = 50)
             for s in range(nS):
-                # print('Loading for current delta: {0:.2f}, {1:.2f}%'.format(delta, s/nS * 100))
-                # print('next_state', s)
-                # Do a one-step lookahead to find the best action
 
+                # Do a one-step lookahead to find the best action
                 A = one_step_lookahead(flat_states[s], V)
                 best_action_value = np.max(A)
+
                 # Calculate delta across all states seen so far
-                # print('V:', V[s])
                 delta = max(delta, np.abs(best_action_value - V[s]))
-                # Update the value function. Ref: Sutton book eq. 4.10. 
+
+                # Update the value function. 
                 V[s] = best_action_value
-                printProgressBar(((s+1)/nS )*100, 100, prefix = 'Value Iteration', suffix = 'Complete', length = 50)      
+
+                # Miscell. Progress Bar.
+                printProgressBar(((s+1)/nS )*100, 100, prefix = 'Value Iteration', suffix = 'Complete', length = 50)    
+
             # Check if we can stop 
             print('Evaluated Delta: {0:.2f}'.format(delta))
             if delta < theta:
@@ -398,14 +394,13 @@ class Environment:
         policyz = np.zeros([nH,W,L])
         printProgressBar(0, 100, prefix = 'Progress:', suffix = 'Complete', length = 50)
         for s in range(nS):
-            #print('Finishing Policy: {0:.2f}%'.format(s/nS * 100))
             # One step lookahead to find the best action for this state
             A = one_step_lookahead(flat_states[s], V)
-            # print('A: ', A)
+
             best_action = np.argmax(A)
-            #print('best_action: ', best_action)
             # Always take the best action
             policyz[flat_states[s].heading][flat_states[s].y][flat_states[s].x] = best_action
             printProgressBar(((s+1)/nS)*100, 100, prefix = 'Policy Recalculation', suffix = 'Complete', length = 50)
+
         print("Finished Value Iteration")
         return policyz, V
