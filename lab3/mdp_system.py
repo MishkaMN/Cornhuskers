@@ -59,8 +59,10 @@ if __name__ == '__main__':
     iterType = input("Iteration type (policy, value):")
     loadFile = input("Load from file? (y/n):")
     if(loadFile == "y"):
-        opt_policy = pickle.load("{}Iter_{}_policy.p".format(iterType,env.robot.p_e))
-        opt_values = pickle.load("{}Iter_{}_values.p".format(iterType,env.robot.p_e))
+        with open("{}Iter_{}_policy.p".format(iterType,env.robot.p_e), 'rb') as pickle_file:
+            opt_policy = pickle.load(pickle_file)
+        with open("{}Iter_{}_values.p".format(iterType,env.robot.p_e), 'rb') as pickle_file:
+            opt_values = pickle.load(pickle_file)
     elif(loadFile == "n"):
         start = time.time()
         if(iterType == "policy"):
@@ -79,19 +81,23 @@ if __name__ == '__main__':
         pickle.dump(opt_values, open( "{}Iter_{}_values.p".format(iterType,env.robot.p_e), "wb" ))
 
     i = 0
+    val = 0
     #input("Start the Animation?")
-    while i < 100:
+    while i < 1:
 
-        tmp = opt_p[env.robot.heading][env.robot.y][env.robot.x]
-        action = actions[tmp.astype(int)]
+        tmp = opt_policy[env.robot.heading][env.robot.y][env.robot.x]
+        val = val + opt_values[env.robot.heading][env.robot.y][env.robot.x]
+        action = tmp
+        print(action)
         next_state = env.get_next_state(action)
         #print('next_state: ', next_state)
         env.robot.move(next_state.x, next_state.y, next_state.heading)
 
         #print('robot pos: ', env.robot.x, env.robot.y, env.robot.heading)
         route.append(( env.robot.x, env.robot.y, env.robot.heading))
-        #if env.robot.x == 4 and env.robot.y == 4:
-        i = i+ 1
+        if env.robot.x == 4 and env.robot.y == 4:
+            i = i+ 1
     print(route)
+    print(val)
     vis = Visualizer(route)
     vis.show()
