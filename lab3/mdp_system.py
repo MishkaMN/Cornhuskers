@@ -40,8 +40,10 @@ if __name__ == '__main__':
     iterType = input("Iteration type (policy, value):")
     loadFile = input("Load from file? (y/n):")
     if(loadFile == "y"):
-        opt_policy = pickle.load("{}Iter_{}_policy.p".format(iterType,env.robot.p_e))
-        opt_values = pickle.load("{}Iter_{}_values.p".format(iterType,env.robot.p_e))
+        with open('{}Iter_{}_policy.p'.format(iterType,env.robot.p_e), 'rb') as pickle_file:
+            opt_policy = pickle.load(pickle_file)
+        with open('{}Iter_{}_values.p'.format(iterType,env.robot.p_e), 'rb') as pickle_file:
+            opt_values = pickle.load(pickle_file)
     elif(loadFile == "n"):
         start = time.time()
         if(iterType == "policy"):
@@ -54,7 +56,10 @@ if __name__ == '__main__':
         route = [(robot.x, robot.y, robot.heading)]
     else:
         raise ValueError("Invalid input")
-        
+    
+    if(loadFile == "n"):
+         pickle.dump(opt_policy, open( "{}Iter_{}_policy.p".format(iterType,env.robot.p_e), "wb" )) 
+         pickle.dump(opt_values, open( "{}Iter_{}_values.p".format(iterType,env.robot.p_e), "wb" ))
     # Serlializer:
     # iterType = input("Iteration type (policy, value):")
     # loadFile = input("Load from file? (y/n):")
@@ -75,9 +80,7 @@ if __name__ == '__main__':
     # else:
     #     raise ValueError("Invalid input")
 
-    # if(loadFile == "n"):
-    #     pickle.dump(opt_policy, open( "{}Iter_{}_policy.p".format(iterType,env.robot.p_e), "wb" )) 
-    #     pickle.dump(opt_values, open( "{}Iter_{}_values.p".format(iterType,env.robot.p_e), "wb" ))
+    
 
     seq = [(robot.x, robot.y, robot.heading)]
     i = 0
