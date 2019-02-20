@@ -1,3 +1,4 @@
+
 import numpy as np
 import time
 import pickle
@@ -31,7 +32,7 @@ if __name__ == '__main__':
     rewards_3d = np.empty((len(headings),)+rewards_2d.shape)
 
     # expand rewards to 3D and assign reward of 1 only
-    # when the heading = 6 at the goal state
+    # when the heading = 5 at the goal state
     for idx in range(len(headings)):
         rewards_3d[idx,:,:] = rewards_2d
         if idx == goal_state.heading:
@@ -51,8 +52,6 @@ if __name__ == '__main__':
     global opt_values
     
     start = time.time()
-    
-    print((time.time()-start), "Seconds")
 
     route = [(robot.x, robot.y, robot.heading)]
     # Serlializer:
@@ -67,12 +66,14 @@ if __name__ == '__main__':
         start = time.time()
         if(iterType == "policy"):
             opt_policy, opt_values = env.policy_iteration(policy, gamma)
+            print((time.time()-start), "Seconds")
         elif(iterType == "value"):
             opt_policy, opt_values = env.value_iteration(State(robot.x, robot.y, robot.heading, 0), policy)
-            exit()
+            print((time.time()-start), "Seconds")
+            #exit()
         else:
             raise ValueError("Unspecified iteration method selected")
-        print((time.time()-start), "Seconds")
+        #print((time.time()-start), "Seconds")
     else:
         raise ValueError("Invalid input")
 
@@ -87,7 +88,7 @@ if __name__ == '__main__':
 
         tmp = opt_policy[env.robot.heading][env.robot.y][env.robot.x]
         if(iterType == "value"):
-            val = val + opt_values[env.robot.heading + 6*((env.robot.y)*6+env.robot.x)]
+            val = val + opt_values[(env.robot.heading*6 + (env.robot.y))*6 + env.robot.x]
         else:
             val = val + opt_values[env.robot.heading][env.robot.y][env.robot.x]
         action = tmp
@@ -101,6 +102,7 @@ if __name__ == '__main__':
         if env.robot.x == 4 and env.robot.y == 4:
             i = i+ 1
     print(route)
-    print(val)
+    print("Value: {0:.2f}".format(val))
     vis = Visualizer(route)
     vis.show()
+

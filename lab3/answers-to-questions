@@ -1,3 +1,4 @@
+
 2.1(a) State space consists of all possible (x, y, heading) configurations of the robot in the grid space. The cardinality of the state space is 12|L||W| = 432 for the case where L = W = 6.
 
 2.1(b) Actions include {stay still} + {forwards, backwards} x {rotate clockwise, rotate counterclockwise, no rotation}. Thus, the cardinality of the action space is 7.
@@ -56,7 +57,10 @@
 
 2.5(a) 	PolicyIter: with p_e = 10%, the algorithm takes roughly 910 seconds
 	ValueIter: With p_e non zero, it takes almost 3 mins. Still significantly faster than Policy Iteration.
-2.5(b)
+2.5(b)  ValueIter, $p_e$ = 0 $t$ = 2min, value = 12.05
+        ValueIter, $p_e$ = 0.1 $t$ = 3min, value = 14.08
+        PolicyIter, $p_e$ = 0   $t$ = 21 min, value = 14.72
+        PolicyITer, $p_e$ = 0.1 $t$ = Over 30min, Did not Converge. 
 
 2.5(c) The policy iteration algorithm generally took much longer than the value iteration algorithm. Additionally,
        A prerotation chance greatly increased the time to convergence for both algorithms.

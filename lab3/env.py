@@ -374,14 +374,14 @@ class Environment:
                 break
 
         # Create a deterministic policy using the optimal value function
-        policyz = np.zeros([nH,W,L])
+        policyz = self.get_init_policy()
         printProgressBar(0, 100, prefix = 'Progress:', suffix = 'Complete', length = 50)
         for s in range(nS):
             #print('Finishing Policy: {0:.2f}%'.format(s/nS * 100))
             # One step lookahead to find the best action for this state
             A = one_step_lookahead(flat_states[s], V)
             # print('A: ', A)
-            best_action = np.argmax(A)
+            best_action = actions[np.argmax(A)]
             #print('best_action: ', best_action)
             # Always take the best action
             policyz[flat_states[s].heading][flat_states[s].y][flat_states[s].x] = best_action
