@@ -1,3 +1,4 @@
+
 2.1(a) State space consists of all possible (x, y, heading) configurations of the robot in the grid space. The cardinality of the state space is 12|L||W| = 432 for the case where L = W = 6.
 
 2.1(b) Actions include {stay still} + {forwards, backwards} x {rotate clockwise, rotate counterclockwise, no rotation}. Thus, the cardinality of the action space is 7.
@@ -6,7 +7,21 @@
 
 2.1(d) function implemented in get_next_state() method in the Environment class in file env.py.
 
+2.2(a) The reward can be found using the get_reward_at() function in the Environment class
+
+2.3(a) The initial policy is generated using get_init_policy() and action_to_take()
+
+2.3(b) The trajectory is generated in the main loop in mdp_system.py and plotted using the Visualizer class
+
+2.3(c) See report for trajectory.
+
+2.3(d) policy_eval() in env.py computes policy evaluation
+
 2.3(e) The trajectory found in 2.3(c) had a value of roughly -3
+
+2.3(f) one_step_look() inside policy_iteration() computes the one step lookahead
+
+2.3(g) policy_iteration() in env.py performs the policy iteration algorithm
 
 2.3(h) The trajectory found in value of roughly 10.722
 
@@ -42,4 +57,10 @@
 
 2.5(a) 	PolicyIter: with p_e = 10%, the algorithm takes roughly 910 seconds
 	ValueIter: With p_e non zero, it takes almost 3 mins. Still significantly faster than Policy Iteration.
+2.5(b)  ValueIter, $p_e$ = 0 $t$ = 2min, value = 12.05
+        ValueIter, $p_e$ = 0.1 $t$ = 3min, value = 14.08
+        PolicyIter, $p_e$ = 0   $t$ = 21 min, value = 14.72
+        PolicyITer, $p_e$ = 0.1 $t$ = Over 30min, Did not Converge. 
 
+2.5(c) The policy iteration algorithm generally took much longer than the value iteration algorithm. Additionally,
+       A prerotation chance greatly increased the time to convergence for both algorithms.
