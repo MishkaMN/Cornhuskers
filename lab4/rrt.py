@@ -24,7 +24,7 @@ def dist(s1,s2):
 
 
 def get_control_input(s1,s2):
-	
+
 def sim_step_from_to(s1, s2):
 	"""
 
@@ -41,7 +41,7 @@ def sim_step_from_to(s1, s2):
         theta = atan2(s2.y-s1.y,s2.x-s1.x)
         return s1.x + delta*cos(theta), s1.y + delta*sin(theta)
 
-def collides(p):    #check if point collides with the obstacle
+def collides(s):    #check if state/point collides with the obstacle
     for rect in rectObs:
         if rect.collidepoint(p) == True:
             return True
