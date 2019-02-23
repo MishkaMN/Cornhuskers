@@ -17,10 +17,11 @@ class Obstacle:
         self.l = l
 
 class Robot:
-    def __init__(self,x,y,theta):
+    def __init__(self,x,y,theta, radius = 5):
         self.x = x
         self.y = y
         self.theta = theta
+        self.radius = radius
 
 class Environment:
     def __init__(self, Nx, Ny, Nt, robot, obstacles=None):
@@ -79,6 +80,15 @@ class Environment:
         plt.grid(which='minor')
         plt.scatter(self.robot.x+.5, self.robot.y+.5)
         plt.show()
+<<<<<<< HEAD
+=======
+
+    def stateAt(self,x,y,theta):
+        for st in self.C:
+            if st.x == x and st.y == y and st.theta == theta:
+                return st     
+        
+>>>>>>> 6530388e19262dbdac2c2c054ba7ce753c36adaa
 
 
 
