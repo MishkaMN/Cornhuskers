@@ -43,8 +43,7 @@ class Environment:
             for yy in range(len(y)):
                 for tt in range(len(theta)):
                     if obstacles is None:
-                        self.C.append(CState(xx,yy,tt))
-                        return
+                        openV.append((xx,yy,tt,1))
                     else:
                         for o in obstacles:
                             if (xx < o.x or xx > (o.x+o.w)) or (yy < o.y or yy > (o.y+o.l)):
