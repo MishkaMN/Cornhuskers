@@ -78,6 +78,7 @@ class Environment:
         plt.gca().xaxis.set_minor_locator(minor_locator)
         plt.gca().yaxis.set_minor_locator(minor_locator)
         plt.grid(which='minor')
+
         plt.scatter(self.robot.x+.5, self.robot.y+.5)
         plt.show()
 
@@ -85,8 +86,6 @@ class Environment:
         for st in self.C:
             if st.x == x and st.y == y and st.theta == theta:
                 return st     
-        
-
 
 
 if __name__ == "__main__":
