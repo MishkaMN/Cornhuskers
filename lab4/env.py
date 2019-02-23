@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.ticker import AutoMinorLocator
 
 class CState:
     def __init__(self, x, y, theta, clear=1):
@@ -24,6 +25,9 @@ class Environment:
         x = np.linspace(0,Nx-1,num=Nx)
         y = np.linspace(0,Ny-1,num=Ny)
         theta = np.linspace(0,(360-360/Nt),num=Nt)
+        self.Nx = Nx
+        self.Ny = Ny
+        self.Nt = Nt
         self.C = []
         openV = []
         closedV = []
@@ -43,7 +47,32 @@ class Environment:
                                     closedV.append((xx,yy,tt,0))
         for st in (openV+closedV):
             self.C.append(CState(st[0],st[1],st[2],st[3]))
-                    
+
+    def show(self):
+        pts = []
+        for V in self.C:
+            if (V.clear == 0) and ((V.x,V.y) not in pts):
+                pts.append((V.x,V.y))
+        arena = np.ones((self.Ny,self.Nx))
+        for pt in pts:
+            arena[pt[1],pt[0]] = 0
+        
+        fig = plt.figure();
+        plt.xlim((0,self.Nx))
+        plt.ylim((0,self.Ny))
+        ax = plt.gca();
+        ax.set_xticks(np.arange(0.5, self.Nx+.5, 1));
+        ax.set_yticks(np.arange(0.5, self.Ny+.5, 1));
+        ax.set_xticklabels(np.arange(0, self.Nx, 1));
+        ax.set_yticklabels(np.arange(0, self.Ny, 1));
+        ax.pcolor(arena, edgecolors='k', linestyle= 'dashed', linewidths=0.2, cmap='RdYlGn', vmin=0.0, vmax=3.0)
+        minor_locator = AutoMinorLocator(2)
+        plt.gca().xaxis.set_minor_locator(minor_locator)
+        plt.gca().yaxis.set_minor_locator(minor_locator)
+        plt.grid(which='minor')
+        plt.show()
+                
+        
 
 
 
@@ -51,5 +80,5 @@ if __name__ == "__main__":
     can = Obstacle(10,10,10,10)
     obs = [can]
     env = Environment(40,60,12,obstacles=obs)
-    for V in env.C:
-        print("V: ", V.x, V.y, V.theta, V.clear)
+    
+    env.show()
