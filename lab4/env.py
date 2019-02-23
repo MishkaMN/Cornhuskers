@@ -16,8 +16,14 @@ class Obstacle:
         self.w = w
         self.l = l
 
+class Robot:
+    def __init__(self,x,y,theta):
+        self.x = x
+        self.y = y
+        self.theta = theta
+
 class Environment:
-    def __init__(self, Nx, Ny, Nt, obstacles=None):
+    def __init__(self, Nx, Ny, Nt, robot, obstacles=None):
         """
         Obstacles format:
         rectangular: x,y,w,l
@@ -28,6 +34,7 @@ class Environment:
         self.Nx = Nx
         self.Ny = Ny
         self.Nt = Nt
+        self.robot = robot
         self.C = []
         openV = []
         closedV = []
@@ -70,6 +77,7 @@ class Environment:
         plt.gca().xaxis.set_minor_locator(minor_locator)
         plt.gca().yaxis.set_minor_locator(minor_locator)
         plt.grid(which='minor')
+        plt.scatter(self.robot.x+.5, self.robot.y+.5)
         plt.show()
                 
         
@@ -77,8 +85,9 @@ class Environment:
 
 
 if __name__ == "__main__":
-    can = Obstacle(10,10,10,10)
+    can = Obstacle(10,10,5,5)
     obs = [can]
-    env = Environment(40,60,12,obstacles=obs)
+    robot = Robot(20,20,10)
+    env = Environment(40,60,12, robot, obstacles=obs)
     
     env.show()
