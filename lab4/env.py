@@ -17,10 +17,11 @@ class Obstacle:
         self.l = l
 
 class Robot:
-    def __init__(self,x,y,theta):
+    def __init__(self,x,y,theta, radius = 5):
         self.x = x
         self.y = y
         self.theta = theta
+        self.radius = radius
 
 class Environment:
     def __init__(self, Nx, Ny, Nt, robot, obstacles=None):
@@ -63,7 +64,7 @@ class Environment:
         arena = np.ones((self.Ny,self.Nx))
         for pt in pts:
             arena[pt[1],pt[0]] = 0
-        
+
         fig = plt.figure();
         plt.xlim((0,self.Nx))
         plt.ylim((0,self.Ny))
@@ -77,17 +78,19 @@ class Environment:
         plt.gca().xaxis.set_minor_locator(minor_locator)
         plt.gca().yaxis.set_minor_locator(minor_locator)
         plt.grid(which='minor')
+
         plt.scatter(self.robot.x+.5, self.robot.y+.5)
         plt.show()
-                
-        
 
-
+    def stateAt(self,x,y,theta):
+        for st in self.C:
+            if st.x == x and st.y == y and st.theta == theta:
+                return st     
 
 if __name__ == "__main__":
     can = Obstacle(10,10,5,5)
     obs = [can]
     robot = Robot(20,20,10)
     env = Environment(40,60,12, robot, obstacles=obs)
-    
+
     env.show()
