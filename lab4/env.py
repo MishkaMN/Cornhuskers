@@ -64,7 +64,7 @@ class Environment:
         arena = np.ones((self.Ny,self.Nx))
         for pt in pts:
             arena[pt[1],pt[0]] = 0
-        
+
         fig = plt.figure();
         plt.xlim((0,self.Nx))
         plt.ylim((0,self.Ny))
@@ -87,11 +87,10 @@ class Environment:
             if st.x == x and st.y == y and st.theta == theta:
                 return st     
 
-
 if __name__ == "__main__":
     can = Obstacle(10,10,5,5)
     obs = [can]
     robot = Robot(20,20,10)
     env = Environment(40,60,12, robot, obstacles=obs)
-    
+
     env.show()
