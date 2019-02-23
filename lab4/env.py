@@ -80,7 +80,11 @@ class Environment:
         plt.grid(which='minor')
         plt.scatter(self.robot.x+.5, self.robot.y+.5)
         plt.show()
-                
+
+    def stateAt(self,x,y,theta):
+        for st in self.C:
+            if st.x == x and st.y == y and st.theta == theta:
+                return st     
         
 
 
