@@ -17,10 +17,11 @@ class Obstacle:
         self.l = l
 
 class Robot:
-    def __init__(self,x,y,theta):
+    def __init__(self,x,y,theta, radius = 5):
         self.x = x
         self.y = y
         self.theta = theta
+        self.radius = radius
 
 class Environment:
     def __init__(self, Nx, Ny, Nt, robot, obstacles=None):
