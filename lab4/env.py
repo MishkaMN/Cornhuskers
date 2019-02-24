@@ -107,17 +107,6 @@ class Environment:
     rand_nn = np.random.choice(NNs)
     return rand_nn
 
-    def check_traj_collision(self, traj):
-        for s in traj:
-            if collides(s):
-                return True
-        return False
-    def collides(s):    #check if state/point collides with the obstacle
-    if s.clear:
-        return False
-    else:
-        return True
-
     def sampleState(self):
         def get_random_idx(lim):
             return ceil(lim*random_sample())
@@ -130,7 +119,7 @@ class Environment:
         
         NNs = nearestNeighbors(self.V, rand_state)
         rand_nn = np.random.choice(NNs)
-        self.V.add(step_from_to(rand_nn, rand_state))
+        self.V.add(sim_step_from_to(rand_nn, rand_state))
 
     def stateAt(self,x,y,theta):
         for st in self.C:
