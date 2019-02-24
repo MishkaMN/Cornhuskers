@@ -4,8 +4,9 @@ from rrt import *
 import matplotlib.pyplot as plt
 import random
 from treelib import Node, Tree
+from math import *
 
-delta = 10 # Distance the robot can run for 1sec.
+delta = 3 # Distance the robot can run for 1sec.
 
 class CState:
     def __init__(self, x, y, theta, clear=1):
@@ -43,7 +44,7 @@ class Environment:
         self.robot = robot
         self.C = set()
         self.goal = goal
-        self.V = set()
+
         openV = []
         closedV = []
         for xx in range(len(x)):
@@ -88,33 +89,34 @@ class Environment:
         plt.gca().xaxis.set_minor_locator(minor_locator)
         plt.gca().yaxis.set_minor_locator(minor_locator)
         plt.grid(which='minor')
-
         plt.scatter(self.robot.x+.5, self.robot.y+.5, c='black')
         plt.scatter(self.goal[0]+.5, self.goal[1]+.5, c='green')
 
-        if not route is None:
+        if route is not None:
             for line in route:
-                plot([line[0].x line[1].x], [line[0].y line[1].y])
+                if line:
+                    plt.plot([line[0].x+0.5, line[1].x+0.5], [line[0].y+0.5, line[1].y+0.5])
 
         plt.show()
 
-    def step_from_to(s1, s2):
-    """
-    2.2c
-    This func makes the robot step 1 sec to target state from initial state
-    Args:
-    p1: initial state
-    p2: target state (with any heading because only when physically turning we use theta)
-    Returns:
-    p: actual state ended with
-    """
-    if dist(s1,s2) < delta:
-        return s2
-    theta = atan2(s2.y-s1.y,s2.x-s1.x)
-    cs = CState(s1.x + delta*cos(theta), s1.y + delta*sin(theta), 0, 0)
-    NNs = nearestNeighbors(self.C-self.V, cs)
-    rand_nn = np.random.choice(NNs)
-    return rand_nn
+    def step_from_to(self, from_state, to_state):
+        """
+        2.2c
+        This func makes the robot step 1 sec to target state from initial state
+        Args:
+        p1: initial state
+        p2: target state (with any heading because only when physically turning we use theta)
+        Returns:
+        p: actual state ended with
+        """
+        if dist(from_state,to_state) < delta:
+            return to_state
+        theta = atan2(to_state.y-from_state.y,to_state.x-from_state.x)
+        next_state = CState(from_state.x + delta*cos(theta), from_state.y + delta*sin(theta), 0, 0)
+        # check for available closest available state
+        closest_next_states = nearestNeighbors(self.C-self.V, next_state)
+
+        return np.random.choice(closest_next_states)
 
     def sampleState(self):
         def get_random_idx(lim):
@@ -128,7 +130,12 @@ class Environment:
         
         NNs = nearestNeighbors(self.V, rand_state)
         rand_nn = np.random.choice(NNs)
-        self.V.add(sim_step_from_to(rand_nn, rand_state))
+        next_step = self.step_from_to(rand_nn, rand_state)
+        if next_step.clear:
+            self.V.add(next_step)
+            return (rand_nn, next_step)
+
+        return None
 
     def stateAt(self,x,y,theta):
         for st in self.C:
@@ -142,5 +149,10 @@ if __name__ == "__main__":
     robot = Robot(20,20,10)
     env = Environment(40,60,12, robot, goal=final, obstacles=obs)
 
-    env.expandTree()
+    route = []
+    for i in range(100):
+        route.append(env.expandTree())
+    print(route)
+    
+    env.show(route=route)
     

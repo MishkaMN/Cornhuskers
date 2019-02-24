@@ -1,7 +1,3 @@
-from utils import *
-
-from enum import Enum
-
 class Robot:
     def __init__(self, x, y, heading):
         # p_e: prerotate probability
