@@ -38,6 +38,7 @@ class Environment:
         self.robot = robot
         self.C = []
         self.goal = goal
+        self.V = set()
         openV = []
         closedV = []
         for xx in range(len(x)):
@@ -64,7 +65,8 @@ class Environment:
         arena = np.ones((self.Ny,self.Nx))
         for pt in pts:
             arena[pt[1],pt[0]] = 0
-
+        for st in self.V:
+            arena[st.y,st.x] = 2
         fig = plt.figure();
         plt.xlim((0,self.Nx))
         plt.ylim((0,self.Ny))
