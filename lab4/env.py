@@ -9,14 +9,13 @@ from math import *
 delta = 3 # Distance the robot can run for 1sec.
 
 class CState:
-    def __init__(self, x, y, theta, clear=1):
+    def __init__(self, x, y, clear=1):
         self.x = x
         self.y = y
-        self.theta = theta
         self.clear = clear
 
     def __str__(self):
-        return str(self.x)+" "+str(self.y)+" "+str(self.theta)+" "+str(self.clear)
+        return str(self.x)+" "+str(self.y)+" "+str(self.clear)
 
 class Obstacle:
     def __init__(self,x,y,w,l):
@@ -33,17 +32,15 @@ class Robot:
         self.radius = radius
 
 class Environment:
-    def __init__(self, Nx, Ny, Nt, robot, goal = (0,0), obstacles=None):
+    def __init__(self, Nx, Ny, robot, goal = (0,0), obstacles=None):
         """
         Obstacles format:
         rectangular: x,y,w,l
         """
         x = np.linspace(0,Nx-1,num=Nx)
         y = np.linspace(0,Ny-1,num=Ny)
-        theta = np.linspace(0,(360-360/Nt),num=Nt)
         self.Nx = Nx
         self.Ny = Ny
-        self.Nt = Nt
         self.robot = robot
         self.C = set()
         self.goal = goal
@@ -52,22 +49,21 @@ class Environment:
         closedV = []
         for xx in range(len(x)):
             for yy in range(len(y)):
-                for tt in range(len(theta)):
-                    if obstacles is None:
-                        openV.append((xx,yy,tt,1))
-                    else:
-                        for o in obstacles:
-                            if (xx < o.x or xx > (o.x+o.w)) or (yy < o.y or yy > (o.y+o.l)):
-                                if((xx,yy,tt,1) not in openV):
-                                    openV.append((xx,yy,tt,1))
-                            else:
-                                if((xx,yy,tt,0) not in closedV):
-                                    closedV.append((xx,yy,tt,0))
+                if obstacles is None:
+                    openV.append((xx,yy,1))
+                else:
+                    for o in obstacles:
+                        if (xx < o.x or xx > (o.x+o.w)) or (yy < o.y or yy > (o.y+o.l)):
+                            if((xx,yy,1) not in openV):
+                                openV.append((xx,yy,1))
+                        else:
+                            if((xx,yy,0) not in closedV):
+                                closedV.append((xx,yy,0))
         for st in (openV+closedV):
-            self.C.add(CState(st[0],st[1],st[2],st[3]))
+            self.C.add(CState(st[0],st[1],st[2]))
         
         self.V = set()
-        self.V.add(self.stateAt(robot.x, robot.y, robot.theta))
+        self.V.add(self.stateAt(robot.x, robot.y))
 
     def show(self, route = None):
         pts = []
@@ -115,7 +111,7 @@ class Environment:
         if dist(from_state,to_state) < delta:
             return to_state
         theta = atan2(to_state.y-from_state.y,to_state.x-from_state.x)
-        next_state = CState(from_state.x + delta*cos(theta), from_state.y + delta*sin(theta), 0, 0)
+        next_state = CState(from_state.x + delta*cos(theta), 0, 0)
         # check for available closest available state
         closest_next_states = nearestNeighbors(self.C-self.V, next_state)
 
@@ -140,9 +136,9 @@ class Environment:
 
         return None
 
-    def stateAt(self,x,y,theta):
+    def stateAt(self,x,y):
         for st in self.C:
-            if st.x == x and st.y == y and st.theta == theta:
+            if st.x == x and st.y == y:
                 return st     
 
 def route2tree(route):
@@ -156,32 +152,59 @@ def route2tree(route):
             trees.create_node(str(child), child, parent=parent)
     return trees
         
-def find_path(tree, goalState):
+def find_path(tree, startState, goalState):
     candidates = tree.paths_to_leaves()
+    goalpath = None
+    startpath = None
     for path in candidates:
-        if path[-1] == goalState:
-            return path
-    return None
+        if goalState in path:
+            goalpath = path[::-1]
+        if startState in path:
+            startpath = path
+        if (not startpath is None) and (not goalpath is None):
+            break
+    if (startpath is None) or (goalpath is None):
+        return None
+
+    print("MERGING PATHS")
+
+    longpath = startpath + goalpath
+    print(longpath)
+    path = []
+    for st in longpath:
+        if st not in path:
+            path.append(st)
+
+    for start in range(len(path)):
+        if path[start] == startState:
+            path = path[start:-1]
+    print(path)
+    path = path[::-1]
+    for goal in range(len(path)):
+        if path[goal] == startState:
+            path = path[goal:-1]
+
+    path = path[::-1]
+    return path
 
 if __name__ == "__main__":
     can = Obstacle(10,10,5,5)
     final = (5,5)
     obs = [can]
     robot = Robot(20,20,10)
-    env = Environment(40,60,12, robot, goal=final, obstacles=obs)
-    goalState = env.stateAt(final[0], final[1], 0)
+    env = Environment(40,60, robot, goal=final, obstacles=obs)
+    goalState = env.stateAt(final[0], final[1])
+    startState = env.stateAt(23, 31)
 
     route = []
     thing = 0
-    while goalState not in env.V:
+    while goalState not in env.V or startState not in env.V:
         print("Expanding Tree " + str(thing))
         route.append(env.expandTree())
         thing = thing + 1
 
     routeTree = route2tree(route)
-    print(routeTree)
-    paths = []
-    path = find_path(routeTree, goalState)
+    path = find_path(routeTree, startState, goalState)
     
     for st in path:
         print(st)
