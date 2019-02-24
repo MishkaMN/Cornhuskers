@@ -1,10 +1,10 @@
 import numpy as np
-from np import *
-import matplotlib.pyplot as plt
 from matplotlib.ticker import AutoMinorLocator
-from scipy.interpolate import interp1d
 from rrt import *
+import matplotlib.pyplot as plt
 import random
+
+delta = 10 # Distance the robot can run for 1sec.
 
 class CState:
     def __init__(self, x, y, theta, clear=1):
@@ -59,7 +59,9 @@ class Environment:
         for st in (openV+closedV):
             self.C.add(CState(st[0],st[1],st[2],st[3]))
 
+        
         self.V = set()
+        self.V.add(self.stateAt(robot.x, robot.y, robot.theta))
 
     def show(self):
         pts = []
@@ -87,18 +89,37 @@ class Environment:
         plt.scatter(self.robot.x+.5, self.robot.y+.5)
         plt.show()
 
+    def step_from_to(s1, s2):
+    """
+    2.2c
+    This func makes the robot step 1 sec to target state from initial state
+    Args:
+    p1: initial state
+    p2: target state (with any heading because only when physically turning we use theta)
+    Returns:
+    p: actual state ended with
+    """
+    if dist(s1,s2) < delta:
+        return s2
+    theta = atan2(s2.y-s1.y,s2.x-s1.x)
+    cs = CState(s1.x + delta*cos(theta), s1.y + delta*sin(theta), 0, 0)
+    NNs = nearestNeighbors(self.C-self.V, cs)
+    rand_nn = np.random.choice(NNs)
+    return rand_nn
+
     def sampleState(self):
         def get_random_idx(lim):
             return ceil(lim*random_sample())
 
-        rand_state = ramdom.sample(self.C - self.V)
+        rand_state = random.sample(self.C - self.V, 1)[0]
         return rand_state
 
     def expandTree(self):
         rand_state = self.sampleState()
+        
         NNs = nearestNeighbors(self.V, rand_state)
-
-        self.V.add(sim_step_from_to(np.random.choice(NNs), rand_state))
+        rand_nn = np.random.choice(NNs)
+        self.V.add(sim_step_from_to(rand_nn, rand_state))
 
     def stateAt(self,x,y,theta):
         for st in self.C:
@@ -111,4 +132,5 @@ if __name__ == "__main__":
     robot = Robot(20,20,10)
     env = Environment(40,60,12, robot, obstacles=obs)
 
-    env.show()
+    env.expandTree()
+    
