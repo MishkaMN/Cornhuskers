@@ -1,65 +1,96 @@
 import numpy as np
+from np import *
 import matplotlib.pyplot as plt
-from robot import *
+from matplotlib.ticker import AutoMinorLocator
+from scipy.interpolate import interp1d
 
-# class Environment:
-#     def __init__(self):
-#         x = np.linspace(0,39,num=40)
-#         y = np.linspace(0,59,num=60)
-#         theta = np.linspace(0,348,num=30)
-#         self.C = np.zeros([40,60,30])
-#         for xx in range(len(x)):
-#             for yy in range(len(y)):
-#                 for tt in range(len(theta)):
-#                     self.C[xx][yy][tt] = xx+yy+tt
-
-class State:
-    def __init__(self, x, y, heading=0):
-        # x: x coordinate in the grid-view
-        # y: y coordinate in the grid-view
+class CState:
+    def __init__(self, x, y, theta, clear=1):
         self.x = x
         self.y = y
-        self.heading = heading
+        self.theta = theta
+        self.clear = clear
 
-        self.iden = self.x+self.y*L+heading*(W*L)
-
-    def __repr__(self):
-        return "State(grid_x: {}, grid_y: {}, heading: {}, reward: {}, \
-            id: {})".format(self.x, self.y, self.heading, self.reward, self.iden)
+class Obstacle:
+    def __init__(self,x,y,w,l):
+        self.x = x
+        self.y = y
+        self.w = w
+        self.l = l
 
 class Environment:
-    def __init__(self, W, L, numHeading, robot, goal_state):
-        self.W = W
-        self.L = L
-        self.goal_state = goal_state
-        self.robot = robot
+    def __init__(self, Nx, Ny, Nt, obstacles=None):
+        """
+        Obstacles format:
+        rectangular: x,y,w,l
+        """
+        x = np.linspace(0,Nx-1,num=Nx)
+        y = np.linspace(0,Ny-1,num=Ny)
+        theta = np.linspace(0,(360-360/Nt),num=Nt)
+        self.Nx = Nx
+        self.Ny = Ny
+        self.Nt = Nt
+        self.C = []
+        openV = []
+        closedV = []
+        for xx in range(len(x)):
+            for yy in range(len(y)):
+                for tt in range(len(theta)):
+                    if obstacles is None:
+                        self.C.append(CState(xx,yy,tt))
+                        return
+                    else:
+                        for o in obstacles:
+                            if (xx < o.x or xx > (o.x+o.w)) or (yy < o.y or yy > (o.y+o.l)):
+                                if((xx,yy,tt,1) not in openV):
+                                    openV.append((xx,yy,tt,1))
+                            else:
+                                if((xx,yy,tt,0) not in closedV):
+                                    closedV.append((xx,yy,tt,0))
+        for st in (openV+closedV):
+            self.C.append(CState(st[0],st[1],st[2],st[3]))
 
-        #discretize state space
-        x_vals = np.linspace(0,W,num=ceil(W))
-        y_vals = np.linspace(0,L,num=ceil(L))
-        heading_vals = np.linspace(0,360,num=numHeading)
-
-        # states in the environment in array-view
-        self.states = []
+    def show(self):
+        pts = []
+        for V in self.C:
+            if (V.clear == 0) and ((V.x,V.y) not in pts):
+                pts.append((V.x,V.y))
+        arena = np.ones((self.Ny,self.Nx))
+        for pt in pts:
+            arena[pt[1],pt[0]] = 0
         
-        for h in heading_vals:
-            y_states = []
-            for y in y_vals:
-                x_states = []
-                for x in x_vals:
-                    # find goal state
-                    # print(rewards[y*self.W+x],self.W-1-y,x)
-                    state = State(x, self.W-y, heading=h)
-                    x_states.append(state)
-                y_states.append(x_states)
-            self.states.append(y_states)
-
-    def visualize(self):
-        plt.plot(list(map(lambda s: s.x, self.states)),
-            list(map(lambda x: s.y, self.states)))
+        fig = plt.figure();
+        plt.xlim((0,self.Nx))
+        plt.ylim((0,self.Ny))
+        ax = plt.gca();
+        ax.set_xticks(np.arange(0.5, self.Nx+.5, 1));
+        ax.set_yticks(np.arange(0.5, self.Ny+.5, 1));
+        ax.set_xticklabels(np.arange(0, self.Nx, 1));
+        ax.set_yticklabels(np.arange(0, self.Ny, 1));
+        ax.pcolor(arena, edgecolors='k', linestyle= 'dashed', linewidths=0.2, cmap='RdYlGn', vmin=0.0, vmax=3.0)
+        minor_locator = AutoMinorLocator(2)
+        plt.gca().xaxis.set_minor_locator(minor_locator)
+        plt.gca().yaxis.set_minor_locator(minor_locator)
+        plt.grid(which='minor')
         plt.show()
+
+    def sampleState(self):
+        def get_random_idx(lim):
+            return ceil(lim*random_sample())
+        # randomly sample a state
+        rand_idx = get_random_idx(self.Nx*self.Ny*self.Nt)
+
+        return self.C[rand_idx]
+
+    def generatePath(self, s1, s2):
+        rand_state = self.sampleState()
+        pass
 
 
 
 if __name__ == "__main__":
-        env = Environment()
+    can = Obstacle(10,10,10,10)
+    obs = [can]
+    env = Environment(40,60,12,obstacles=obs)
+    
+    env.show()
