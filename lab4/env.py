@@ -3,6 +3,7 @@ from matplotlib.ticker import AutoMinorLocator
 from rrt import *
 import matplotlib.pyplot as plt
 import random
+from treelib import Node, Tree
 
 delta = 10 # Distance the robot can run for 1sec.
 
