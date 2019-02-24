@@ -94,7 +94,7 @@ class Environment:
         if route is not None:
             for line in route:
                 if line:
-                    plt.plot([line[0].x+0.5, line[1].x+0.5], [line[0].y+0.5, line[1].y+0.5], c='blue')
+                    plt.plot([line[0].x+0.5, line[1].x+0.5], [line[0].y+0.5, line[1].y+0.5])
 
         plt.show()
 
@@ -126,13 +126,17 @@ class Environment:
 
     def expandTree(self):
         rand_state = self.sampleState()
-        
         NNs = nearestNeighbors(self.V, rand_state)
+        for nn in NNs:
+            print(nn, "Neighbors")
+        print(rand_state, "State")
+        input("Pause")
         rand_nn = np.random.choice(NNs)
         next_step = self.step_from_to(rand_nn, rand_state)
+        
         if next_step.clear:
             self.V.add(next_step)
-            print(rand_nn, next_step)
+            print(dist(rand_nn, next_step))
             return (rand_nn, next_step)
 
         return None
@@ -148,6 +152,7 @@ def route2tree(route):
         if not line is None:
             parent = line[0]
             child = line[1]
+            print((str(parent), str(child)))
             if(idx == 0):
                 trees.create_node("root", parent)
             trees.create_node(str(child), child, parent=parent)
@@ -204,7 +209,7 @@ if __name__ == "__main__":
 
     route = []
     thing = 0
-    while goalState not in env.V or startState not in env.V:
+    while goalState not in env.V:
         #print("Expanding Tree " + str(thing))
         newBranch = env.expandTree()
         route.append(newBranch)
@@ -212,9 +217,9 @@ if __name__ == "__main__":
 
     routeTree = route2tree(route)
     routeTree.show()
-    path = find_path(routeTree, startState, goalState)
+    #path = find_path(routeTree, startState, goalState)
     
-    for st in path:
-        print(st)
+    #for st in path:
+    #    print(st)
     
     env.show(route=route)
