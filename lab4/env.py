@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import random
 from math import *
 
-delta = 3 # Distance the robot can run for 1sec.
+delta = 10 # Distance the robot can run for 1sec.
 
 class CState:
     def __init__(self, x, y, theta, clear=1):
@@ -15,11 +15,17 @@ class CState:
         self.clear = clear
 
 class Obstacle:
-    def __init__(self,x,y,w,l):
+    def __init__(self,x,y,w,l, robot_rad):
+        # x, y is the bottom left corner of obstacle
         self.x = x
         self.y = y
         self.w = w
         self.l = l
+
+        self.edges = [[(self.x-robot_rad, self.y-robot_rad), (self.x+self.w+robot_rad, self.y-robot_rad)],
+                [(self.x+self.w+robot_rad, self.y-robot_rad), (self.x+self.w+robot_rad, self.y+self.l+robot_rad)],
+                [(self.x+self.w+robot_rad, self.y+self.l+robot_rad), (self.x-robot_rad, self.y+self.l+robot_rad)],
+                [(self.x-robot_rad, self.y+self.l+robot_rad), (self.x-robot_rad, self.y-robot_rad)]]
 
 class Robot:
     def __init__(self,x,y,theta, radius = 5):
@@ -43,6 +49,7 @@ class Environment:
         self.robot = robot
         self.C = set()
         self.goal = goal
+        self.obstacles = obstacles
 
         openV = []
         closedV = []
@@ -117,6 +124,40 @@ class Environment:
 
         return np.random.choice(closest_next_states)
 
+    def checkTraj(self, traj):
+        # check whether traj intersects with obstacle
+        def line_intersects(e1, e2):
+            p0_x, p0_y = e1[0]
+            p1_x, p1_y = e1[1]
+            p2_x, p2_y = e2[0]
+            p3_x, p3_y = e2[1]
+
+            # Returns 1 if the lines intersect, otherwise 0. In addition, if the lines 
+            # intersect the intersection point may be stored in the floats i_x and i_y.
+            s1_x = p1_x - p0_x
+            s1_y = p1_y - p0_y
+            s2_x = p3_x - p2_x
+            s2_y = p3_y - p2_y
+
+            denom = (-s2_x * s1_y + s1_x * s2_y)
+            if (denom == 0):
+                return 0
+
+            s = (-s1_y * (p0_x - p2_x) + s1_x * (p0_y - p2_y)) / denom
+            t = ( s2_x * (p0_y - p2_y) - s2_y * (p0_x - p2_x)) / denom
+
+            if s >= 0 and s <= 1 and t >= 0 and t <= 1:
+                return 1
+            return 0
+
+        for ob in self.obstacles:
+            for e in ob.edges:
+                print('edge: ', e)
+                # check collision
+                if line_intersects(e, traj):
+                    return False
+        return True
+
     def sampleState(self):
         def get_random_idx(lim):
             return ceil(lim*random_sample())
@@ -130,7 +171,7 @@ class Environment:
         NNs = nearestNeighbors(self.V, rand_state)
         rand_nn = np.random.choice(NNs)
         next_step = self.step_from_to(rand_nn, rand_state)
-        if next_step.clear:
+        if next_step.clear and self.checkTraj(((rand_nn.x, rand_nn.y),(next_step.x, next_step.y))):
             self.V.add(next_step)
             return (rand_nn, next_step)
 
@@ -149,8 +190,7 @@ if __name__ == "__main__":
     env = Environment(40,60,12, robot, goal=final, obstacles=obs)
 
     route = []
-    for i in range(100):
+    for i in range(500):
         route.append(env.expandTree())
-    print(route)
     env.show(route=route)
     
