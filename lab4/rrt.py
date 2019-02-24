@@ -1,20 +1,12 @@
-
 import numpy as np
-import time
-import pickle
 from env import *
-from robot import *
-import pdb
 import math
 
-delta = 10 # Distance the robot can run for 1sec.
-
-
-
-def get_control_input(s1,s2):
-    #2.2c
-    return
-
+def collides(s):    #check if state/point collides with the obstacle
+    for rect in rectObs:
+        if rect.collidepoint(p) == True:
+            return True
+    return False
 
 # Return Euclidean distance between two States
 def dist(s0, s1):
@@ -28,7 +20,7 @@ def nearestNeighbors(V, target):
 
     # Each point is a State object
     for point in V:
-        curr_distance = distance(point, target)
+        curr_distance = dist(point, target)
         if min_distance is None:
             res.append(point)
             min_distance = curr_distance
