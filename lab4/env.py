@@ -89,6 +89,18 @@ class Environment:
         plt.scatter(self.robot.x+.5, self.robot.y+.5)
         plt.show()
 
+    def check_traj_collision(self, traj):
+        for s in traj:
+            if collides(s):
+                return True
+        return False
+    def collides(s):    #check if state/point collides with the obstacle
+    if s.clear:
+        return False
+    else:
+        return True
+
+
     def step_from_to(s1, s2):
     """
     2.2c
