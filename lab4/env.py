@@ -98,7 +98,7 @@ class Environment:
         if route is not None:
             for line in route:
                 if line:
-                    plt.plot([line[0].x+0.5, line[1].x+0.5], [line[0].y+0.5, line[1].y+0.5])
+                    plt.plot([line[0].x+0.5, line[1].x+0.5], [line[0].y+0.5, line[1].y+0.5], c='blue')
 
         plt.show()
 
@@ -145,22 +145,21 @@ class Environment:
             if st.x == x and st.y == y and st.theta == theta:
                 return st     
 
-def route2tree(route, final_state):
+def route2tree(route):
     trees = Tree()
     for idx,line in enumerate(route):
         if not line is None:
             parent = line[0]
             child = line[1]
-            print((str(parent), str(child)))
             if(idx == 0):
                 trees.create_node("root", parent)
             trees.create_node(str(child), child, parent=parent)
     return trees
         
-def find_path(tree, goalState)
+def find_path(tree, goalState):
     candidates = tree.paths_to_leaves()
     for path in candidates:
-        if path[-1] == str(goalState):
+        if path[-1] == goalState:
             return path
     return None
 
@@ -173,10 +172,18 @@ if __name__ == "__main__":
     goalState = env.stateAt(final[0], final[1], 0)
 
     route = []
-    for i in range(100):
+    thing = 0
+    while goalState not in env.V:
+        print("Expanding Tree " + str(thing))
         route.append(env.expandTree())
+        thing = thing + 1
 
     routeTree = route2tree(route)
     print(routeTree)
+    paths = []
+    path = find_path(routeTree, goalState)
+    
+    for st in path:
+        print(st)
     env.show(route=route)
     
