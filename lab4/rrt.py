@@ -41,7 +41,7 @@ def collides(s):    #check if state/point collides with the obstacle
 
 
 # Return Euclidean distance between two States
-def distance(s0, s1):
+def dist(s0, s1):
     return math.sqrt((s0.x - s1.x)**2 + (s0.y - s1.y)**2)
 
 # Given a set of points V in C-space and single other target point,
