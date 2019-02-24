@@ -15,6 +15,9 @@ class CState:
         self.theta = theta
         self.clear = clear
 
+    def __str__(self):
+        return str(self.x)+" "+str(self.y)+" "+str(self.theta)+" "+str(self.clear)
+
 class Obstacle:
     def __init__(self,x,y,w,l):
         self.x = x
@@ -142,17 +145,38 @@ class Environment:
             if st.x == x and st.y == y and st.theta == theta:
                 return st     
 
+def route2tree(route, final_state):
+    trees = Tree()
+    for idx,line in enumerate(route):
+        if not line is None:
+            parent = line[0]
+            child = line[1]
+            print((str(parent), str(child)))
+            if(idx == 0):
+                trees.create_node("root", parent)
+            trees.create_node(str(child), child, parent=parent)
+    return trees
+        
+def find_path(tree, goalState)
+    candidates = tree.paths_to_leaves()
+    for path in candidates:
+        if path[-1] == str(goalState):
+            return path
+    return None
+
 if __name__ == "__main__":
     can = Obstacle(10,10,5,5)
     final = (5,5)
     obs = [can]
     robot = Robot(20,20,10)
     env = Environment(40,60,12, robot, goal=final, obstacles=obs)
+    goalState = env.stateAt(final[0], final[1], 0)
 
     route = []
     for i in range(100):
         route.append(env.expandTree())
-    print(route)
-    
+
+    routeTree = route2tree(route)
+    print(routeTree)
     env.show(route=route)
     
