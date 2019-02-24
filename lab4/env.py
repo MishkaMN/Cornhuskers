@@ -25,10 +25,10 @@ class Obstacle:
         self.l = l
 
 class Robot:
-    def __init__(self,x,y,theta, radius = 5):
+    def __init__(self,x,y,heading, radius = 5):
         self.x = x
         self.y = y
-        self.theta = theta
+        self.heading = heading
         self.radius = radius
 
 class Environment:
@@ -132,6 +132,7 @@ class Environment:
         next_step = self.step_from_to(rand_nn, rand_state)
         if next_step.clear:
             self.V.add(next_step)
+            print(rand_nn, next_step)
             return (rand_nn, next_step)
 
         return None
@@ -158,33 +159,38 @@ def find_path(tree, startState, goalState):
     startpath = None
     for path in candidates:
         if goalState in path:
-            goalpath = path[::-1]
+            goalpath = path
         if startState in path:
-            startpath = path
+            startpath = path[::-1]
         if (not startpath is None) and (not goalpath is None):
             break
     if (startpath is None) or (goalpath is None):
         return None
 
-    print("MERGING PATHS")
-
     longpath = startpath + goalpath
-    print(longpath)
+
+    #Shortest Path, not working
+    """
     path = []
     for st in longpath:
         if st not in path:
             path.append(st)
 
-    for start in range(len(path)):
-        if path[start] == startState:
-            path = path[start:-1]
-    print(path)
+    
+    for idx,start in enumerate(path):
+        if start == startState:
+            path = path[idx:-1]
     path = path[::-1]
-    for goal in range(len(path)):
-        if path[goal] == startState:
-            path = path[goal:-1]
 
+    for idx,goal in enumerate(path):
+        if goal == goalState:
+            path = path[idx:-1]
     path = path[::-1]
+
+    for t in path:
+        print(t)
+    """
+
     return path
 
 if __name__ == "__main__":
@@ -199,14 +205,16 @@ if __name__ == "__main__":
     route = []
     thing = 0
     while goalState not in env.V or startState not in env.V:
-        print("Expanding Tree " + str(thing))
-        route.append(env.expandTree())
+        #print("Expanding Tree " + str(thing))
+        newBranch = env.expandTree()
+        route.append(newBranch)
         thing = thing + 1
 
     routeTree = route2tree(route)
+    routeTree.show()
     path = find_path(routeTree, startState, goalState)
     
     for st in path:
         print(st)
-    env.show(route=route)
     
+    env.show(route=route)
