@@ -24,7 +24,7 @@ class Robot:
         self.radius = radius
 
 class Environment:
-    def __init__(self, Nx, Ny, Nt, robot, obstacles=None):
+    def __init__(self, Nx, Ny, Nt, robot, goal = (0,0), obstacles=None):
         """
         Obstacles format:
         rectangular: x,y,w,l
@@ -37,6 +37,7 @@ class Environment:
         self.Nt = Nt
         self.robot = robot
         self.C = []
+        self.goal = goal
         openV = []
         closedV = []
         for xx in range(len(x)):
@@ -78,7 +79,8 @@ class Environment:
         plt.gca().yaxis.set_minor_locator(minor_locator)
         plt.grid(which='minor')
 
-        plt.scatter(self.robot.x+.5, self.robot.y+.5)
+        plt.scatter(self.robot.x+.5, self.robot.y+.5, c='black')
+        plt.scatter(self.goal[0]+.5, self.goal[1]+.5, c='green')
         plt.show()
 
     def stateAt(self,x,y,theta):
@@ -88,8 +90,9 @@ class Environment:
 
 if __name__ == "__main__":
     can = Obstacle(10,10,5,5)
+    final = (5,5)
     obs = [can]
     robot = Robot(20,20,10)
-    env = Environment(40,60,12, robot, obstacles=obs)
+    env = Environment(40,60,12, robot, goal=final, obstacles=obs)
 
     env.show()
