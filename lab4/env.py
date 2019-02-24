@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import random
 from math import *
 
-delta = 10 # Distance the robot can run for 1sec.
+delta = 3 # Distance the robot can run for 1sec.
 
 class CState:
     def __init__(self, x, y, theta, clear=1):
@@ -61,12 +61,11 @@ class Environment:
                                     closedV.append((xx,yy,tt,0))
         for st in (openV+closedV):
             self.C.add(CState(st[0],st[1],st[2],st[3]))
-
         
         self.V = set()
         self.V.add(self.stateAt(robot.x, robot.y, robot.theta))
 
-    def show(self):
+    def show(self, route = None):
         pts = []
         for v in self.C:
             if (v.clear == 0) and ((v.x,v.y) not in pts):
@@ -91,6 +90,12 @@ class Environment:
         plt.grid(which='minor')
         plt.scatter(self.robot.x+.5, self.robot.y+.5, c='black')
         plt.scatter(self.goal[0]+.5, self.goal[1]+.5, c='green')
+
+        if route is not None:
+            for line in route:
+                if line:
+                    plt.plot([line[0].x+0.5, line[1].x+0.5], [line[0].y+0.5, line[1].y+0.5])
+
         plt.show()
 
     def step_from_to(self, from_state, to_state):
@@ -105,10 +110,10 @@ class Environment:
         """
         if dist(from_state,to_state) < delta:
             return to_state
-        theta = atan2(s2.y-s1.y,s2.x-s1.x)
-        next_state = CState(s1.x + delta*cos(theta), s1.y + delta*sin(theta), 0, 0)
+        theta = atan2(to_state.y-from_state.y,to_state.x-from_state.x)
+        next_state = CState(from_state.x + delta*cos(theta), from_state.y + delta*sin(theta), 0, 0)
         # check for available closest available state
-        closest_next_states = nearestNeighbors(self.C-self.V, cs)
+        closest_next_states = nearestNeighbors(self.C-self.V, next_state)
 
         return np.random.choice(closest_next_states)
 
@@ -125,9 +130,11 @@ class Environment:
         NNs = nearestNeighbors(self.V, rand_state)
         rand_nn = np.random.choice(NNs)
         next_step = self.step_from_to(rand_nn, rand_state)
-        self.V.add(next_step)
+        if next_step.clear:
+            self.V.add(next_step)
+            return (rand_nn, next_step)
 
-        return next_step
+        return None
 
     def stateAt(self,x,y,theta):
         for st in self.C:
@@ -142,7 +149,8 @@ if __name__ == "__main__":
     env = Environment(40,60,12, robot, goal=final, obstacles=obs)
 
     route = []
-    for i in range(10):
+    for i in range(100):
         route.append(env.expandTree())
-    env.show()
+    print(route)
+    env.show(route=route)
     
