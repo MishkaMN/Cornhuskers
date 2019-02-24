@@ -3,6 +3,7 @@ from matplotlib.ticker import AutoMinorLocator
 from rrt import *
 import matplotlib.pyplot as plt
 import random
+from math import *
 
 delta = 10 # Distance the robot can run for 1sec.
 
@@ -28,7 +29,7 @@ class Robot:
         self.radius = radius
 
 class Environment:
-    def __init__(self, Nx, Ny, Nt, robot, obstacles=None):
+    def __init__(self, Nx, Ny, Nt, robot, goal = (0,0), obstacles=None):
         """
         Obstacles format:
         rectangular: x,y,w,l
@@ -41,6 +42,8 @@ class Environment:
         self.Nt = Nt
         self.robot = robot
         self.C = set()
+        self.goal = goal
+
         openV = []
         closedV = []
         for xx in range(len(x)):
@@ -71,7 +74,8 @@ class Environment:
         arena = np.ones((self.Ny,self.Nx))
         for pt in pts:
             arena[pt[1],pt[0]] = 0
-
+        for st in self.V:
+            arena[st.y,st.x] = 2
         fig = plt.figure();
         plt.xlim((0,self.Nx))
         plt.ylim((0,self.Ny))
@@ -85,27 +89,28 @@ class Environment:
         plt.gca().xaxis.set_minor_locator(minor_locator)
         plt.gca().yaxis.set_minor_locator(minor_locator)
         plt.grid(which='minor')
-        plt.show()
-        plt.scatter(self.robot.x+.5, self.robot.y+.5)
+        plt.scatter(self.robot.x+.5, self.robot.y+.5, c='black')
+        plt.scatter(self.goal[0]+.5, self.goal[1]+.5, c='green')
         plt.show()
 
-    def step_from_to(s1, s2):
-    """
-    2.2c
-    This func makes the robot step 1 sec to target state from initial state
-    Args:
-    p1: initial state
-    p2: target state (with any heading because only when physically turning we use theta)
-    Returns:
-    p: actual state ended with
-    """
-    if dist(s1,s2) < delta:
-        return s2
-    theta = atan2(s2.y-s1.y,s2.x-s1.x)
-    cs = CState(s1.x + delta*cos(theta), s1.y + delta*sin(theta), 0, 0)
-    NNs = nearestNeighbors(self.C-self.V, cs)
-    rand_nn = np.random.choice(NNs)
-    return rand_nn
+    def step_from_to(self, from_state, to_state):
+        """
+        2.2c
+        This func makes the robot step 1 sec to target state from initial state
+        Args:
+        p1: initial state
+        p2: target state (with any heading because only when physically turning we use theta)
+        Returns:
+        p: actual state ended with
+        """
+        if dist(from_state,to_state) < delta:
+            return to_state
+        theta = atan2(s2.y-s1.y,s2.x-s1.x)
+        next_state = CState(s1.x + delta*cos(theta), s1.y + delta*sin(theta), 0, 0)
+        # check for available closest available state
+        closest_next_states = nearestNeighbors(self.C-self.V, cs)
+
+        return np.random.choice(closest_next_states)
 
     def sampleState(self):
         def get_random_idx(lim):
@@ -119,7 +124,10 @@ class Environment:
         
         NNs = nearestNeighbors(self.V, rand_state)
         rand_nn = np.random.choice(NNs)
-        self.V.add(sim_step_from_to(rand_nn, rand_state))
+        next_step = self.step_from_to(rand_nn, rand_state)
+        self.V.add(next_step)
+
+        return next_step
 
     def stateAt(self,x,y,theta):
         for st in self.C:
@@ -128,9 +136,13 @@ class Environment:
 
 if __name__ == "__main__":
     can = Obstacle(10,10,5,5)
+    final = (5,5)
     obs = [can]
     robot = Robot(20,20,10)
-    env = Environment(40,60,12, robot, obstacles=obs)
+    env = Environment(40,60,12, robot, goal=final, obstacles=obs)
 
-    env.expandTree()
+    route = []
+    for i in range(10):
+        route.append(env.expandTree())
+    env.show()
     
