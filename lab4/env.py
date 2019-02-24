@@ -32,7 +32,7 @@ class Robot:
         self.radius = radius
 
 class Environment:
-    def __init__(self, Nx, Ny, robot, goal = (0,0), obstacles=None):
+    def __init__(self, Nx, Ny, robot,goal=(0,0), obstacles=None):
         """
         Obstacles format:
         rectangular: x,y,w,l
@@ -43,7 +43,7 @@ class Environment:
         self.Ny = Ny
         self.robot = robot
         self.C = set()
-        self.goal = goal
+        self.goal=goal
 
         openV = []
         closedV = []
@@ -130,7 +130,7 @@ class Environment:
         for nn in NNs:
             print(nn, "Neighbors")
         print(rand_state, "State")
-        input("Pause")
+        #input("Pause")
         rand_nn = np.random.choice(NNs)
         next_step = self.step_from_to(rand_nn, rand_state)
         
@@ -204,22 +204,9 @@ if __name__ == "__main__":
     obs = [can]
     robot = Robot(20,20,10)
     env = Environment(40,60, robot, goal=final, obstacles=obs)
-    goalState = env.stateAt(final[0], final[1])
-    startState = env.stateAt(23, 31)
 
     route = []
-    thing = 0
-    while goalState not in env.V:
-        #print("Expanding Tree " + str(thing))
-        newBranch = env.expandTree()
-        route.append(newBranch)
-        thing = thing + 1
-
-    routeTree = route2tree(route)
-    routeTree.show()
-    #path = find_path(routeTree, startState, goalState)
-    
-    #for st in path:
-    #    print(st)
+    for i in range(100):
+        route.append(env.expandTree())
     
     env.show(route=route)
