@@ -3,6 +3,8 @@ from np import *
 import matplotlib.pyplot as plt
 from matplotlib.ticker import AutoMinorLocator
 from scipy.interpolate import interp1d
+from rrt import *
+import random
 
 class CState:
     def __init__(self, x, y, theta, clear=1):
@@ -18,8 +20,15 @@ class Obstacle:
         self.w = w
         self.l = l
 
+class Robot:
+    def __init__(self,x,y,theta, radius = 5):
+        self.x = x
+        self.y = y
+        self.theta = theta
+        self.radius = radius
+
 class Environment:
-    def __init__(self, Nx, Ny, Nt, obstacles=None):
+    def __init__(self, Nx, Ny, Nt, robot, obstacles=None):
         """
         Obstacles format:
         rectangular: x,y,w,l
@@ -30,15 +39,15 @@ class Environment:
         self.Nx = Nx
         self.Ny = Ny
         self.Nt = Nt
-        self.C = []
+        self.robot = robot
+        self.C = set()
         openV = []
         closedV = []
         for xx in range(len(x)):
             for yy in range(len(y)):
                 for tt in range(len(theta)):
                     if obstacles is None:
-                        self.C.append(CState(xx,yy,tt))
-                        return
+                        openV.append((xx,yy,tt,1))
                     else:
                         for o in obstacles:
                             if (xx < o.x or xx > (o.x+o.w)) or (yy < o.y or yy > (o.y+o.l)):
@@ -48,17 +57,19 @@ class Environment:
                                 if((xx,yy,tt,0) not in closedV):
                                     closedV.append((xx,yy,tt,0))
         for st in (openV+closedV):
-            self.C.append(CState(st[0],st[1],st[2],st[3]))
+            self.C.add(CState(st[0],st[1],st[2],st[3]))
+
+        self.V = set()
 
     def show(self):
         pts = []
-        for V in self.C:
-            if (V.clear == 0) and ((V.x,V.y) not in pts):
-                pts.append((V.x,V.y))
+        for v in self.C:
+            if (v.clear == 0) and ((v.x,v.y) not in pts):
+                pts.append((v.x,v.y))
         arena = np.ones((self.Ny,self.Nx))
         for pt in pts:
             arena[pt[1],pt[0]] = 0
-        
+
         fig = plt.figure();
         plt.xlim((0,self.Nx))
         plt.ylim((0,self.Ny))
@@ -73,24 +84,31 @@ class Environment:
         plt.gca().yaxis.set_minor_locator(minor_locator)
         plt.grid(which='minor')
         plt.show()
+        plt.scatter(self.robot.x+.5, self.robot.y+.5)
+        plt.show()
 
     def sampleState(self):
         def get_random_idx(lim):
             return ceil(lim*random_sample())
-        # randomly sample a state
-        rand_idx = get_random_idx(self.Nx*self.Ny*self.Nt)
 
-        return self.C[rand_idx]
+        rand_state = ramdom.sample(self.C - self.V)
+        return rand_state
 
-    def generatePath(self, s1, s2):
+    def expandTree(self):
         rand_state = self.sampleState()
-        pass
+        NNs = nearestNeighbors(self.V, rand_state)
 
+        self.V.add(sim_step_from_to(np.random.choice(NNs), rand_state))
 
+    def stateAt(self,x,y,theta):
+        for st in self.C:
+            if st.x == x and st.y == y and st.theta == theta:
+                return st     
 
 if __name__ == "__main__":
-    can = Obstacle(10,10,10,10)
+    can = Obstacle(10,10,5,5)
     obs = [can]
-    env = Environment(40,60,12,obstacles=obs)
-    
+    robot = Robot(20,20,10)
+    env = Environment(40,60,12, robot, obstacles=obs)
+
     env.show()
