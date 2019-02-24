@@ -60,12 +60,11 @@ class Environment:
                                     closedV.append((xx,yy,tt,0))
         for st in (openV+closedV):
             self.C.add(CState(st[0],st[1],st[2],st[3]))
-
         
         self.V = set()
         self.V.add(self.stateAt(robot.x, robot.y, robot.theta))
 
-    def show(self):
+    def show(self, route = None):
         pts = []
         for v in self.C:
             if (v.clear == 0) and ((v.x,v.y) not in pts):
@@ -91,6 +90,11 @@ class Environment:
 
         plt.scatter(self.robot.x+.5, self.robot.y+.5, c='black')
         plt.scatter(self.goal[0]+.5, self.goal[1]+.5, c='green')
+
+        if not route is None:
+            for line in route:
+                plot([line[0].x line[1].x], [line[0].y line[1].y])
+
         plt.show()
 
     def step_from_to(s1, s2):
