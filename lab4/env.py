@@ -3,19 +3,56 @@ from matplotlib.ticker import AutoMinorLocator
 from rrt import *
 import matplotlib.pyplot as plt
 import random
-from math import *
+from treelib import Node, Tree
+import math
+from robot import *
 
-delta = 10 # Distance the robot can run for 1sec.
+delta = 10      # Distance the robot can run for 1sec.
+
+def getVelocities(pwmR, pwmL):
+    b = 9.1         # distance between the wheels in cm
+
+    # units in centimeters
+    vR = abs(14*math.tanh(-0.048*(pwmR - 91.8)))
+    vL = abs(13.9*math.tanh(-0.047*(pwmL - 92.6)))
+    if pwmL < 90 and pwmR > 90:
+        pass
+    elif pwmL < 90 and pwmR < 90:
+        vL *= -1
+    elif pwmL > 90 and pwmR < 90:
+        vR *= -1
+        vL *= -1
+    elif pwmL > 90 and pwmR > 90:
+        vR *= -1
+
+    vT = .5*(vL+vR)
+    wAng = 1/b*(vL-vR)
+    return (vR, vL, vT, wAng)
+
+#  (leftpwm, rightpwm)
+# forward: 180, 0
+# right: 180, 180
+# left: 0, 0
+forward_pwms = (180, 0)
+right_pwms = (180, 180)
+left_pwms = (0, 0)
+
+forward_velocities = getVelocities(*forward_pwms)
+right_velocities = getVelocities(*right_pwms)
+left_velocities = getVelocities(*left_pwms)
 
 class CState:
-    def __init__(self, x, y, theta, clear=1):
+    def __init__(self, x, y, heading, clear=1):
         self.x = x
         self.y = y
-        self.theta = theta
+        self.heading = heading
         self.clear = clear
 
+    def __str__(self):
+        return str(self.x)+" "+str(self.y)+" "+str(self.heading)+" "+str(self.clear)
+
 class Obstacle:
-    def __init__(self,x,y,w,l, robot_rad):
+    def __init__(self,x,y,w,l, robot_rad=0):
         # x, y is the bottom left corner of obstacle
         self.x = x
         self.y = y
@@ -27,22 +64,15 @@ class Obstacle:
                 [(self.x+self.w+robot_rad, self.y+self.l+robot_rad), (self.x-robot_rad, self.y+self.l+robot_rad)],
                 [(self.x-robot_rad, self.y+self.l+robot_rad), (self.x-robot_rad, self.y-robot_rad)]]
 
-class Robot:
-    def __init__(self,x,y,theta, radius = 5):
-        self.x = x
-        self.y = y
-        self.theta = theta
-        self.radius = radius
-
 class Environment:
-    def __init__(self, Nx, Ny, Nt, robot, goal = (0,0), obstacles=None):
+    def __init__(self, Nx, Ny, Nt, robot, goal=(0,0), obstacles=None):
         """
         Obstacles format:
         rectangular: x,y,w,l
         """
         x = np.linspace(0,Nx-1,num=Nx)
         y = np.linspace(0,Ny-1,num=Ny)
-        theta = np.linspace(0,(360-360/Nt),num=Nt)
+        heading = np.linspace(0,(360-360/Nt),num=Nt)
         self.Nx = Nx
         self.Ny = Ny
         self.Nt = Nt
@@ -55,7 +85,7 @@ class Environment:
         closedV = []
         for xx in range(len(x)):
             for yy in range(len(y)):
-                for tt in range(len(theta)):
+                for tt in range(len(heading)):
                     if obstacles is None:
                         openV.append((xx,yy,tt,1))
                     else:
@@ -70,7 +100,7 @@ class Environment:
             self.C.add(CState(st[0],st[1],st[2],st[3]))
         
         self.V = set()
-        self.V.add(self.stateAt(robot.x, robot.y, robot.theta))
+        self.V.add(self.stateAt(robot.x, robot.y, robot.heading))
 
     def show(self, route = None):
         pts = []
@@ -101,7 +131,7 @@ class Environment:
         if route is not None:
             for line in route:
                 if line:
-                    plt.plot([line[0].x+0.5, line[1].x+0.5], [line[0].y+0.5, line[1].y+0.5])
+                    plt.plot([line[0].x+0.5, line[1].x+0.5], [line[0].y+0.5, line[1].y+0.5], c='blue')
 
         plt.show()
 
@@ -111,14 +141,14 @@ class Environment:
         This func makes the robot step 1 sec to target state from initial state
         Args:
         p1: initial state
-        p2: target state (with any heading because only when physically turning we use theta)
+        p2: target state (with any heading because only when physically turning we use heading)
         Returns:
         p: actual state ended with
         """
         if dist(from_state,to_state) < delta:
             return to_state
-        theta = atan2(to_state.y-from_state.y,to_state.x-from_state.x)
-        next_state = CState(from_state.x + delta*cos(theta), from_state.y + delta*sin(theta), 0, 0)
+        heading = math.atan2(to_state.y-from_state.y,to_state.x-from_state.x)
+        next_state = CState(from_state.x + delta*math.cos(heading), from_state.y + delta*math.sin(heading), 0, 0)
         # check for available closest available state
         closest_next_states = nearestNeighbors(self.C-self.V, next_state)
 
@@ -177,20 +207,87 @@ class Environment:
 
         return None
 
-    def stateAt(self,x,y,theta):
+    def stateAt(self,x,y,heading):
         for st in self.C:
-            if st.x == x and st.y == y and st.theta == theta:
-                return st     
+            if st.x == x and st.y == y and st.heading == heading:
+                return st
+
+    def generateInputs(route):
+        # produce a series of inputs for the robot to move to goal
+        prevState = route[0]
+        inputs = []
+
+        for state in route[1:]:
+            # heading that robot should position itself
+            heading = math.atan2((state.y - prevState.y)/(state.x - prevState.x))
+            
+            # magnitude to travel
+            mag = dist(state, prevState)
+            prevState = state
+
+            # map heading to robot action
+            if heading < self.robot.heading:
+                # turn left
+                action = 'L'
+                seconds = (self.robot.heading-heading)/left_velocities[3]
+            else:
+                # turn left
+                action = 'R'
+                seconds = (heading-self.robot.heading)/right_velocities[3]
+            inputs.append((action, seconds))
+
+            # map translation to robot action
+            inputs.append(('F', mag/forward_velocities[2]))
+
+        return inputs
+
+def route2tree(route):
+    trees = Tree()
+    for idx,line in enumerate(route):
+        if not line is None:
+            parent = line[0]
+            child = line[1]
+            if(idx == 0):
+                trees.create_node("root", parent)
+            trees.create_node(str(child), child, parent=parent)
+    return trees
+        
+def find_path(tree, goalState):
+    candidates = tree.paths_to_leaves()
+    for path in candidates:
+        if path[-1] == goalState:
+            return path
+    return None
 
 if __name__ == "__main__":
-    can = Obstacle(10,10,5,5)
+    robot_rad = 8
+    can = Obstacle(10,10,5,5, robot_rad=robot_rad)
     final = (5,5)
     obs = [can]
     robot = Robot(20,20,10)
     env = Environment(40,60,12, robot, goal=final, obstacles=obs)
+    goalState = env.stateAt(final[0], final[1], 0)
 
     route = []
-    for i in range(500):
-        route.append(env.expandTree())
+
+    counta = 0
+    while goalState not in env.V:
+        newState = env.expandTree()
+        if not newState:
+            print("failed to expand tree (no trajectory to reach sampled state")
+            continue
+        print("Expanding Tree " + str(counta))
+
+        route.append(newState)
+        counta = counta + 1
+
+    # inputs = generateInputs(route)
+
+    routeTree = route2tree(route)
+    paths = []
+    path = find_path(routeTree, goalState)
+    
+    for st in path:
+        print(st)
     env.show(route=route)
     
