@@ -220,7 +220,9 @@ def outputEstimate(q_est):
 def getVelocities(pwmR, pwmL):
     vR = abs(140*math.tanh(-0.048*(pwmR - 91.8)))
     vL = abs(139*math.tanh(-0.047*(pwmL - 92.6)))
-    if pwmL < 90 and pwmR > 90:
+    if pwmL == 90 and pwmR == 90:
+        return (0, 0, 0, 0)
+    elif pwmL < 90 and pwmR > 90:
         pass
     elif pwmL < 90 and pwmR < 90:
         vL *= -1

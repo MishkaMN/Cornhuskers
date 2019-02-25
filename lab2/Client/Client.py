@@ -52,10 +52,10 @@ if __name__ == '__main__':
         while(1):
             print("Send Command")
             command = input();
-            ws.send(command)
+            if command: 
+                ws.send(command)
 
         ws.received_message()
-        ws.close()
         exit()
 
     except KeyboardInterrupt:
