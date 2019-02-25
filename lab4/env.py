@@ -25,10 +25,10 @@ class Obstacle:
         self.l = l
 
 class Robot:
-    def __init__(self,x,y,heading, radius = 5):
+    def __init__(self,x,y,theta, radius = 5):
         self.x = x
         self.y = y
-        self.heading = heading
+        self.theta = theta
         self.radius = radius
 
 class Environment:
@@ -65,7 +65,7 @@ class Environment:
         self.V = set()
         self.V.add(self.stateAt(robot.x, robot.y))
 
-    def show(self, route = None):
+    def show(self, route = None, path = None):
         pts = []
         for v in self.C:
             if (v.clear == 0) and ((v.x,v.y) not in pts):
@@ -94,8 +94,15 @@ class Environment:
         if route is not None:
             for line in route:
                 if line:
-                    plt.plot([line[0].x+0.5, line[1].x+0.5], [line[0].y+0.5, line[1].y+0.5])
+                    plt.plot([line[0].x+0.5, line[1].x+0.5], [line[0].y+0.5, line[1].y+0.5], c="black")
 
+        if path is not None:
+            pathX = []
+            pathY = []
+            for st in path:
+                pathX.append(st.x+.5)
+                pathY.append(st.y+.5)
+            plt.plot(pathX,pathY, c="blue")
         plt.show()
 
     def step_from_to(self, from_state, to_state):
@@ -111,32 +118,27 @@ class Environment:
         if dist(from_state,to_state) < delta:
             return to_state
         theta = atan2(to_state.y-from_state.y,to_state.x-from_state.x)
-        next_state = CState(from_state.x + delta*cos(theta), 0, 0)
+        next_state = CState(from_state.x + delta*cos(theta), from_state.y+delta*sin(theta), )
         # check for available closest available state
         closest_next_states = nearestNeighbors(self.C-self.V, next_state)
 
         return np.random.choice(closest_next_states)
 
     def sampleState(self):
-        def get_random_idx(lim):
-            return ceil(lim*random_sample())
 
         rand_state = random.sample(self.C - self.V, 1)[0]
+        print("sample")
+        print(rand_state)
         return rand_state
 
     def expandTree(self):
         rand_state = self.sampleState()
         NNs = nearestNeighbors(self.V, rand_state)
-        for nn in NNs:
-            print(nn, "Neighbors")
-        print(rand_state, "State")
-        #input("Pause")
         rand_nn = np.random.choice(NNs)
         next_step = self.step_from_to(rand_nn, rand_state)
-        
         if next_step.clear:
             self.V.add(next_step)
-            print(dist(rand_nn, next_step))
+            
             return (rand_nn, next_step)
 
         return None
@@ -172,29 +174,7 @@ def find_path(tree, startState, goalState):
     if (startpath is None) or (goalpath is None):
         return None
 
-    longpath = startpath + goalpath
-
-    #Shortest Path, not working
-    """
-    path = []
-    for st in longpath:
-        if st not in path:
-            path.append(st)
-
-    
-    for idx,start in enumerate(path):
-        if start == startState:
-            path = path[idx:-1]
-    path = path[::-1]
-
-    for idx,goal in enumerate(path):
-        if goal == goalState:
-            path = path[idx:-1]
-    path = path[::-1]
-
-    for t in path:
-        print(t)
-    """
+    path = startpath + goalpath 
 
     return path
 
@@ -205,8 +185,19 @@ if __name__ == "__main__":
     robot = Robot(20,20,10)
     env = Environment(40,60, robot, goal=final, obstacles=obs)
 
+    goalState = env.stateAt(final[0],final[1])
+    startState = env.stateAt(30,30)
+
     route = []
-    for i in range(100):
+    thing = 0
+    while goalState not in env.V or startState not in env.V:
+        print("Expanding Tree " + str(thing))
         route.append(env.expandTree())
+        thing = thing + 1
+
+    routeTree = route2tree(route)
+    path = find_path(routeTree, startState, goalState)
+    for st in path:
+        print(st)
+    env.show(route=route, path=path)
     
-    env.show(route=route)
