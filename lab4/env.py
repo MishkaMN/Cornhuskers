@@ -42,14 +42,13 @@ right_velocities = getVelocities(*right_pwms)
 left_velocities = getVelocities(*left_pwms)
 
 class CState:
-    def __init__(self, x, y, heading, clear=1):
+    def __init__(self, x, y, clear=1):
         self.x = x
         self.y = y
-        self.heading = heading
         self.clear = clear
 
     def __str__(self):
-        return str(self.x)+" "+str(self.y)+" "+str(self.heading)+" "+str(self.clear)
+        return str(self.x)+" "+str(self.y)+" "+str(self.clear)
 
 class Obstacle:
     def __init__(self,x,y,w,l, robot_rad=0):
@@ -65,17 +64,16 @@ class Obstacle:
                 [(self.x-robot_rad, self.y+self.l+robot_rad), (self.x-robot_rad, self.y-robot_rad)]]
 
 class Environment:
-    def __init__(self, Nx, Ny, Nt, robot, goal=(0,0), obstacles=None):
+    def __init__(self, Nx, Ny, robot,goal=(0,0), obstacles=None):
         """
         Obstacles format:
         rectangular: x,y,w,l
         """
         x = np.linspace(0,Nx-1,num=Nx)
         y = np.linspace(0,Ny-1,num=Ny)
-        heading = np.linspace(0,(360-360/Nt),num=Nt)
+
         self.Nx = Nx
         self.Ny = Ny
-        self.Nt = Nt
         self.robot = robot
         self.C = set()
         self.goal = goal
@@ -85,24 +83,23 @@ class Environment:
         closedV = []
         for xx in range(len(x)):
             for yy in range(len(y)):
-                for tt in range(len(heading)):
-                    if obstacles is None:
-                        openV.append((xx,yy,tt,1))
-                    else:
-                        for o in obstacles:
-                            if (xx < o.x or xx > (o.x+o.w)) or (yy < o.y or yy > (o.y+o.l)):
-                                if((xx,yy,tt,1) not in openV):
-                                    openV.append((xx,yy,tt,1))
-                            else:
-                                if((xx,yy,tt,0) not in closedV):
-                                    closedV.append((xx,yy,tt,0))
+                if obstacles is None:
+                    openV.append((xx,yy,1))
+                else:
+                    for o in obstacles:
+                        if (xx < o.x or xx > (o.x+o.w)) or (yy < o.y or yy > (o.y+o.l)):
+                            if((xx,yy,1) not in openV):
+                                openV.append((xx,yy,1))
+                        else:
+                            if((xx,yy,0) not in closedV):
+                                closedV.append((xx,yy,0))
         for st in (openV+closedV):
-            self.C.add(CState(st[0],st[1],st[2],st[3]))
+            self.C.add(CState(st[0],st[1],st[2]))
         
         self.V = set()
-        self.V.add(self.stateAt(robot.x, robot.y, robot.heading))
+        self.V.add(self.stateAt(robot.x, robot.y))
 
-    def show(self, route = None):
+    def show(self, route = None, path = None):
         pts = []
         for v in self.C:
             if (v.clear == 0) and ((v.x,v.y) not in pts):
@@ -131,8 +128,15 @@ class Environment:
         if route is not None:
             for line in route:
                 if line:
-                    plt.plot([line[0].x+0.5, line[1].x+0.5], [line[0].y+0.5, line[1].y+0.5], c='blue')
+                    plt.plot([line[0].x+0.5, line[1].x+0.5], [line[0].y+0.5, line[1].y+0.5], c="black")
 
+        if path is not None:
+            pathX = []
+            pathY = []
+            for st in path:
+                pathX.append(st.x+.5)
+                pathY.append(st.y+.5)
+            plt.plot(pathX,pathY, c="blue")
         plt.show()
 
     def step_from_to(self, from_state, to_state):
@@ -148,7 +152,8 @@ class Environment:
         if dist(from_state,to_state) < delta:
             return to_state
         heading = math.atan2(to_state.y-from_state.y,to_state.x-from_state.x)
-        next_state = CState(from_state.x + delta*math.cos(heading), from_state.y + delta*math.sin(heading), 0, 0)
+        next_state = CState(from_state.x + delta*math.cos(heading), from_state.y + delta*math.sin(heading), 0)
+
         # check for available closest available state
         closest_next_states = nearestNeighbors(self.C-self.V, next_state)
 
@@ -189,27 +194,27 @@ class Environment:
         return True
 
     def sampleState(self):
-        def get_random_idx(lim):
-            return ceil(lim*random_sample())
 
         rand_state = random.sample(self.C - self.V, 1)[0]
+        print("sample")
+        print(rand_state)
         return rand_state
 
     def expandTree(self):
         rand_state = self.sampleState()
-        
         NNs = nearestNeighbors(self.V, rand_state)
         rand_nn = np.random.choice(NNs)
         next_step = self.step_from_to(rand_nn, rand_state)
         if next_step.clear and self.checkTraj(((rand_nn.x, rand_nn.y),(next_step.x, next_step.y))):
             self.V.add(next_step)
+            
             return (rand_nn, next_step)
 
         return None
 
-    def stateAt(self,x,y,heading):
+    def stateAt(self,x,y):
         for st in self.C:
-            if st.x == x and st.y == y and st.heading == heading:
+            if st.x == x and st.y == y:
                 return st
 
     def generateInputs(route):
@@ -247,47 +252,52 @@ def route2tree(route):
         if not line is None:
             parent = line[0]
             child = line[1]
+            print((str(parent), str(child)))
             if(idx == 0):
                 trees.create_node("root", parent)
             trees.create_node(str(child), child, parent=parent)
     return trees
         
-def find_path(tree, goalState):
+def find_path(tree, startState, goalState):
     candidates = tree.paths_to_leaves()
+    goalpath = None
+    startpath = None
     for path in candidates:
-        if path[-1] == goalState:
-            return path
-    return None
+        if goalState in path:
+            goalpath = path
+        if startState in path:
+            startpath = path[::-1]
+        if (not startpath is None) and (not goalpath is None):
+            break
+    if (startpath is None) or (goalpath is None):
+        return None
+
+    path = startpath + goalpath 
+
+    return path
 
 if __name__ == "__main__":
     robot_rad = 8
-    can = Obstacle(10,10,5,5, robot_rad=robot_rad)
+    can = Obstacle(20,20,1,1, robot_rad=robot_rad)
     final = (5,5)
     obs = [can]
-    robot = Robot(20,20,10)
-    env = Environment(40,60,12, robot, goal=final, obstacles=obs)
-    goalState = env.stateAt(final[0], final[1], 0)
+    robot = Robot(45,45,10)
+    env = Environment(60,60, robot, goal=final, obstacles=obs)
+
+    goalState = env.stateAt(final[0],final[1])
+    startState = env.stateAt(30,30)
 
     route = []
 
     counta = 0
-    while goalState not in env.V:
-        newState = env.expandTree()
-        if not newState:
-            print("failed to expand tree (no trajectory to reach sampled state")
-            continue
+    while goalState not in env.V or startState not in env.V:
         print("Expanding Tree " + str(counta))
-
-        route.append(newState)
+        route.append(env.expandTree())
         counta = counta + 1
 
-    # inputs = generateInputs(route)
-
     routeTree = route2tree(route)
-    paths = []
-    path = find_path(routeTree, goalState)
-    
+    path = find_path(routeTree, startState, goalState)
     for st in path:
         print(st)
-    env.show(route=route)
+    env.show(route=route, path=path)
     
