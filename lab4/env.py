@@ -187,17 +187,13 @@ class Environment:
 
         for ob in self.obstacles:
             for e in ob.edges:
-                print('edge: ', e)
                 # check collision
                 if line_intersects(e, traj):
                     return False
         return True
 
     def sampleState(self):
-
         rand_state = random.sample(self.C - self.V, 1)[0]
-        print("sample")
-        print(rand_state)
         return rand_state
 
     def expandTree(self):
@@ -217,33 +213,51 @@ class Environment:
             if st.x == x and st.y == y:
                 return st
 
-    def generateInputs(route):
+    def generateInputs(self, path):
         # produce a series of inputs for the robot to move to goal
-        prevState = route[0]
+        prevState = path[0]
         inputs = []
 
-        for state in route[1:]:
+        test_heading = 0
+        print('path: ')
+        for s in path:
+            print(s)
+        for state in path[1:]:
+            print('from ' + str(prevState) + ' to ' + str(state))
+            raw_heading = math.atan2((state.y-prevState.y), (state.x-prevState.x))
+            print('raw_heading: ', math.degrees(raw_heading))
             # heading that robot should position itself
-            heading = math.atan2((state.y - prevState.y)/(state.x - prevState.x))
-            
+            if raw_heading < 0:
+                heading = abs(raw_heading)+math.pi/2
+            else:
+                if raw_heading > math.pi/2:
+                    heading = math.pi-abs(raw_heading) + 3*math.pi/2
+                else:
+                    heading = math.pi/2 - raw_heading
+
+            print('heading: ', math.degrees(heading))
             # magnitude to travel
             mag = dist(state, prevState)
+            print('mag: ', mag)
             prevState = state
 
+            heading_diff = test_heading - heading
             # map heading to robot action
-            if heading < self.robot.heading:
-                # turn left
-                action = 'L'
-                seconds = (self.robot.heading-heading)/left_velocities[3]
+            if (heading_diff > 0 and heading_diff > math.pi) \
+                or (heading_diff <= 0 and heading_diff > -math.pi):
+                # turn right
+                action = 'R'
+                seconds = abs(heading_diff/right_velocities[3])
             else:
                 # turn left
-                action = 'R'
-                seconds = (heading-self.robot.heading)/right_velocities[3]
-            inputs.append((action, seconds))
-
+                action = 'L'
+                seconds = abs(heading_diff/left_velocities[3])
+                
             # map translation to robot action
-            inputs.append(('F', mag/forward_velocities[2]))
+            inputs.append([(action, seconds), ('F', mag/forward_velocities[2])])
 
+            # update robot heading
+            test_heading = heading
         return inputs
 
 def route2tree(route):
@@ -252,7 +266,6 @@ def route2tree(route):
         if not line is None:
             parent = line[0]
             child = line[1]
-            print((str(parent), str(child)))
             if(idx == 0):
                 trees.create_node("root", parent)
             trees.create_node(str(child), child, parent=parent)
@@ -261,27 +274,20 @@ def route2tree(route):
 def find_path(tree, startState, goalState):
     candidates = tree.paths_to_leaves()
     goalpath = None
-    startpath = None
     for path in candidates:
         if goalState in path:
             goalpath = path
-        if startState in path:
-            startpath = path[::-1]
-        if (not startpath is None) and (not goalpath is None):
-            break
-    if (startpath is None) or (goalpath is None):
-        return None
 
-    path = startpath + goalpath 
+    #path = startpath + goalpath 
 
-    return path
+    return goalpath
 
 if __name__ == "__main__":
     robot_rad = 8
     can = Obstacle(20,20,1,1, robot_rad=robot_rad)
     final = (5,5)
     obs = [can]
-    robot = Robot(45,45,10)
+    robot = Robot(45,45,0)
     env = Environment(60,60, robot, goal=final, obstacles=obs)
 
     goalState = env.stateAt(final[0],final[1])
@@ -291,13 +297,17 @@ if __name__ == "__main__":
 
     counta = 0
     while goalState not in env.V or startState not in env.V:
-        print("Expanding Tree " + str(counta))
-        route.append(env.expandTree())
-        counta = counta + 1
+        next_state = env.expandTree()
+        if next_state:
+            print("Expanding Tree " + str(counta))
+            route.append(next_state)
+            counta = counta + 1
 
     routeTree = route2tree(route)
     path = find_path(routeTree, startState, goalState)
-    for st in path:
-        print(st)
+    inputs = env.generateInputs(path)
+
+    for st, robot_input in zip(path, inputs):
+        print(st, robot_input)
     env.show(route=route, path=path)
     
