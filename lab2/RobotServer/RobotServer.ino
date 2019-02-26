@@ -50,6 +50,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t len) {
               webSocket.sendTXT(num, data);
               
               parseCommand(_payload, commandArgs);
+              Serial.print(commandArgs);
               drive(commandArgs[0], commandArgs[1], commandArgs[2], servoLeft, servoRight);
               sprintf(data, "Command,%d,%d,%d", commandArgs[0], commandArgs[1], commandArgs[2]);
               webSocket.sendTXT(num, data);
