@@ -15,8 +15,8 @@ def getVelocities(pwmR, pwmL):
     b = 9.1         # distance between the wheels in cm
 
     # units in centimeters
-    vR = abs(14*math.tanh(-0.048*(pwmR - 91.8)))
-    vL = abs(13.9*math.tanh(-0.047*(pwmL - 92.6)))
+    vR = abs(13.7*math.tanh(0.0474*(pwmR - 87.646)))
+    vL = abs(11.2*math.tanh(-0.0577*(pwmL - 89.714)))
     if pwmL < 90 and pwmR > 90:
         pass
     elif pwmL < 90 and pwmR < 90:
@@ -300,12 +300,14 @@ if __name__ == "__main__":
     routeTree = route2tree(route)
     path = find_path(routeTree, startState, goalState)
     inputs = env.generateInputs(path)
-
+    print("Tree Complete")
 
     try:
         ws = RobotClient(esp8266host)
         ws.connect()
         print("Ready")
+
+        ws.send("90 90 5000")  
 
         for turn,fw in inputs:
             print(turn,fw)
@@ -315,8 +317,7 @@ if __name__ == "__main__":
             #turn
             if(turnDir == 'L'):
                 command = "0 0 " + str(int(1000*turnLen))
-                ws.send(command)
-                
+                ws.send(command)            
             else:
                 command = "180 180 " + str(int(1000*turnLen))
                 ws.send(command)

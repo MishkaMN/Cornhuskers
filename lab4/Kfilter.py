@@ -15,8 +15,8 @@ EAST_WALL = 1
 SOUTH_WALL = 2
 WEST_WALL = 3
 
-sigmaR = 0.115 # mm/s
-sigmaL = 0.0538 # mm/s
+sigmaR = 230.2667 # mm/s
+sigmaL = 17.88 # mm/s
 sumVar = sigmaR * sigmaR + sigmaL * sigmaL
 diffVar = sigmaR * sigmaR - sigmaL * sigmaL
 sigmaAngle = 15.3*DEGREE_TO_RAD
