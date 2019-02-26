@@ -14,7 +14,7 @@ class RobotClient(WebSocketClient):
         self.est_state = np.array([0, Kfilter.W/2, Kfilter.L/2]);
         self.P = np.eye(3)
         self.z_init = np.array([0,0,0])
-        self.command = np.array([0,0,0])
+        self.command = ""
         self.z_final = np.array([0,0,0])
     def opened(self):
         print("Socket Opened")
@@ -22,6 +22,8 @@ class RobotClient(WebSocketClient):
         print("Socket Closed", code, reason);
     def received_message(self, msg):
         parts = str(msg).split(",")
+        if(parts[0] == "Command"):
+            self.command = str(parts[1]) + " " + str(parts[2]) + " " + str(parts[3])
         if(parts[0] == "Last"):
             frontSense = (float(parts[1])-62.4)/.937
             sideSense = (float(parts[2])-41.7)/.972
@@ -32,7 +34,7 @@ class RobotClient(WebSocketClient):
             """ START FILTERING """
             #print("State:")
             #print(self.est_state[0]*180.0/math.pi, self.est_state[1], self.est_state[2])
-            pwmL, pwmR, dt = command.split(" ")
+            pwmL, pwmR, dt = self.command.split(" ")
             self.est_state, self.P = Kfilter.aPrioriUpdate(self.est_state, float(dt)/1000.0, self.P, float(pwmR), float(pwmL))
             #print(self.est_state)
             self.est_state, self.P = Kfilter.aPosterioriUpdate(self.P, self.z_final, self.est_state, float(dt)/1000.0)
@@ -45,7 +47,7 @@ class RobotClient(WebSocketClient):
 
 if __name__ == '__main__':
     try:
-        ws = DummyClient(esp8266host)
+        ws = RobotClient(esp8266host)
         ws.connect()
         print("Ready")
 

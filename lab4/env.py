@@ -6,8 +6,10 @@ import random
 from treelib import Node, Tree
 import math
 from robot import *
+from Client import *
+import time
 
-delta = 10      # Distance the robot can run for 1sec.
+delta = 3      # Distance the robot can run for 1sec.
 
 def getVelocities(pwmR, pwmL):
     b = 9.1         # distance between the wheels in cm
@@ -219,13 +221,8 @@ class Environment:
         inputs = []
 
         test_heading = 0
-        print('path: ')
-        for s in path:
-            print(s)
         for state in path[1:]:
-            print('from ' + str(prevState) + ' to ' + str(state))
             raw_heading = math.atan2((state.y-prevState.y), (state.x-prevState.x))
-            print('raw_heading: ', math.degrees(raw_heading))
             # heading that robot should position itself
             if raw_heading < 0:
                 heading = abs(raw_heading)+math.pi/2
@@ -235,10 +232,9 @@ class Environment:
                 else:
                     heading = math.pi/2 - raw_heading
 
-            print('heading: ', math.degrees(heading))
             # magnitude to travel
             mag = dist(state, prevState)
-            print('mag: ', mag)
+
             prevState = state
 
             heading_diff = test_heading - heading
@@ -284,30 +280,59 @@ def find_path(tree, startState, goalState):
 
 if __name__ == "__main__":
     robot_rad = 8
-    can = Obstacle(20,20,1,1, robot_rad=robot_rad)
+    can = Obstacle(39,59,1,1, robot_rad=robot_rad)
     final = (5,5)
     obs = [can]
-    robot = Robot(45,45,0)
-    env = Environment(60,60, robot, goal=final, obstacles=obs)
+    robot = Robot(20,30,0)
+    env = Environment(40,60, robot, goal=final, obstacles=obs)
 
     goalState = env.stateAt(final[0],final[1])
     startState = env.stateAt(30,30)
 
     route = []
 
-    counta = 0
+    print("Expanding Tree ")
     while goalState not in env.V or startState not in env.V:
         next_state = env.expandTree()
         if next_state:
-            print("Expanding Tree " + str(counta))
             route.append(next_state)
-            counta = counta + 1
 
     routeTree = route2tree(route)
     path = find_path(routeTree, startState, goalState)
     inputs = env.generateInputs(path)
 
-    for st, robot_input in zip(path, inputs):
-        print(st, robot_input)
-    env.show(route=route, path=path)
+
+    try:
+        ws = RobotClient(esp8266host)
+        ws.connect()
+        print("Ready")
+
+        for turn,fw in inputs:
+            print(turn,fw)
+            turnDir, turnLen = turn
+            fwLen = fw[1]
+
+            #turn
+            if(turnDir == 'L'):
+                command = "0 0 " + str(int(1000*turnLen))
+                ws.send(command)
+                
+            else:
+                command = "180 180 " + str(int(1000*turnLen))
+                ws.send(command)
+            time.sleep(turnLen)
+
+            #Forward
+            command = "180 0 "+ str(int(1000*fwLen))
+            ws.send(command)
+            time.sleep(fwLen)
+
+        ws.close()
+        env.show(route=route, path=path)
+
+    except KeyboardInterrupt:
+        ws.close()
+
+    
+    
     
