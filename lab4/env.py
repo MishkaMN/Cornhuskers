@@ -31,10 +31,10 @@ def getVelocities(pwmR, pwmL):
     wAng = 1/b*(vL-vR)
     #right
     if(pwmR == 180 and pwmL == 180):
-        wAng = 0.155  * math.pi / 180.0 * 1000 -2.7 * math.pi / 180.0
+        wAng = 0.155  * math.pi / 180.0 * 1000
     #left
     if(pwmR == 0 and pwmL == 0):
-        wAng = 0.153 * math.pi / 180.0 * 1000 - 8.42 * math.pi / 180.0
+        wAng = 0.153 * math.pi / 180.0 * 1000
     if(wAng < 0):
         wAng = 1
     return (vR, vL, vT, wAng)
