@@ -29,6 +29,10 @@ def getVelocities(pwmR, pwmL):
 
     vT = .5*(vL+vR)
     wAng = 1/b*(vL-vR)
+    if(pwmR == 180 and pwmL == 180):
+        wAng = 0.155  * math.pi / 180.0 * 1000
+    if(pwmR == 0 and pwmL == 0):
+        wAng = 0.153 * math.pi / 180.0 * 1000
     return (vR, vL, vT, wAng)
 
 #  (leftpwm, rightpwm)
@@ -42,6 +46,12 @@ left_pwms = (0, 0)
 forward_velocities = getVelocities(*forward_pwms)
 right_velocities = getVelocities(*right_pwms)
 left_velocities = getVelocities(*left_pwms)
+
+def rightTurnTime(angle):
+    return 6.52*angle+18.38
+
+def leftTurnTime(angle):
+    return 6.43*angle+56.29
 
 class CState:
     def __init__(self, x, y, clear=1):
@@ -59,7 +69,7 @@ class Obstacle:
         self.y = y
         self.w = w
         self.l = l
-
+        self.rad=robot_rad
         self.edges = [[(self.x-robot_rad, self.y-robot_rad), (self.x+self.w+robot_rad, self.y-robot_rad)],
                 [(self.x+self.w+robot_rad, self.y-robot_rad), (self.x+self.w+robot_rad, self.y+self.l+robot_rad)],
                 [(self.x+self.w+robot_rad, self.y+self.l+robot_rad), (self.x-robot_rad, self.y+self.l+robot_rad)],
@@ -78,6 +88,7 @@ class Environment:
         self.Ny = Ny
         self.robot = robot
         self.C = set()
+        self.Cobs=set()
         self.goal = goal
         self.obstacles = obstacles
 
@@ -89,7 +100,7 @@ class Environment:
                     openV.append((xx,yy,1))
                 else:
                     for o in obstacles:
-                        if (xx < o.x or xx > (o.x+o.w)) or (yy < o.y or yy > (o.y+o.l)):
+                        if (xx < (o.x - o.rad) or xx > (o.x+o.w+o.rad)) or (yy < (o.y-o.rad) or yy > (o.y+o.l+o.rad)):
                             if((xx,yy,1) not in openV):
                                 openV.append((xx,yy,1))
                         else:
@@ -97,6 +108,8 @@ class Environment:
                                 closedV.append((xx,yy,0))
         for st in (openV+closedV):
             self.C.add(CState(st[0],st[1],st[2]))
+        for st in closedV:
+            self.Cobs.add(CState(st[0],st[1],st[2]))
         
         self.V = set()
         self.V.add(self.stateAt(robot.x, robot.y))
@@ -139,6 +152,7 @@ class Environment:
                 pathX.append(st.x+.5)
                 pathY.append(st.y+.5)
             plt.plot(pathX,pathY, c="blue")
+        plt.axes().set_aspect('equal')
         plt.show()
 
     def step_from_to(self, from_state, to_state):
@@ -157,7 +171,7 @@ class Environment:
         next_state = CState(from_state.x + delta*math.cos(heading), from_state.y + delta*math.sin(heading), 0)
 
         # check for available closest available state
-        closest_next_states = nearestNeighbors(self.C-self.V, next_state)
+        closest_next_states = nearestNeighbors(self.C-self.Cobs-self.V, next_state)
 
         return np.random.choice(closest_next_states)
 
@@ -216,44 +230,7 @@ class Environment:
                 return st
 
     def generateInputs(self, path):
-        # produce a series of inputs for the robot to move to goal
-        prevState = path[0]
-        inputs = []
 
-        test_heading = 0
-        for state in path[1:]:
-            raw_heading = math.atan2((state.y-prevState.y), (state.x-prevState.x))
-            # heading that robot should position itself
-            if raw_heading < 0:
-                heading = abs(raw_heading)+math.pi/2
-            else:
-                if raw_heading > math.pi/2:
-                    heading = math.pi-abs(raw_heading) + 3*math.pi/2
-                else:
-                    heading = math.pi/2 - raw_heading
-
-            # magnitude to travel
-            mag = dist(state, prevState)
-
-            prevState = state
-
-            heading_diff = test_heading - heading
-            # map heading to robot action
-            if (heading_diff > 0 and heading_diff > math.pi) \
-                or (heading_diff <= 0 and heading_diff > -math.pi):
-                # turn right
-                action = 'R'
-                seconds = abs(heading_diff/right_velocities[3])
-            else:
-                # turn left
-                action = 'L'
-                seconds = abs(heading_diff/left_velocities[3])
-                
-            # map translation to robot action
-            inputs.append([(action, seconds), ('F', mag/forward_velocities[2])])
-
-            # update robot heading
-            test_heading = heading
         return inputs
 
 def route2tree(route):
@@ -267,7 +244,7 @@ def route2tree(route):
             trees.create_node(str(child), child, parent=parent)
     return trees
         
-def find_path(tree, startState, goalState):
+def find_path(tree, goalState):
     candidates = tree.paths_to_leaves()
     goalpath = None
     for path in candidates:
@@ -280,32 +257,40 @@ def find_path(tree, startState, goalState):
 
 if __name__ == "__main__":
     robot_rad = 8
-    can = Obstacle(39,59,1,1, robot_rad=robot_rad)
-    final = (5,5)
-    obs = [can]
-    robot = Robot(20,30,0)
-    env = Environment(40,60, robot, goal=final, obstacles=obs)
+    can = Obstacle(12,22,1,1, robot_rad=robot_rad)
+    final = (2,7)
+    """
+    rightWall = [Obstacle(39,59,1,1, robot_rad=robot_rad),Obstacle(39,51,1,1, robot_rad=robot_rad),Obstacle(39,43,1,1, robot_rad=robot_rad),Obstacle(39,35,1,1, robot_rad=robot_rad),Obstacle(39,23,1,1, robot_rad=robot_rad),Obstacle(39,15,1,1, robot_rad=robot_rad),Obstacle(39,7,1,1, robot_rad=robot_rad)]
+    leftWall = [Obstacle(0,59,1,1, robot_rad=robot_rad),Obstacle(0,51,1,1, robot_rad=robot_rad),Obstacle(0,43,1,1, robot_rad=robot_rad),Obstacle(0,35,1,1, robot_rad=robot_rad),Obstacle(0,23,1,1, robot_rad=robot_rad),Obstacle(0,15,1,1, robot_rad=robot_rad),Obstacle(0,7,1,1, robot_rad=robot_rad)]
+    topWall = [Obstacle(1,59,1,1, robot_rad=robot_rad),Obstacle(9,59,1,1, robot_rad=robot_rad),Obstacle(17,59,1,1, robot_rad=robot_rad),Obstacle(25,51,1,1, robot_rad=robot_rad),Obstacle(33,59,1,1, robot_rad=robot_rad)]
+    bottomWall = [Obstacle(1,0,1,1, robot_rad=robot_rad),Obstacle(9,0,1,1, robot_rad=robot_rad),Obstacle(17,0,1,1, robot_rad=robot_rad),Obstacle(25,0,1,1, robot_rad=robot_rad),Obstacle(33,0,1,1, robot_rad=robot_rad)]
+    """
+    obs = [can]#+leftWall+rightWall+topWall+bottomWall
+    robot = Robot(22,37,0)
+    env = Environment(24,44, robot, goal=final, obstacles=obs)
 
     goalState = env.stateAt(final[0],final[1])
-    startState = env.stateAt(30,30)
 
     route = []
 
     print("Expanding Tree ")
-    while goalState not in env.V or startState not in env.V:
+    while goalState not in env.V:
         next_state = env.expandTree()
         if next_state:
             route.append(next_state)
 
     routeTree = route2tree(route)
-    path = find_path(routeTree, startState, goalState)
+    path = find_path(routeTree, goalState)
     inputs = env.generateInputs(path)
     print("Tree Complete")
+
+    env.show(route=route, path=path)
+    exit()
 
     try:
         ws = RobotClient(esp8266host)
         ws.connect()
-        print("Ready")
+        print("Connected to robot")
 
         ws.send("90 90 5000")  
 
@@ -321,12 +306,10 @@ if __name__ == "__main__":
             else:
                 command = "180 180 " + str(int(1000*turnLen))
                 ws.send(command)
-            time.sleep(turnLen)
 
             #Forward
             command = "180 0 "+ str(int(1000*fwLen))
             ws.send(command)
-            time.sleep(fwLen)
 
         ws.close()
         env.show(route=route, path=path)
