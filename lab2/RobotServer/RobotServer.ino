@@ -7,8 +7,8 @@
 VL53L0X fSensor, sSensor;
 Servo servoLeft, servoRight;
 
-const char* ssid     = "YikeNet_2G";
-const char* password = "luckytrain022";
+const char* ssid     = "8Hz-WAN-IP";
+const char* password = "exoticfinch954";
 
 WebSocketsServer webSocket = WebSocketsServer(81);
 

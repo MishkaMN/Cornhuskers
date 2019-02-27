@@ -4,7 +4,8 @@ import Kfilter
 import numpy as np
 import math
 
-esp8266host = "ws://192.168.50.133:81/"
+# Yikenet- 192.168.50.133
+esp8266host = "ws://192.168.1.36:81/"
 
 command = ""
 
@@ -38,8 +39,8 @@ class RobotClient(WebSocketClient):
             self.est_state, self.P = Kfilter.aPrioriUpdate(self.est_state, float(dt)/1000.0, self.P, float(pwmR), float(pwmL))
             #print(self.est_state)
             self.est_state, self.P = Kfilter.aPosterioriUpdate(self.P, self.z_final, self.est_state, float(dt)/1000.0)
-            print("Filtered State")
-            print(self.est_state[0]*180.0/math.pi, self.est_state[1], self.est_state[2])
+            #print("Filtered State")
+            #print(self.est_state[0]*180.0/math.pi, self.est_state[1], self.est_state[2])
             #print(self.P)
             
 

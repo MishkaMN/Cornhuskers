@@ -40,12 +40,15 @@ def getVelocities(pwmR, pwmL):
     return (vR, vL, vT, wAng)
 
 #  (leftpwm, rightpwm)
-# forward: 180, 0
+# forward: 110, 0
 # right: 180, 180
 # left: 0, 0
-forward_pwms = (180, 0)
+# T_forward = 87.22855*Len + 41.17
+forward_pwms = (110, 0)
 right_pwms = (180, 180)
 left_pwms = (0, 0)
+def forwardTime(distance):
+    return 87.22855*distance + 41.17
 
 forward_velocities = getVelocities(*forward_pwms)
 right_velocities = getVelocities(*right_pwms)
@@ -277,7 +280,8 @@ class Environment:
             #print("{0:} : {1:.2f}, RAW: {2:.2f}".format(c, math.degrees(turn), math.degrees(heading)))
                 
             # map translation to robot action
-            inputs.append([(action, seconds), ('F', mag/forward_velocities[2])])
+            seconds_f = int(forwardTime(mag))
+            inputs.append([(action, seconds), ('F', seconds_f)]) #old :  mag/forward_velocities[2])
 
             # update robot heading
             test_heading = heading
@@ -307,7 +311,8 @@ def find_path(tree, goalState):
 
 if __name__ == "__main__":
     robot_rad = 8
-    can = Obstacle(12,22,1,1, robot_rad=robot_rad)
+    can = Obstacle(11,21,1,1, robot_rad=robot_rad)
+    can2 = Obstacle(8,13,1,1, robot_rad=robot_rad)
     final = (2,7)
     """
     rightWall = [Obstacle(39,59,1,1, robot_rad=robot_rad),Obstacle(39,51,1,1, robot_rad=robot_rad),Obstacle(39,43,1,1, robot_rad=robot_rad),Obstacle(39,35,1,1, robot_rad=robot_rad),Obstacle(39,23,1,1, robot_rad=robot_rad),Obstacle(39,15,1,1, robot_rad=robot_rad),Obstacle(39,7,1,1, robot_rad=robot_rad)]
@@ -315,7 +320,7 @@ if __name__ == "__main__":
     topWall = [Obstacle(1,59,1,1, robot_rad=robot_rad),Obstacle(9,59,1,1, robot_rad=robot_rad),Obstacle(17,59,1,1, robot_rad=robot_rad),Obstacle(25,51,1,1, robot_rad=robot_rad),Obstacle(33,59,1,1, robot_rad=robot_rad)]
     bottomWall = [Obstacle(1,0,1,1, robot_rad=robot_rad),Obstacle(9,0,1,1, robot_rad=robot_rad),Obstacle(17,0,1,1, robot_rad=robot_rad),Obstacle(25,0,1,1, robot_rad=robot_rad),Obstacle(33,0,1,1, robot_rad=robot_rad)]
     """
-    obs = [can]#+leftWall+rightWall+topWall+bottomWall
+    obs = [can, can2]#+leftWall+rightWall+topWall+bottomWall
     robot = Robot(22,37,0)
     env = Environment(24,44, robot, goal=final, obstacles=obs)
 
@@ -355,7 +360,7 @@ if __name__ == "__main__":
                 ws.send(command)
 
             #Forward
-            command = "180 0 "+ str(int(1000*fwLen))
+            command = "180 0 "+ str(fwLen)
             ws.send(command)
 
         ws.close()
