@@ -29,10 +29,14 @@ def getVelocities(pwmR, pwmL):
 
     vT = .5*(vL+vR)
     wAng = 1/b*(vL-vR)
+    #right
     if(pwmR == 180 and pwmL == 180):
-        wAng = 0.155  * math.pi / 180.0 * 1000
+        wAng = 0.155  * math.pi / 180.0 * 1000 -2.7 * math.pi / 180.0
+    #left
     if(pwmR == 0 and pwmL == 0):
-        wAng = 0.153 * math.pi / 180.0 * 1000
+        wAng = 0.153 * math.pi / 180.0 * 1000 - 8.42 * math.pi / 180.0
+    if(wAng < 0):
+        wAng = 1
     return (vR, vL, vT, wAng)
 
 #  (leftpwm, rightpwm)
@@ -156,6 +160,7 @@ class Environment:
         plt.show()
 
     def step_from_to(self, from_state, to_state):
+        #print("Evaluation {0:.2f} seconds".format(time.time()-start))
         """
         2.2c
         This func makes the robot step 1 sec to target state from initial state
@@ -213,6 +218,7 @@ class Environment:
         return rand_state
 
     def expandTree(self):
+        #print("Evaluation {0:.2f} seconds".format(time.time()-start))
         rand_state = self.sampleState()
         NNs = nearestNeighbors(self.V, rand_state)
         rand_nn = np.random.choice(NNs)
@@ -230,7 +236,51 @@ class Environment:
                 return st
 
     def generateInputs(self, path):
+        # produce a series of inputs for the robot to move to goal
+        prevState = path[0]
+        inputs = []
 
+        test_heading = 0
+        for state in path[1:]:
+
+            raw_heading = math.atan2((state.x-prevState.x), (state.y-prevState.y))
+           
+            # heading that robot should position itself
+            if raw_heading < 0:
+                heading = 2* math.pi + raw_heading
+            else:
+                heading = raw_heading
+
+            # magnitude to travel
+            mag = dist(state, prevState)
+
+            prevState = state
+
+            heading_diff = heading - test_heading
+            #print("{0:.2f}".format(math.degrees(heading_diff)))
+            # map heading to robot action
+            l_turn = (test_heading - heading)
+            r_turn = (heading - test_heading)
+            if l_turn < 0:
+                l_turn = l_turn + 2*math.pi
+            if r_turn < 0:
+                r_turn = r_turn + 2*math.pi
+            turn = min(l_turn,r_turn)
+            action= ""
+            seconds = 0
+            if l_turn< r_turn:
+                action = "L"
+                seconds = abs(turn/right_velocities[3])
+            else:
+                action = "R"
+                seconds = abs(turn/left_velocities[3])
+            #print("{0:} : {1:.2f}, RAW: {2:.2f}".format(c, math.degrees(turn), math.degrees(heading)))
+                
+            # map translation to robot action
+            inputs.append([(action, seconds), ('F', mag/forward_velocities[2])])
+
+            # update robot heading
+            test_heading = heading
         return inputs
 
 def route2tree(route):
@@ -273,7 +323,7 @@ if __name__ == "__main__":
 
     route = []
 
-    print("Expanding Tree ")
+    print("Expanding Tree...")
     while goalState not in env.V:
         next_state = env.expandTree()
         if next_state:
@@ -283,9 +333,6 @@ if __name__ == "__main__":
     path = find_path(routeTree, goalState)
     inputs = env.generateInputs(path)
     print("Tree Complete")
-
-    env.show(route=route, path=path)
-    exit()
 
     try:
         ws = RobotClient(esp8266host)
