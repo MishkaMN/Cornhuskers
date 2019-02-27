@@ -142,6 +142,7 @@ class Environment:
         plt.show()
 
     def step_from_to(self, from_state, to_state):
+        #print("Evaluation {0:.2f} seconds".format(time.time()-start))
         """
         2.2c
         This func makes the robot step 1 sec to target state from initial state
@@ -199,6 +200,7 @@ class Environment:
         return rand_state
 
     def expandTree(self):
+        #print("Evaluation {0:.2f} seconds".format(time.time()-start))
         rand_state = self.sampleState()
         NNs = nearestNeighbors(self.V, rand_state)
         rand_nn = np.random.choice(NNs)
@@ -222,35 +224,49 @@ class Environment:
 
         test_heading = 0
         for state in path[1:]:
-            raw_heading = math.atan2((state.y-prevState.y), (state.x-prevState.x))
+
+            raw_heading = math.atan2((state.x-prevState.x), (state.y-prevState.y))
+           
             # heading that robot should position itself
             if raw_heading < 0:
-                heading = abs(raw_heading)+math.pi/2
+                heading = 2* math.pi + raw_heading
             else:
-                if raw_heading > math.pi/2:
-                    heading = math.pi-abs(raw_heading) + 3*math.pi/2
-                else:
-                    heading = math.pi/2 - raw_heading
+                heading = raw_heading
 
             # magnitude to travel
             mag = dist(state, prevState)
 
             prevState = state
 
-            heading_diff = test_heading - heading
+            heading_diff = heading - test_heading
+            #print("{0:.2f}".format(math.degrees(heading_diff)))
             # map heading to robot action
-            if (heading_diff > 0 and heading_diff > math.pi) \
-                or (heading_diff <= 0 and heading_diff > -math.pi):
-                # turn right
-                action = 'R'
-                seconds = abs(heading_diff/right_velocities[3])
+            l_turn = (test_heading - heading)
+            r_turn = (heading - test_heading)
+            if l_turn < 0:
+                l_turn = l_turn + 2*math.pi
+            if r_turn < 0:
+                r_turn = r_turn + 2*math.pi
+            turn = min(l_turn,r_turn)
+            c= ""
+            if l_turn< r_turn:
+                c = "L"
             else:
-                # turn left
-                action = 'L'
-                seconds = abs(heading_diff/left_velocities[3])
+                c = "R"
+            print("{0:} : {1:.2f}, RAW: {2:.2f}".format(c, math.degrees(turn), math.degrees(heading)))
+            # if ((heading_diff > 0):
+            #     # turn right
+            #     action = 'R'
+            #     print("{0:} : {1:.2f}, RAW: {2:.2f}".format(action, math.degrees(heading_diff),math.degrees(heading) ))
+            #     seconds = abs(heading_diff/right_velocities[3])
+            # else:
+            #     # turn left
+            #     action = 'L'
+            #     print("{0:} : {1:.2f}, RAW: {2:.2f}".format(action, math.degrees(heading_diff),math.degrees(heading) ))
+            #     seconds = abs(heading_diff/left_velocities[3])
                 
             # map translation to robot action
-            inputs.append([(action, seconds), ('F', mag/forward_velocities[2])])
+            #inputs.append([(c, seconds), ('F', mag/forward_velocities[2])])
 
             # update robot heading
             test_heading = heading
@@ -301,38 +317,39 @@ if __name__ == "__main__":
     path = find_path(routeTree, startState, goalState)
     inputs = env.generateInputs(path)
     print("Tree Complete")
+    env.show(route=route, path=path)
 
-    try:
-        ws = RobotClient(esp8266host)
-        ws.connect()
-        print("Ready")
+    # try:
+    #     ws = RobotClient(esp8266host)
+    #     ws.connect()
+    #     print("Ready")
 
-        ws.send("90 90 5000")  
+    #     ws.send("90 90 5000")  
 
-        for turn,fw in inputs:
-            print(turn,fw)
-            turnDir, turnLen = turn
-            fwLen = fw[1]
+    #     for turn,fw in inputs:
+    #         print(turn,fw)
+    #         turnDir, turnLen = turn
+    #         fwLen = fw[1]
 
-            #turn
-            if(turnDir == 'L'):
-                command = "0 0 " + str(int(1000*turnLen))
-                ws.send(command)            
-            else:
-                command = "180 180 " + str(int(1000*turnLen))
-                ws.send(command)
-            time.sleep(turnLen)
+    #         #turn
+    #         if(turnDir == 'L'):
+    #             command = "0 0 " + str(int(1000*turnLen))
+    #             ws.send(command)            
+    #         else:
+    #             command = "180 180 " + str(int(1000*turnLen))
+    #             ws.send(command)
+    #         time.sleep(turnLen)
 
-            #Forward
-            command = "180 0 "+ str(int(1000*fwLen))
-            ws.send(command)
-            time.sleep(fwLen)
+    #         #Forward
+    #         command = "180 0 "+ str(int(1000*fwLen))
+    #         ws.send(command)
+    #         time.sleep(fwLen)
 
-        ws.close()
-        env.show(route=route, path=path)
+    #     ws.close()
+    #     env.show(route=route, path=path)
 
-    except KeyboardInterrupt:
-        ws.close()
+    # except KeyboardInterrupt:
+    #     ws.close()
 
     
     
