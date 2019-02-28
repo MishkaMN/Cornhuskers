@@ -43,10 +43,10 @@ def getVelocities(pwmR, pwmL):
 # forward: 110, 0
 # right: 180, 180
 # left: 0, 0
-# T_forward = 87.22855*Len + 41.17
 forward_pwms = (110, 0)
 right_pwms = (180, 180)
 left_pwms = (0, 0)
+
 def forwardTime(distance):
     ms = 87.22855*distance + 41.17
     return ms
@@ -297,6 +297,30 @@ class Environment:
             else:
                 idx += 1
         return path
+
+    def arbitraryToGoal(self, start, goal):
+        tmp = (self.robot.x,self.robot.y)
+        self.robot.x = goal[0]
+        self.robot.y = goal[1]
+        
+
+        startState = env.stateAt(start[0],start[1])
+
+        route = []
+
+        print("Expanding Tree...")
+        while startState not in env.V:
+            next_state = env.expandTree()
+            if next_state:
+                route.append(next_state)
+
+        routeTree = route2tree(route)
+        path = find_path(routeTree, goalState)
+        path = env.improve_path(path)
+        inputs = env.generateInputs(path)
+        
+        return reversed(inputs)
+
 def route2tree(route):
     trees = Tree()
     for idx,line in enumerate(route):
@@ -353,9 +377,6 @@ if __name__ == "__main__":
     inputs = env.generateInputs(path)
     print("Tree Complete")
     print("Time: {}".format(time.time()-start))
-
-    for turn,fw in inputs:
-        print(turn,fw)
 
     
     try:
