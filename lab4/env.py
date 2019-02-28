@@ -375,8 +375,13 @@ if __name__ == "__main__":
     print("Tree Gen Time: {}".format(time.time()-start))
     start = time.time()
     path = find_path(routeTree, goalState)
+
+    env.show(route=route, path=path)
+
     path = env.improve_path(path)
     
+
+    env.show(route=route, path=path)
     print("Path Selection Time Gen Time: {}".format(time.time()-start))
     start = time.time()
     inputs = env.generateInputs(path)
