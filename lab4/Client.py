@@ -5,7 +5,8 @@ import numpy as np
 import math
 
 # Yikenet- 192.168.50.133
-esp8266host = "ws://192.168.1.36:81/"
+# 8HZ-Wan-IP : 192.168.1.36
+esp8266host = "ws://192.168.50.133:81/"
 
 command = ""
 
@@ -22,6 +23,7 @@ class RobotClient(WebSocketClient):
     def closed(self, code, reason=None):
         print("Socket Closed", code, reason);
     def received_message(self, msg):
+        """
         parts = str(msg).split(",")
         if(parts[0] == "Command"):
             self.command = str(parts[1]) + " " + str(parts[2]) + " " + str(parts[3])
@@ -32,7 +34,7 @@ class RobotClient(WebSocketClient):
             
             self.z_final = [theta, frontSense, sideSense]
             #print(self.z_final)
-            """ START FILTERING """
+            """ """START FILTERING
             #print("State:")
             #print(self.est_state[0]*180.0/math.pi, self.est_state[1], self.est_state[2])
             pwmL, pwmR, dt = self.command.split(" ")
@@ -42,7 +44,7 @@ class RobotClient(WebSocketClient):
             #print("Filtered State")
             #print(self.est_state[0]*180.0/math.pi, self.est_state[1], self.est_state[2])
             #print(self.P)
-            
+        """
 
         
 

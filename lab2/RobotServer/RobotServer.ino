@@ -7,8 +7,8 @@
 VL53L0X fSensor, sSensor;
 Servo servoLeft, servoRight;
 
-const char* ssid     = "8Hz-WAN-IP";
-const char* password = "exoticfinch954";
+const char* ssid     = "YikeNet_2G";
+const char* password = "luckytrain022";
 
 WebSocketsServer webSocket = WebSocketsServer(81);
 
@@ -41,13 +41,13 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t len) {
               int commandArgs[3];
 
               //Initial sensor readings
-              float f,s, gz, head;
-              ReadDistSensors(f,s,fSensor,sSensor);
-              ReadIMU(gz,head);
-              Serial.print(head); Serial.print("\n");
+              //float f,s, gz, head;
+              //ReadDistSensors(f,s,fSensor,sSensor);
+              //ReadIMU(gz,head);
+              //Serial.print(head); Serial.print("\n");
               char data[64];
-              sprintf(data, "First,%f,%f,%f", f, s, head);
-              webSocket.sendTXT(num, data);
+              //sprintf(data, "First,%f,%f,%f", f, s, head);
+              //webSocket.sendTXT(num, data);
               
               parseCommand(_payload, commandArgs);
               //Serial.print(commandArgs);
@@ -56,10 +56,10 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t len) {
               webSocket.sendTXT(num, data);
               
               //final sensor readings
-              ReadDistSensors(f,s,fSensor,sSensor);
-              ReadIMU(gz,head);
-              sprintf(data, "Last,%f,%f,%f", f, s, (-1*head+ 290.0)*DEG_TO_RAD);
-              webSocket.sendTXT(num, data);
+              //ReadDistSensors(f,s,fSensor,sSensor);
+              //ReadIMU(gz,head);
+              //sprintf(data, "Last,%f,%f,%f", f, s, (-1*head+ 290.0)*DEG_TO_RAD);
+              //webSocket.sendTXT(num, data);
             }   
             break;      
         case WStype_BIN:
@@ -158,6 +158,6 @@ void setup() {
 void loop() {
   webSocket.loop();
   float f,s, gz, head;
-  ReadIMU(gz,head);
-  Serial.print((-1*head+ 290.0)*DEG_TO_RAD); Serial.print("\n");
+  //ReadIMU(gz,head);
+  //Serial.print((-1*head+ 290.0)*DEG_TO_RAD); Serial.print("\n");
 }

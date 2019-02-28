@@ -48,7 +48,10 @@ forward_pwms = (110, 0)
 right_pwms = (180, 180)
 left_pwms = (0, 0)
 def forwardTime(distance):
-    return 87.22855*distance + 41.17
+    ms = 87.22855*distance + 41.17
+    if(ms > 1000):
+        ms = ms - 300
+    return ms
 
 forward_velocities = getVelocities(*forward_pwms)
 right_velocities = getVelocities(*right_pwms)
@@ -183,39 +186,6 @@ class Environment:
 
         return np.random.choice(closest_next_states)
 
-    def checkTraj(self, traj):
-        # check whether traj intersects with obstacle
-        def line_intersects(e1, e2):
-            p0_x, p0_y = e1[0]
-            p1_x, p1_y = e1[1]
-            p2_x, p2_y = e2[0]
-            p3_x, p3_y = e2[1]
-
-            # Returns 1 if the lines intersect, otherwise 0. In addition, if the lines 
-            # intersect the intersection point may be stored in the floats i_x and i_y.
-            s1_x = p1_x - p0_x
-            s1_y = p1_y - p0_y
-            s2_x = p3_x - p2_x
-            s2_y = p3_y - p2_y
-
-            denom = (-s2_x * s1_y + s1_x * s2_y)
-            if (denom == 0):
-                return 0
-
-            s = (-s1_y * (p0_x - p2_x) + s1_x * (p0_y - p2_y)) / denom
-            t = ( s2_x * (p0_y - p2_y) - s2_y * (p0_x - p2_x)) / denom
-
-            if s >= 0 and s <= 1 and t >= 0 and t <= 1:
-                return 1
-            return 0
-
-        for ob in self.obstacles:
-            for e in ob.edges:
-                # check collision
-                if line_intersects(e, traj):
-                    return False
-        return True
-
     def sampleState(self):
         rand_state = random.sample(self.C - self.V, 1)[0]
         return rand_state
@@ -243,7 +213,7 @@ class Environment:
         prevState = path[0]
         inputs = []
 
-        test_heading = 0
+        test_heading = self.robot.heading
         for state in path[1:]:
 
             raw_heading = math.atan2((state.x-prevState.x), (state.y-prevState.y))
@@ -281,12 +251,54 @@ class Environment:
                 
             # map translation to robot action
             seconds_f = int(forwardTime(mag))
-            inputs.append([(action, seconds), ('F', seconds_f)]) #old :  mag/forward_velocities[2])
+            inputs.append([(action, seconds), ('F', seconds_f)]) #old :  mag/forward_velocities[2]
 
             # update robot heading
             test_heading = heading
         return inputs
 
+    def checkTraj(self, traj):
+        # check whether traj intersects with obstacle
+        def line_intersects(e1, e2):
+            p0_x, p0_y = e1[0]
+            p1_x, p1_y = e1[1]
+            p2_x, p2_y = e2[0]
+            p3_x, p3_y = e2[1]
+
+            # Returns 1 if the lines intersect, otherwise 0. In addition, if the lines 
+            # intersect the intersection point may be stored in the floats i_x and i_y.
+            s1_x = p1_x - p0_x
+            s1_y = p1_y - p0_y
+            s2_x = p3_x - p2_x
+            s2_y = p3_y - p2_y
+
+            denom = (-s2_x * s1_y + s1_x * s2_y)
+            if (denom == 0):
+                return 0
+
+            s = (-s1_y * (p0_x - p2_x) + s1_x * (p0_y - p2_y)) / denom
+            t = ( s2_x * (p0_y - p2_y) - s2_y * (p0_x - p2_x)) / denom
+
+            if s >= 0 and s <= 1 and t >= 0 and t <= 1:
+                return 1
+            return 0
+
+        for ob in self.obstacles:
+            for e in ob.edges:
+                # check collision
+                if line_intersects(e, traj):
+                    return False
+        return True
+
+    def improve_path(self, path):
+        idx = 1
+        while idx < len(path)-1:
+            if self.checkTraj(((path[idx-1].x, path[idx-1].y), (path[idx+1].x, path[idx+1].y))):
+                # drop state at idx
+                del path[idx]
+            else:
+                idx += 1
+        return path
 def route2tree(route):
     trees = Tree()
     for idx,line in enumerate(route):
@@ -309,20 +321,23 @@ def find_path(tree, goalState):
 
     return goalpath
 
+
+
 if __name__ == "__main__":
-    robot_rad = 8
-    can = Obstacle(11,21,1,1, robot_rad=robot_rad)
-    can2 = Obstacle(8,13,1,1, robot_rad=robot_rad)
-    final = (2,7)
+    robot_rad = 5
+    start = time.time()
+    bars = Obstacle(20, 15,19,4, robot_rad=robot_rad)
+    tea = Obstacle(15,34,7,9, robot_rad=robot_rad)
+    final = (20,53)
     """
     rightWall = [Obstacle(39,59,1,1, robot_rad=robot_rad),Obstacle(39,51,1,1, robot_rad=robot_rad),Obstacle(39,43,1,1, robot_rad=robot_rad),Obstacle(39,35,1,1, robot_rad=robot_rad),Obstacle(39,23,1,1, robot_rad=robot_rad),Obstacle(39,15,1,1, robot_rad=robot_rad),Obstacle(39,7,1,1, robot_rad=robot_rad)]
     leftWall = [Obstacle(0,59,1,1, robot_rad=robot_rad),Obstacle(0,51,1,1, robot_rad=robot_rad),Obstacle(0,43,1,1, robot_rad=robot_rad),Obstacle(0,35,1,1, robot_rad=robot_rad),Obstacle(0,23,1,1, robot_rad=robot_rad),Obstacle(0,15,1,1, robot_rad=robot_rad),Obstacle(0,7,1,1, robot_rad=robot_rad)]
     topWall = [Obstacle(1,59,1,1, robot_rad=robot_rad),Obstacle(9,59,1,1, robot_rad=robot_rad),Obstacle(17,59,1,1, robot_rad=robot_rad),Obstacle(25,51,1,1, robot_rad=robot_rad),Obstacle(33,59,1,1, robot_rad=robot_rad)]
     bottomWall = [Obstacle(1,0,1,1, robot_rad=robot_rad),Obstacle(9,0,1,1, robot_rad=robot_rad),Obstacle(17,0,1,1, robot_rad=robot_rad),Obstacle(25,0,1,1, robot_rad=robot_rad),Obstacle(33,0,1,1, robot_rad=robot_rad)]
     """
-    obs = [can, can2]#+leftWall+rightWall+topWall+bottomWall
-    robot = Robot(22,37,0)
-    env = Environment(24,44, robot, goal=final, obstacles=obs)
+    obs = [bars, tea]#+leftWall+rightWall+topWall+bottomWall
+    robot = Robot(25,8, 3*math.pi/2)
+    env = Environment(40,60, robot, goal=final, obstacles=obs)
 
     goalState = env.stateAt(final[0],final[1])
 
@@ -336,9 +351,15 @@ if __name__ == "__main__":
 
     routeTree = route2tree(route)
     path = find_path(routeTree, goalState)
+    path = env.improve_path(path)
     inputs = env.generateInputs(path)
     print("Tree Complete")
+    print("Time: {}".format(time.time()-start))
 
+    for turn,fw in inputs:
+        print(turn,fw)
+
+    
     try:
         ws = RobotClient(esp8266host)
         ws.connect()
@@ -360,9 +381,10 @@ if __name__ == "__main__":
                 ws.send(command)
 
             #Forward
-            command = "180 0 "+ str(fwLen)
+            command = "180 0 "+ str(int(fwLen))
             ws.send(command)
 
+        ws.send("90 90 1000")
         ws.close()
         env.show(route=route, path=path)
 
