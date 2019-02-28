@@ -248,7 +248,7 @@ class Environment:
             #print("{0:} : {1:.2f}, RAW: {2:.2f}".format(c, math.degrees(turn), math.degrees(heading)))
                 
             # map translation to robot action
-            seconds_f = int(forwardTime(mag))
+            seconds_f = forwardTime(mag)/1000
             inputs.append([(action, seconds), ('F', seconds_f)]) #old :  mag/forward_velocities[2]
 
             # update robot heading
@@ -365,18 +365,22 @@ if __name__ == "__main__":
 
     route = []
 
+
     print("Expanding Tree...")
     while goalState not in env.V:
         next_state = env.expandTree()
         if next_state:
             route.append(next_state)
-
     routeTree = route2tree(route)
-    path = find_path(routeTree, goalState)
+    print("Tree Gen Time: {}".format(time.time()-start))
+    start = time.time()
     path = env.improve_path(path)
+    path = find_path(routeTree, goalState)
+    print("Path Selection Time Gen Time: {}".format(time.time()-start))
+    start = time.time()
     inputs = env.generateInputs(path)
     print("Tree Complete")
-    print("Time: {}".format(time.time()-start))
+    print("Input Generation Time: {}".format(time.time()-start))
 
     
     try:
@@ -400,7 +404,7 @@ if __name__ == "__main__":
                 ws.send(command)
 
             #Forward
-            command = "180 0 "+ str(int(fwLen))
+            command = "180 0 "+ str(int(1000*fwLen))
             ws.send(command)
 
         ws.send("90 90 1000")
