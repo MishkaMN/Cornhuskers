@@ -49,8 +49,6 @@ right_pwms = (180, 180)
 left_pwms = (0, 0)
 def forwardTime(distance):
     ms = 87.22855*distance + 41.17
-    if(ms > 1000):
-        ms = ms - 300
     return ms
 
 forward_velocities = getVelocities(*forward_pwms)
