@@ -54,7 +54,7 @@ while(True):
 
         #draw frames
         frame = cv2.warpPerspective(frame,M,(envSize,envSize))
-        cv2.line(frame, (int(center[0]), int(center[1])), (int(topCenter[0]), int(topCenter[1])), (0,255,0), 3)
+        cv2.line(frame, (int(center[0]), int(envSize - center[1])), (int(topCenter[0]), int(topCenter[1])), (0,255,0), 3)
         cv2.imshow('frame',frame)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
