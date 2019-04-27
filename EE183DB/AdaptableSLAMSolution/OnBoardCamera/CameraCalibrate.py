@@ -18,10 +18,10 @@ import argparse
 
 #---------------------- SET THE PARAMETERS
 nRows = 9
-nCols = 6
-dimension = 25 #- mm
+nCols = 7
+dimension = 20 #- mm
 
-workingFolder   = "./camera_01"
+workingFolder   = "./CalibImg"
 imageType       = 'jpg'
 #------------------------------------------
 
@@ -79,10 +79,10 @@ else:
         gray    = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
 
         print("Reading image ", fname)
-
+        print("Done")
         # Find the chess board corners
         ret, corners = cv2.findChessboardCorners(gray, (nCols,nRows),None)
-
+        print("Searching for Pattern...")
         # If found, add object points, image points (after refining them)
         if ret == True:
             print("Pattern found! Press ESC to skip or ENTER to accept")
@@ -91,14 +91,13 @@ else:
 
             # Draw and display the corners
             cv2.drawChessboardCorners(img, (nCols,nRows), corners2,ret)
-            cv2.imshow('img',img)
+            cv2.imshow('img', cv2.resize(img, (960, 540)))
             # cv2.waitKey(0)
-            k = cv2.waitKey(0) & 0xFF
-            if k == 27: #-- ESC Button
-                print("Image Skipped")
-                imgNotGood = fname
-                continue
-
+            # k = cv2.waitKey(0) & 0xFF
+            # if k == 27: #-- ESC Button
+            #     print("Image Skipped")
+            #     imgNotGood = fname
+            #     continue
             print("Image accepted")
             nPatternFound += 1
             objpoints.append(objp)
@@ -137,13 +136,13 @@ if (nPatternFound > 1):
     print("Disortion: ", dist)
 
     #--------- Save result
-    filename = workingFolder + "/cameraMatrix.txt"
+    filename = "cameraMatrix.txt"
     np.savetxt(filename, mtx, delimiter=',')
-    filename = workingFolder + "/cameraDistortion.txt"
+    filename = "cameraDistortion.txt"
     np.savetxt(filename, dist, delimiter=',')
 
     mean_error = 0
-    for i in xrange(len(objpoints)):
+    for i in range(len(objpoints)):
         imgpoints2, _ = cv2.projectPoints(objpoints[i], rvecs[i], tvecs[i], mtx, dist)
         error = cv2.norm(imgpoints[i],imgpoints2, cv2.NORM_L2)/len(imgpoints2)
         mean_error += error
