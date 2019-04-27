@@ -20,6 +20,7 @@ K = np.array([[fx,s,cx],[0,fy,cy],[0,0,1]])
 while(True):
     start = time.time()
     _, img1 = cap.read()
+    sleep(2)
     _, img2 = cap.read()
 
     img1=cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)

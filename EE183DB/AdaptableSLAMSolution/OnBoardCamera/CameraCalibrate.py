@@ -21,7 +21,7 @@ nRows = 9
 nCols = 6
 dimension = 25 #- mm
 
-workingFolder   = "./camera_01"
+workingFolder   = "./CalibImg"
 imageType       = 'jpg'
 #------------------------------------------
 
@@ -79,10 +79,10 @@ else:
         gray    = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
 
         print("Reading image ", fname)
-
+        print("Done")
         # Find the chess board corners
         ret, corners = cv2.findChessboardCorners(gray, (nCols,nRows),None)
-
+        print("Searching for Pattern...")
         # If found, add object points, image points (after refining them)
         if ret == True:
             print("Pattern found! Press ESC to skip or ENTER to accept")
