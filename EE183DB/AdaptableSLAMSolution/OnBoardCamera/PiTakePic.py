@@ -7,4 +7,4 @@ camera.start_preview()
 for i in range(5):
     sleep(5)
     camera.capture('../Images/Calibrate/cal%s.jpg' % i)
-camera.stop_preview()
+camera.stop_preview()   

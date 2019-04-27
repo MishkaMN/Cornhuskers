@@ -2,9 +2,9 @@ import numpy as np
 import cv2
 import cv2.aruco as aruco
  
-cap = cv2.VideoCapture(1)
+cap = cv2.VideoCapture(0)
 envSize = 300
-
+print("Starting...")
 while(True):
 
     ret, frame = cap.read()
@@ -56,7 +56,7 @@ while(True):
         frame = cv2.warpPerspective(frame,M,(envSize,envSize))
         cv2.line(frame, (int(center[0]), int(envSize - center[1])), (int(topCenter[0]), int(topCenter[1])), (0,255,0), 3)
         cv2.imshow('frame',frame)
-
+    
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
