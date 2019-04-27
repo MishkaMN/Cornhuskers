@@ -4,7 +4,8 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import axes3d, Axes3D
 import time
 import math
-from picamera import PiCamera
+#from picamera import PiCamera
+#from picamera.array import PiRGBArray
 
 # cx = 640 / 2 # half horizontal resolution
 # cy = 480 / 2 # half vertical resolution
@@ -16,36 +17,27 @@ from picamera import PiCamera
 # #pi camera matrix
 # K = np.array([[fx,s,cx],[0,fy,cy],[0,0,1]])
 
-K = np.loadtxt("cameraMatrix.txt")
+K = np.loadtxt("cameraMatrix.txt", delimiter=',')
 
-# initialize the camera
-camera = PiCamera()
-rawCapture = PiRGBArray(camera)
 
-camera.start_preview(fullscreen=False, window=(0,0,640,360))
-print("Taking first image in 5 seconds")
-sleep(5)
-camera.capture(rawCapture, format="bgr")
-img1 = rawCapture.array
-img1=cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
-print("Taking second image in 5 seconds")
-sleep(5)
-camera.capture(rawCapture, format="bgr")
-img2 = rawCapture.array
-img2=cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
-print("Images taken")
-camera.stop_preview()
+img1 = cv2.imread("g1_1.jpg")
+img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
+img2 = cv2.imread("g1_2.jpg")
+img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
 
+print("Loaded Images...")
 # Initiate ORB detector
 orb = cv2.ORB_create()
+print("Detector Created...")
 # find the keypoints and descriptors with ORB
 kp1, des1 = orb.detectAndCompute(img1,None)
 kp2, des2 = orb.detectAndCompute(img2,None)
-
+print("ORB Features Detected...")
 # create BFMatcher object
 bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
 # Match descriptors.
 matches = bf.match(des1,des2)
+print("Matched Features...")
 # Sort them in the order of their distance.
 matches = sorted(matches, key = lambda x:x.distance)
 # Draw first 10 matches.
@@ -77,5 +69,3 @@ ax = Axes3D(fig)
 ax.scatter(point_3d[:,0], point_3d[:,1], point_3d[:,2])
 plt.show()
 
-if cv2.waitKey(1) & 0xFF == ord('q'):
-    break
