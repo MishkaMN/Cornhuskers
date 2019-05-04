@@ -85,13 +85,13 @@ else:
         print("Searching for Pattern...")
         # If found, add object points, image points (after refining them)
         if ret == True:
-            print("Pattern found! Press ESC to skip or ENTER to accept")
+            print("Pattern found!")# Press ESC to skip or ENTER to accept")
             #--- Sometimes, Harris cornes fails with crappy pictures, so
             corners2 = cv2.cornerSubPix(gray,corners,(11,11),(-1,-1),criteria)
 
             # Draw and display the corners
             cv2.drawChessboardCorners(img, (nCols,nRows), corners2,ret)
-            cv2.imshow('img', cv2.resize(img, (960, 540)))
+            # cv2.imshow('img', cv2.resize(img, (960, 540)))
             # cv2.waitKey(0)
             # k = cv2.waitKey(0) & 0xFF
             # if k == 27: #-- ESC Button
@@ -136,9 +136,9 @@ if (nPatternFound > 1):
     print("Disortion: ", dist)
 
     #--------- Save result
-    filename = "cameraMatrix.txt"
+    filename = "OP6cameraMatrix.txt"
     np.savetxt(filename, mtx, delimiter=',')
-    filename = "cameraDistortion.txt"
+    filename = "OP6cameraDistortion.txt"
     np.savetxt(filename, dist, delimiter=',')
 
     mean_error = 0
