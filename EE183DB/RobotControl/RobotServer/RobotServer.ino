@@ -5,8 +5,8 @@
 
 Servo servoLeft, servoRight;
 
-const char* ssid     = "YikeNet_2G";
-const char* password = "luckytrain022";
+const char* ssid     = "Kelton 211 (2G)";
+const char* password = "interesting";
 
 WebSocketsServer webSocket = WebSocketsServer(81);
 
@@ -40,7 +40,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t len) {
               char data[64];
               
               parseCommand(_payload, commandArgs);
-              drive(commandArgs[0], -commandArgs[1], commandArgs[2], servoLeft, servoRight);
+              drive(commandArgs[0], commandArgs[1], commandArgs[2], servoLeft, servoRight);
               sprintf(data, "Command,%d,%d,%d", commandArgs[0], commandArgs[1], commandArgs[2]);
               webSocket.sendTXT(num, data);
             }   

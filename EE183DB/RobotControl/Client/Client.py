@@ -1,21 +1,21 @@
 from ws4py.client.threadedclient import WebSocketClient
 import time, requests
-import Kfilter
+#import Kfilter
 import numpy as np
 import math
 
-esp8266host = "ws://192.168.50.133:81/"
+esp8266host = "ws://192.168.0.104:81/"
 
 command = ""
 
 class DummyClient(WebSocketClient):
     def __init__(self, host):
         super(DummyClient, self).__init__(host)
-        self.est_state = np.array([0, Kfilter.W/2, Kfilter.L/2]);
-        self.P = np.eye(3)
-        self.z_init = np.array([0,0,0])
-        self.command = np.array([0,0,0])
-        self.z_final = np.array([0,0,0])
+        #self.est_state = np.array([0, Kfilter.W/2, Kfilter.L/2]);
+        #self.P = np.eye(3)
+        #self.z_init = np.array([0,0,0])
+        #self.command = np.array([0,0,0])
+        #self.z_final = np.array([0,0,0])
     def opened(self):
         print("Socket Opened")
     def closed(self, code, reason=None):
@@ -41,7 +41,21 @@ class DummyClient(WebSocketClient):
             #print(self.P)
             
 
-        
+def dir_to_cmd(command):
+    tmp = command.split()
+    dirs = ['f', 'r', 'b', 'l','a', 'w', 's', 'd' ]
+    if tmp[0] in dirs:
+        if tmp[0] == 'f' or tmp[0] == 'w':
+            cmd = '180 0 ' + tmp[1]
+        elif tmp[0] == 'b' or tmp[0] == 's':
+            cmd = '0 180 ' + tmp[1]
+        elif tmp[0] == 'r' or tmp[0] == 'd':
+            cmd = '180 180 '+ tmp[1]
+        elif tmp[0] == 'l' or tmp[0] == 'a':
+            cmd = '0 0 '+ tmp[1]
+    else:
+        cmd = command
+    return cmd
 
 if __name__ == '__main__':
     try:
@@ -53,7 +67,8 @@ if __name__ == '__main__':
 
         while(1):
             print("Send Command")
-            command = raw_input()
+            command = input()
+            command = dir_to_cmd(command)
             if command: 
                 ws.send(command)
 
