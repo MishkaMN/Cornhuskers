@@ -7,53 +7,69 @@ f_app = 2277.68014059754
 f = 4.5 # mm
 sens_h = 6.828 # mm
 # d = 107.95 #millimeters
-img = cv2.imread('lmark2.jpg')
-_, threshold = cv2.threshold(img, 127, 255, cv2.THRESH_BINARY)
-imgray = cv2.cvtColor(threshold, cv2.COLOR_BGR2GRAY);
-contours, hierarchy = cv2.findContours(imgray, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-# for cnt in contours:
-#     approx = cv2.approxPolyDP(cnt, 0.01*cv2.arcLength(cnt, True), True)
-#     cv2.drawContours(img, [approx], 0, (0), 5)
-#     x = approx.ravel()[0]
-#     y = approx.ravel()[1]
-# Find the index of the largest contour
-areas = np.array([cv2.contourArea(c) for c in contours])
-cnts = [contours[i] for i in np.where(areas > 100000)[0]]
 
-objPoseX = []
-objPoseY = []
-for cnt in cnts:
-    x,y,w,h = cv2.boundingRect(cnt)
+input("Press Enter to Start")
+
+cap = cv2.VideoCapture('LMarkVideo.mp4')
+
+flag=True
+while(cap.isOpened()):
     
-    # DISTANCE CALC
-    d = f_app*objHeight/h
-    d2 = f * objHeight / (sens_h * h/img.shape[0])
-    f_app = d * h / objHeight
-    #print(d, d2, f_app)
+    ret, img = cap.read()
 
-    #ANGLE CALC
-    px_from_center = (x+w/2) - img.shape[1]/2
-    angle = np.arctan(px_from_center/f*sens_h/(img.shape[1]))
-    #print(angle*180/np.pi)
+    _, threshold = cv2.threshold(img, 150, 255, cv2.THRESH_BINARY)
+    imgray = cv2.cvtColor(threshold, cv2.COLOR_BGR2GRAY);
+    contours, hierarchy = cv2.findContours(imgray, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    # for cnt in contours:
+    #     approx = cv2.approxPolyDP(cnt, 0.01*cv2.arcLength(cnt, True), True)
+    #     cv2.drawContours(img, [approx], 0, (0), 5)
+    #     x = approx.ravel()[0]
+    #     y = approx.ravel()[1]
+    # Find the index of the largest contour
+    areas = np.array([cv2.contourArea(c) for c in contours])
+    cnts = [contours[i] for i in np.where(areas > 10000)[0]]
 
-    cv2.rectangle(img,(x,y),(x+w,y+h),(0,255,0),2)
-    cv2.putText(img, "angle"+str(angle*180/np.pi), (x, y), cv2.FONT_HERSHEY_TRIPLEX, 2, (0,255,0), lineType=cv2.LINE_AA) 
-    cv2.putText(img, "Dist"+str(d2), (x, y-100), cv2.FONT_HERSHEY_TRIPLEX, 2, (0,255,0), lineType=cv2.LINE_AA)
-    objPoseX.append(d2*np.sin(angle))
-    objPoseY.append(d2*np.cos(angle))
+    objPoseX = []
+    objPoseY = []
+    for cnt in cnts:
+        x,y,w,h = cv2.boundingRect(cnt)
+        
+        # DISTANCE CALC
+        d = f_app*objHeight/h
+        d2 = f * objHeight / (sens_h * h/img.shape[0])
+        f_app = d * h / objHeight
+        #print(d, d2, f_app)
 
+        #ANGLE CALC
+        px_from_center = (x+w/2) - img.shape[1]/2
+        angle = np.arctan(px_from_center/f*sens_h/(img.shape[1]))
+        #print(angle*180/np.pi)
 
-plt.scatter(objPoseX, objPoseY)
-bottom, top = plt.ylim()
-fovDistX = np.max(plt.xlim())
-plt.xlim(-1.05*fovDistX,1.05*fovDistX)
-plt.ylim(0-top*.05,top*1.05)
-plt.scatter([0],[0], color="red")
+        cv2.rectangle(img,(x,y),(x+w,y+h),(0,255,0),2)
+        cv2.putText(img, "angle"+str(angle*180/np.pi), (x, y), cv2.FONT_HERSHEY_TRIPLEX, 2, (0,255,0), lineType=cv2.LINE_AA) 
+        cv2.putText(img, "Dist"+str(d2), (x, y-100), cv2.FONT_HERSHEY_TRIPLEX, 2, (0,255,0), lineType=cv2.LINE_AA)
+        objPoseX.append(d2*np.sin(angle))
+        objPoseY.append(d2*np.cos(angle))
 
-for i,_ in enumerate(objPoseX):
-    plt.plot(np.array((0, objPoseX[i])),np.array((0, objPoseY[i])), '--r')
-#cv2.imshow("shapes", img)
-#cv2.imwrite("tmp.jpg", img)
-plt.show()
-cv2.waitKey(0)
+    plt.cla()
+    plt.scatter(objPoseX, objPoseY)
+    bottom, top = plt.ylim()
+    fovDistX = np.max(plt.xlim())
+    plt.xlim(-1.05*fovDistX,1.05*fovDistX)
+    plt.ylim(0-top*.05,top*1.05)
+    plt.scatter([0],[0], color="red")
+
+    for i,_ in enumerate(objPoseX):
+        plt.plot(np.array((0, objPoseX[i])),np.array((0, objPoseY[i])), '--r')
+    cv2.imshow("shapes", img)
+    #cv2.imwrite("tmp.jpg", img)
+    
+    plt.pause(0.000001)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+    if flag:
+        input("Press Enter to Continue")
+        flag=False
+
+cap.release()
 cv2.destroyAllWindows()
