@@ -26,7 +26,7 @@ MAX_RANGE = 20.0  # maximum observation range
 M_DIST_TH = 2.0  # Threshold of Mahalanobis distance for data association.
 STATE_SIZE = 3  # State size [x,y,yaw]
 LM_SIZE = 2  # LM srate size [x,y]
-N_PARTICLE = 100  # number of particle
+N_PARTICLE = 10  # number of particle
 NTH = N_PARTICLE / 1.5  # Number of particle for re-sampling
 
 show_animation = True
@@ -372,7 +372,7 @@ def main():
                      [-10.0, 15.0]
                      ])
     N_LM = RFID.shape[0]
-    print(N_LM)
+    
     N_LM = 10
     # State Vector [x y yaw v]'
     xEst = np.zeros((STATE_SIZE, 1))  # SLAM estimation
@@ -403,14 +403,15 @@ def main():
         hxDR = np.hstack((hxDR, xDR))
         hxTrue = np.hstack((hxTrue, xTrue))
 
+       	
         if show_animation:  # pragma: no cover
             plt.cla()
             plt.plot(RFID[:, 0], RFID[:, 1], "*k")
 
-            if(len(z[:, 0]) > 0):
-                for iz in range(len(z[:, 0])):
+            if(len(z[0,:]) > 0):
+                for iz in range(len(z[0,:])):
                     ## CHECK z[2,iz] exists
-                    lmid = int(z[2, iz])
+                    lmid = int(z[2,iz])
                     plt.plot([xEst[0], RFID[lmid, 0]], [
                             xEst[1], RFID[lmid, 1]], "-k")
 
@@ -425,6 +426,7 @@ def main():
             plt.axis("equal")
             plt.grid(True)
             plt.pause(0.000001)
+    print('ended')    
 
 
 if __name__ == '__main__':
