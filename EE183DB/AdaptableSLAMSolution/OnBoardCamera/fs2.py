@@ -2,6 +2,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import math
 import time
+
+
+Sfaster = 0
+Nfaster = 0
+hahaz = 0
+nequal = 0
+
 # Fast SLAM covariance
 # What we model
 R = np.diag([2.5, np.deg2rad(10.0)])**2
@@ -27,7 +34,7 @@ INIT_X = 350.0
 INIT_Y = 350.0
 INIT_YAW = 0.0
 
-show_animation = True
+show_animation = False
 
 class Particle:
 
@@ -163,12 +170,16 @@ def compute_weight(particle, z, Q):
     dz = z[0:2].reshape(2, 1) - zp
     dz[1, 0] = pi_2_pi(dz[1, 0])
 
+    
     try:
         invS = np.linalg.inv(Sf)
     except np.linalg.linalg.LinAlgError:
+        print("Error")
         return 1.0
 
     num = math.exp(-0.5 * dz.T @ invS @ dz)
+
+
     den = 2.0 * math.pi * math.sqrt(np.linalg.det(Sf))
 
     w = num / den
@@ -390,7 +401,7 @@ def main(num_particle = 100):
 
         st_err = abs(st_est - st_true)
 
-        print("Current Distance Error: %.2f, Angle Error: %.2f" % (math.sqrt(st_err[0]**2 + st_err[1]**2), np.rad2deg(abs(st_err[2]))))
+        #print("Current Distance Error: %.2f, Angle Error: %.2f" % (math.sqrt(st_err[0]**2 + st_err[1]**2), np.rad2deg(abs(st_err[2]))))
         hist_err += st_err
         sim_num += 1
         if show_animation:  # pragma: no cover
@@ -428,6 +439,7 @@ def main(num_particle = 100):
     angle_err = np.rad2deg(hist_err[2])
     print("=================================================")
     print("FastSLAM ended in %.2fs with Distance Error: %.2fmm, Angle Error: %.2fdeg" % (total_time, dist_err, angle_err))
+    print("S: %d, N:%d, E:%d" % (Sfaster, Nfaster, hahaz))
     plt.savefig("Sim with %d.png" %(num_particle))
     return dist_err, angle_err
 
