@@ -2,13 +2,15 @@ import numpy as np
 import cv2
 import cv2.aruco as aruco
  
-cap = cv2.VideoCapture(0)
-envSize = 300
+cap = cv2.VideoCapture(1)
+envSize = 700
 print("Starting...")
+flag = False
 while(True):
 
     ret, frame = cap.read()
-
+    
+    
     #detect aruco tags and find corners
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     aruco_dict = aruco.Dictionary_get(aruco.DICT_6X6_250)
@@ -33,6 +35,7 @@ while(True):
 
 
     if (not ids is None) and (len(ids) == 5):
+        flag = True
         sortedCorners =  [x for _,x in sorted(zip(ids,corners))]
         
         #find centers of environment tags
@@ -52,11 +55,31 @@ while(True):
         angle = np.arctan2(-1*vec[1], vec[0])
         print(center, angle*180/np.pi)
 
-        #draw frames
+        #warp frames
         frame = cv2.warpPerspective(frame,M,(envSize,envSize))
+
+        # Identify red obstacles
+        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+        lower_blue = np.array([100,50,50])
+        upper_blue = np.array([140,255,255])
+        mask = cv2.inRange(hsv, lower_blue, upper_blue)
+        isolated_blue = cv2.bitwise_and(frame,frame, mask= mask)
+        _, threshold = cv2.threshold(isolated_blue, 80, 255, cv2.THRESH_BINARY)
+        imgray = cv2.cvtColor(threshold, cv2.COLOR_BGR2GRAY);
+        contours, hierarchy = cv2.findContours(imgray, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        # Find the index of the largest contour
+        areas = np.array([cv2.contourArea(c) for c in contours])
+        cnts = [contours[i] for i in np.where(areas > 10)[0]]
+        for cnt in cnts:
+            x,y,w,h = cv2.boundingRect(cnt)
+            cv2.rectangle(frame,(x,y),(x+w,y+h),(0,255,0),2)
+            print( (x+w/2, envSize - (y+h/2) ))
+
         cv2.line(frame, (int(center[0]), int(envSize - center[1])), (int(topCenter[0]), int(topCenter[1])), (0,255,0), 3)
         cv2.imshow('frame',frame)
-    
+
+    if not flag:
+        cv2.imshow('frame',frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
