@@ -1,0 +1,65 @@
+- week: 6
+  goals:
+  - goal: Generate map of detected objects from a single image
+    tasks:
+    - Write software to take distance and angle data  of objects and draw their positions on an image
+    deliverable: Image with points representing detected objects on cartesian plane with the origin representing the camera
+    points: 3
+  - goal: Continue implementation of SLAM algorithm
+    tasks:
+    - Develop a simulation of FastSLAM using existing libraries
+    deliverable: Video with simulation of SLAM
+    points: 3
+  - goal: Test and evaluate neural network on MIMO (target 2 wheeled robot) system
+    tasks:
+    - Iterate on neural network architecture if needed
+    - Test learned model on physical robot
+    deliverable: Simulated input data/trajectories and analytical comparison to state estimation
+    points: 4
+- week: 7
+  goals:
+  - goal: Update Ground Truth Estimator to detect obstacles
+    tasks:
+    - Modify ground truth estimator, detect circles/ellipses that contrast with the background
+    deliverable: Video of detection of ground truth positions of landmarks/obstacles
+    points: 6
+  - goal: Test and evaluate neural network on a new MIMO (target 2 wheeled robot) system
+    tasks:
+    - Iterate on neural network architecture if needed
+    - Test learned model on physical robot
+    deliverable: Simulated input data/trajectories and analytical comparison to state estimation
+    points: 4
+- week: 8
+  goals:
+  - goal: SLAM algorithm implementation
+    tasks:
+    - SLAM algorithm implementation on test robot, integrate with system ID
+    deliverable: Video of robot performing SLAM
+    points: 6
+  - goal: Test and evaluate neural network on a new MIMO (target 2 wheeled robot) system
+    tasks:
+    - Iterate on neural network architecture if needed
+    - Test learned model on physical robot
+    deliverable: Simulated input data/trajectories and analytical comparison to state estimation
+    points: 4
+- week: 9
+  goals:
+  - goal: Improve SLAM algorithm implementation if needed
+    tasks:
+    - Debug SLAM algorithm code, prepare for demo
+    deliverable: Video of various robot performing SLAM
+    points: 6
+  - goal: Test and evaluate neural network on multiple target robots
+    tasks:
+    - Iterate on neural network architecture if needed
+    - Test learned model on physical robot
+    deliverable: Simulated input data/trajectories and analytical comparison to state estimation
+    points: 4
+- week: 10
+  goals:
+  - goal: Complete Demo of SLAM on test robot
+    tasks:
+    - Finish any outstanding tasks
+    - Create demonstration showing pre-trained robot configurations performing SLAM in a controlled environment
+    deliverable: Completed demo showing pre-trained robot configurations with multiple wheel sizes performing SLAM in 2D, flat environment alongside ground truth measurement
+    points: 10

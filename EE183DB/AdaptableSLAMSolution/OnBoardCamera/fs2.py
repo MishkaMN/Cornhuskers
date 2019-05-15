@@ -2,6 +2,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import math
 import time
+from ContourFind import locateObstacle
+
+
 # Fast SLAM covariance
 # What we model
 R = np.diag([2.5, np.deg2rad(10.0)])**2
