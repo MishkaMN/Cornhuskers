@@ -4,7 +4,7 @@ import time, requests
 import numpy as np
 import math
 
-esp8266host = "ws://192.168.0.104:81/"
+esp8266host = "ws://192.168.50.133:81/"
 
 command = ""
 

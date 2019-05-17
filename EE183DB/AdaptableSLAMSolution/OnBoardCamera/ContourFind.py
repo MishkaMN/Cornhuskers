@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 
 objHeight = 54 #mm
 f_app = 2277.68014059754 
-f = 4.5 # mm
-sens_h = 6.828 # mm
+f = 3.04 # 4.5 # mm
+sens_h = 2.76 #6.828 # mm
 # d = 107.95 #millimeters
 
 def locateObstacle(img):

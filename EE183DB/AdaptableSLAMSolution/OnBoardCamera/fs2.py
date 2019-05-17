@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import math
 import time
-from ContourFind import locateObstacle
+import ContourFind
 
 Sfaster = 0
 Nfaster = 0
@@ -19,7 +19,7 @@ Rsim = np.diag([1.0, np.deg2rad(2.0)])**2
 Qsim = np.diag([0.5, 0.5])**2
 OFFSET_YAWRATE_NOISE = 1.0
 
-DT = 0.1  # time tick [s]
+DT = 1  # time tick [s]
 SIM_LENGTH = 50.0  # simulation time [s]
 MAX_RANGE = 300.0  # maximum observation range
 M_DIST_TH = 2.0  # Threshold of Mahalanobis distance for data association.
@@ -344,7 +344,8 @@ def calc_final_state(particles):
     st_est[2, 0] = pi_2_pi(st_est[2, 0])
     return st_est
 
-def main(num_particle = 100):
+def main(num_particle = 100, dt = 0.1):
+    DT = dt
     print("Starting Simulation...")
 
     global N_PARTICLE 
@@ -384,6 +385,7 @@ def main(num_particle = 100):
     start_time = time.time()
 
     while(SIM_LENGTH >= sim_time):
+        print("%.2f%%: %d Particles, dt = %.2f" % ((100*sim_time/SIM_LENGTH), num_particle, dt), flush=True)
         sim_time += DT
         
         u = gen_input(sim_time)
@@ -443,8 +445,8 @@ def main(num_particle = 100):
     plt.savefig("Sim with %d.png" %(num_particle))
     return dist_err, angle_err
 
-def run(num_particle):
-    return main(num_particle)
+def run(num_particle, dt):
+    return main(num_particle, dt)
 
 
 if __name__ == '__main__':
