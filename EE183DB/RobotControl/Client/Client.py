@@ -4,7 +4,8 @@ import time, requests
 import numpy as np
 import math
 
-esp8266host = "ws://192.168.0.104:81/"
+#esp8266host = "ws://192.168.0.104:81/"
+esp8266host = "ws://192.168.50.133:81/"
 
 command = ""
 
@@ -26,7 +27,7 @@ class DummyClient(WebSocketClient):
             frontSense = (float(parts[1])-62.4)/.937
             sideSense = (float(parts[2])-41.7)/.972
             theta = float(parts[3])
-            
+
             self.z_final = [theta, frontSense, sideSense]
             #print(self.z_final)
             """ START FILTERING """
@@ -39,7 +40,7 @@ class DummyClient(WebSocketClient):
             print("Filtered State")
             print(self.est_state[0]*180.0/math.pi, self.est_state[1], self.est_state[2])
             #print(self.P)
-            
+
 
 def dir_to_cmd(command):
     tmp = command.split()
@@ -63,13 +64,13 @@ if __name__ == '__main__':
         ws.connect()
         print("Ready")
 
-        print("Command Format: LeftPWM RightPWM TimeInMS")
+        print("Command Format: LeftPWM RightPWM")
 
         while(1):
             print("Send Command")
             command = input()
             command = dir_to_cmd(command)
-            if command: 
+            if command:
                 ws.send(command)
 
         ws.received_message()
