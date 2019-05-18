@@ -5,9 +5,12 @@
 
 Servo servoLeft, servoRight;
 
+<<<<<<< HEAD
 // const char* ssid     = "Kelton 211 (2G)";
 // const char* password = "interesting";
 
+=======
+>>>>>>> 578b3f79cf2676885e1338bc31015b9baa83d92c
 const char* ssid     = "YikeNet_2G";
 const char* password = "luckytrain022";
 
