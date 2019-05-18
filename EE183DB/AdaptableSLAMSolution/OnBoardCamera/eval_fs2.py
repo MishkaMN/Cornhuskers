@@ -8,6 +8,7 @@ def main():
 	distH = np.zeros((20,15))
 	angleH = np.zeros((20,15))
 
+	plt.figure()
 	dts = np.linspace(.1, 2, 20)
 	for i,dt in enumerate(dts):
 		j = 0
@@ -18,20 +19,25 @@ def main():
 			num_particle += 10
 			j = j + 1;
 			print(distH, flush=True)
-			input()
+			#input()
+		num_particle = 10
+		plt.plot(np.linspace(10,150,15),distH[i,:])
 
-	plt.cla()
-	plt.plot(distH[0,:])
+	#plot()
+	#plt.cla()
+	#plt.plot(distH[0,:])
 	plt.xlabel('Num of iteration')
 	plt.ylabel('Error in Distance, mm')
+	plt.legend(['.1', '.2','.3','.4', '.5','.6','.7', '.8','.9','1.0', 
+		'1.1','1.2','1.3', '1.4','1.5','1.6', '1.7','1.8','1.9', '2.0'])
 	plt.savefig('Distance_Error.png')
 	
-	plt.cla()
-	plt.plot(angleH)
-	plt.xlabel('Num of iteration')
-	plt.ylabel('Error in Angle, deg')
+	#plt.cla()
+	#plt.plot(angleH)
+	#plt.xlabel('Num of iteration')
+	#plt.ylabel('Error in Angle, deg')
 
-	plt.savefig('Angle_Error.png')
+	#plt.savefig('Angle_Error.png')
 
 if __name__ == '__main__':
     main()

@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import math
 import time
-import ContourFind
+#import ContourFind
 
 Sfaster = 0
 Nfaster = 0
@@ -384,6 +384,8 @@ def main(num_particle = 100, dt = 0.1):
     sim_num = 0
     start_time = time.time()
 
+    fig_err_t = plt.figure()
+
     while(SIM_LENGTH >= sim_time):
         print("%.2f%%: %d Particles, dt = %.2f" % ((100*sim_time/SIM_LENGTH), num_particle, dt), flush=True)
         sim_time += DT
@@ -406,6 +408,7 @@ def main(num_particle = 100, dt = 0.1):
         #print("Current Distance Error: %.2f, Angle Error: %.2f" % (math.sqrt(st_err[0]**2 + st_err[1]**2), np.rad2deg(abs(st_err[2]))))
         hist_err += st_err
         sim_num += 1
+
         if show_animation:  # pragma: no cover
             plt.cla()
             plt.plot(env_lm[:, 0], env_lm[:, 1], "*k")
@@ -431,6 +434,9 @@ def main(num_particle = 100, dt = 0.1):
             plt.axis("equal")
             plt.grid(True)
             plt.pause(0.000001)
+
+
+
 
 
     # Report Error
