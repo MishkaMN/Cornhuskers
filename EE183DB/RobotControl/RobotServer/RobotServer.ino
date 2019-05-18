@@ -5,6 +5,12 @@
 
 Servo servoLeft, servoRight;
 
+<<<<<<< HEAD
+// const char* ssid     = "Kelton 211 (2G)";
+// const char* password = "interesting";
+
+=======
+>>>>>>> 578b3f79cf2676885e1338bc31015b9baa83d92c
 const char* ssid     = "YikeNet_2G";
 const char* password = "luckytrain022";
 
@@ -18,33 +24,33 @@ void parseCommand(String command, int* commandParts)
   commandParts[0] = atoi(strtokIndx);
   strtokIndx = strtok(NULL,", ");
   commandParts[1] = atoi(strtokIndx);
-  strtokIndx = strtok(NULL,", ");
-  commandParts[2] = atoi(strtokIndx);
-  Serial.print(commandParts[2]);
+//  strtokIndx = strtok(NULL,", ");
+//  commandParts[2] = atoi(strtokIndx);
+//  Serial.print(commandParts[2]);
 }
 
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t len) {
     switch(type) {
-        case WStype_DISCONNECTED:      
+        case WStype_DISCONNECTED:
             break;
-        case WStype_CONNECTED: 
+        case WStype_CONNECTED:
             {
               IPAddress ip = webSocket.remoteIP(num);
-              Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\r\n", num, ip[0], ip[1], ip[2], ip[3], payload);    
+              Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\r\n", num, ip[0], ip[1], ip[2], ip[3], payload);
             }
             break;
         case WStype_TEXT:
             {
               String _payload = String((char *) &payload[0]);
-              int commandArgs[3];
+              int commandArgs[2];
               char data[64];
-              
+
               parseCommand(_payload, commandArgs);
-              drive(commandArgs[0], commandArgs[1], commandArgs[2], servoLeft, servoRight);
-              sprintf(data, "Command,%d,%d,%d", commandArgs[0], commandArgs[1], commandArgs[2]);
+              drive(commandArgs[0], commandArgs[1], servoLeft, servoRight);
+              sprintf(data, "Command,%d,%d,%d", commandArgs[0], commandArgs[1]);
               webSocket.sendTXT(num, data);
-            }   
-            break;      
+            }
+            break;
         case WStype_BIN:
             {
               hexdump(payload, len);
@@ -52,7 +58,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t len) {
             // echo data back to browser
             webSocket.sendBIN(num, payload, len);
             break;
-  
+
     }
 }
 
@@ -65,14 +71,14 @@ void setup() {
      Serial.print(".");
      delay(200);
   }
-  
+
   Serial.println("");
-  Serial.println("WiFi connected");  
+  Serial.println("WiFi connected");
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
 
-  delay(500);  
-   
+  delay(500);
+
   Serial.println("Start Websocket Server");
   webSocket.begin();
   webSocket.onEvent(webSocketEvent);
@@ -82,9 +88,10 @@ void setup() {
   servoRight.attach(SERVO_RIGHT);
 
   delay(3000);
-  
+
 }
 
 void loop() {
   webSocket.loop();
+  
 }
