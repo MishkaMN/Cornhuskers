@@ -8,6 +8,7 @@ import cv2.aruco as aruco
 import random
 import time
 import csv
+import datetime
 
 current_milli_time = lambda: int(round(time.time() * 1000))
 
@@ -80,22 +81,10 @@ def getPose(corners, pMatrix):
     vec = topCenter - center
     return center,topCenter,vec
 
-def inBounds(envSize, x, y):
+def inBounds(envWidth, envLength, x, y):
     padding = 200
-    return (x >= padding and x <= envSize - padding and
-            y >= padding and y <= envSize - padding)
-
-# PWMs
-motor_min = 82
-motor_max = 108
-
-# Millisecond times
-command_stop_time = 0
-command_time_min = 100
-command_time_max = 3000
-
-
-start_time = 0
+    return (x >= padding and x <= envWidth - padding and
+            y >= padding and y <= envLength - padding)
 
 if __name__ == '__main__':
     random.seed()
@@ -104,120 +93,182 @@ if __name__ == '__main__':
         ws.connect()
 
         cap = cv2.VideoCapture(0)
-        envSize = 1060
-        center = envSize / 2
+        #envSize = 1060
+        envLength = 1219
+        envWidth = 914
+
         print("Starting...")
-        flag = False
-        x = y = center
-        theta = 0
-        while(True):
-            ret, frame = cap.read()
 
-            #detect aruco tags and find corners
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            aruco_dict = aruco.Dictionary_get(aruco.DICT_6X6_250)
-            parameters =  aruco.DetectorParameters_create()
-            corners, ids, rejectedImgPoints = aruco.detectMarkers(gray, aruco_dict, parameters=parameters)
+        filename = time.strftime("%Y-%m-%d %H:%M:%S") + '.csv'
+        with open(filename, 'w') as csvfile:
+            writer = csv.writer(csvfile)
 
-            if (not ids is None) and (len(ids) == 5):
-                flag = True
-                sortedCorners =  [x for _,x in sorted(zip(ids,corners))]
+            flag = False
+            x = envWidth / 2
+            y = envLength / 2
+            theta = 0
+            moving_to_center = False
+            upper_angle = lower_angle = 0
+            angle_padding = 5
+            left_pwm = right_pwm = 90
 
-                #find centers of environment tags
-                topLeft = getCenter(sortedCorners, 0, 0)
-                topRight = getCenter(sortedCorners, 1, 0)
-                bottomLeft = getCenter(sortedCorners, 2, 0)
-                bottomRight = getCenter(sortedCorners, 3, 0)
+            # PWMs
+            motor_min = 82
+            motor_max = 98
 
-                #Perspective transform to correct for angle of camera
-                pts1 = np.float32([topLeft, topRight, bottomLeft, bottomRight])
-                pts2 = np.float32([[0,0],[envSize,0],[0,envSize],[envSize,envSize]])
-                M = cv2.getPerspectiveTransform(pts1,pts2)
+            # Millisecond times
+            command_stop_time = 0
+            command_time_min = 100
+            command_time_max = 3000
 
-                #perform pose estimates
-                center, topCenter, vec = getPose(sortedCorners,M)
-                center = (center[0] + 1, envSize - center[1] - 42)
-                angle = np.arctan2(-1*vec[1], vec[0])
+            start_time = current_milli_time()
+            total_duration = 3600 * 1000 # in MS
+            end_time = start_time + total_duration
 
-                x,y = center
-                theta = angle*180/np.pi
-                print(x, y, theta)
+            while(True):
+                ret, frame = cap.read()
 
-                #warp frames
-                frame = cv2.warpPerspective(frame,M,(envSize,envSize))
+                #detect aruco tags and find corners
+                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                aruco_dict = aruco.Dictionary_get(aruco.DICT_6X6_250)
+                parameters =  aruco.DetectorParameters_create()
+                corners, ids, rejectedImgPoints = aruco.detectMarkers(gray, aruco_dict, parameters=parameters)
 
-                # Identify blue obstacles
-                hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-                lower_blue = np.array([100,50,50])
-                upper_blue = np.array([140,255,255])
-                mask = cv2.inRange(hsv, lower_blue, upper_blue)
-                isolated_blue = cv2.bitwise_and(frame,frame, mask= mask)
-                _, threshold = cv2.threshold(isolated_blue, 80, 255, cv2.THRESH_BINARY)
-                imgray = cv2.cvtColor(threshold, cv2.COLOR_BGR2GRAY);
-                contours, hierarchy = cv2.findContours(imgray, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-                # Find the index of the largest contour
-                areas = np.array([cv2.contourArea(c) for c in contours])
-                cnts = [contours[i] for i in np.where(areas > 10)[0]]
-                for cnt in cnts:
-                    bx,by,bw,bh = cv2.boundingRect(cnt)
-                    cv2.rectangle(frame,(bx,by),(bx+bw,by+bh),(0,255,0),2)
-                    print( (bx+bw/2, envSize - (by+bh/2) ))
+                if (not ids is None) and (len(ids) == 5):
+                    flag = True
+                    sortedCorners =  [x for _,x in sorted(zip(ids,corners))]
 
-                cv2.line(frame, (int(center[0]), int(envSize - center[1])), (int(topCenter[0]), int(topCenter[1])), (0,255,0), 3)
-                cv2.imshow('frame',frame)
+                    #find centers of environment tags
+                    topLeft = getCenter(sortedCorners, 0, 0)
+                    topRight = getCenter(sortedCorners, 1, 0)
+                    bottomLeft = getCenter(sortedCorners, 2, 0)
+                    bottomRight = getCenter(sortedCorners, 3, 0)
 
-            else:
-                flag = False
+                    #Perspective transform to correct for angle of camera
+                    pts1 = np.float32([topLeft, topRight, bottomLeft, bottomRight])
+                    pts2 = np.float32([[0,0],[envWidth,0],[0,envLength],[envWidth,envLength]])
+                    M = cv2.getPerspectiveTransform(pts1,pts2)
 
-            if not inBounds(envSize, x, y):
-                ws.send('90 90')
-                command_stop_time = 0
+                    #perform pose estimates
+                    center, topCenter, vec = getPose(sortedCorners,M)
+                    center = (center[0], envLength - center[1])
+                    angle = np.arctan2(-1*vec[1], vec[0])
 
-                # Get angle from point of robot to center point
-                angle_to_center = math.degrees(math.atan2(center - x / center - y))
-                current_angle = theta
+                    x,y = center
+                    theta = angle*180/np.pi
+                    print(x, y, theta)
 
-                # Put angles between 0 and 360 degrees
-                if angle_to_center < -180:
-                    angle_to_center += 360
-                if current_angle < 0:
-                    current_angle += 360
+                    #warp frames
+                    frame = cv2.warpPerspective(frame,M,(envWidth,envLength))
 
-                # Determine optimal rotation direction
-                diff = angle_to_center - current_angle
-                if diff < 0:
-                    diff += 360
-                if diff > 180:
-                    command = '82 82'
+                    # Identify blue obstacles
+                    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+                    lower_blue = np.array([100,50,50])
+                    upper_blue = np.array([140,255,255])
+                    mask = cv2.inRange(hsv, lower_blue, upper_blue)
+                    isolated_blue = cv2.bitwise_and(frame,frame, mask= mask)
+                    _, threshold = cv2.threshold(isolated_blue, 80, 255, cv2.THRESH_BINARY)
+                    imgray = cv2.cvtColor(threshold, cv2.COLOR_BGR2GRAY);
+                    contours, hierarchy = cv2.findContours(imgray, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+                    # Find the index of the largest contour
+                    areas = np.array([cv2.contourArea(c) for c in contours])
+                    cnts = [contours[i] for i in np.where(areas > 10)[0]]
+                    for cnt in cnts:
+                        bx,by,bw,bh = cv2.boundingRect(cnt)
+                        cv2.rectangle(frame,(bx,by),(bx+bw,by+bh),(0,255,0),2)
+                        print( (bx+bw/2, envLength - (by+bh/2) ))
+
+                    cv2.line(frame, (int(center[0]), int(envLength - center[1])), (int(topCenter[0]), int(topCenter[1])), (0,255,0), 3)
+                    cv2.imshow('frame',frame)
+
                 else:
-                    command = '98 98'
+                    flag = False
 
-                while theta < angle_to_center - 5 or theta > angle_to_center + 5:
-                    
+                if moving_to_center:
+                    current_angle = theta
 
-            elif current_milli_time() >= command_stop_time:
-                # Stop
-                ws.send('90 90')
+                    # Put angle between 0 and 360 degrees
+                    if current_angle < 0:
+                        current_angle += 360
 
-                # duration = randint(command_time_min, command_time_max)
-                duration = 10000
+                    # Check if robot is facing towards center (within a threshold)
+                    if (((upper_angle < lower_angle) and (current_angle > upper_angle and current_angle < lower_angle)) or
+                        (current_angle > lower_angle and current_angle < upper_angle)):
 
-                left = random.randint(motor_min, motor_max)
-                right = random.randint(motor_min, motor_max)
+                        # Stop
+                        ws.send('90 90')
+                        moving_to_center = False
 
-                # Drive motors
-                #command = str(left) + ' ' + str(right)
-                command = '98 82'
-                ws.send(command)
+                        # Move forward
+                        ws.send('98 82')
+                        command_stop_time = current_milli_time() + 1000
 
-                command_stop_time = current_milli_time() + duration
+                elif not inBounds(envWidth, envLength, x, y):
+                    ws.send('90 90')
+                    command_stop_time = 0
 
-                print('Input ' + str(left) + ' ' + str(right) + ' for ' + str(duration) + ' ms')
+                    # Get angle from point of robot to center point
+                    angle_to_center = math.degrees(math.atan2(envWidth - x / envLength - y))
+                    current_angle = theta
 
-            if not flag:
-                cv2.imshow('frame',frame)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
+                    # Put angles between 0 and 360 degrees
+                    if angle_to_center < -180:
+                        angle_to_center += 360
+                    if current_angle < 0:
+                        current_angle += 360
+
+                    # Determine optimal rotation direction
+                    diff = angle_to_center - current_angle
+                    if diff < 0:
+                        diff += 360
+                    if diff > 180:
+                        # turn CCW
+                        command = '83 85'
+                    else:
+                        # turn CW
+                        command = '180 101'
+
+                    ws.send(command)
+
+                    # Minimum threshold to consider robot to be "facing the center"
+                    lower_angle = angle_to_center - angle_padding
+                    if lower_angle < 0:
+                        lower_angle += 360
+                    upper_angle = angle_to_center + angle_padding
+                    if upper_angle >= 360:
+                        upper_angle -= 360
+
+                elif current_milli_time() >= command_stop_time:
+                    # Stop
+                    ws.send('90 90')
+
+                    # duration = randint(command_time_min, command_time_max)
+                    duration = 10000
+
+                    # Random inputs
+                    left_pwm = random.choice([180, 83, 90])
+                    right_pwm = random.choice([85, 101, 90])
+
+                    # Drive motors
+                    # command = str(left_pwm) + ' ' + str(right_pwm)
+                    command = '180 85'
+                    ws.send(command)
+
+                    command_stop_time = current_milli_time() + duration
+
+                    # print('Input ' + str(left_pwm) + ' ' + str(right_pwm) + ' for ' + str(duration) + ' ms')
+
+                if not flag:
+                    cv2.imshow('frame',frame)
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break
+
+                # Record data in CSV file
+                current_time = (current_milli_time() - start_time) / 1000 # Time in seconds
+                writer.writerow([current_time, left_pwm, right_pwm, x, y, theta])
+
+                if current_time >= end_time:
+                    break
 
         cap.release()
         cv2.destroyAllWindows()

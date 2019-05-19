@@ -3,9 +3,10 @@ import time, requests
 #import Kfilter
 import numpy as np
 import math
+
+#esp8266host = "ws://192.168.0.104:81/"
 import time
 #esp8266host = "ws://192.168.0.104:81/"
-
 esp8266host = "ws://192.168.50.133:81/"
 
 command = ""
@@ -72,7 +73,7 @@ if __name__ == '__main__':
             command = input()
             sleeptime = int(command.split(' ')[2])
             command = dir_to_cmd(command)
-            
+
             if command:
                 ws.send(command)
                 time.sleep(float(sleeptime)/1000.0)
