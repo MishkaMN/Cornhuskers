@@ -35,7 +35,7 @@ INIT_X = 100.0
 INIT_Y = 100.0
 INIT_YAW = 0.0
 
-show_animation = True
+show_animation = False
 
 class Particle:
 
@@ -477,4 +477,4 @@ if __name__ == '__main__':
     if i == '':
         main()
     else:
-        main(int(i))
+        main(int(i),1.0)
