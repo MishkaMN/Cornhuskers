@@ -64,8 +64,8 @@ if __name__ == '__main__':
 
             # Identify blue obstacles
             hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-            lower_blue = np.array([100,50,50])
-            upper_blue = np.array([140,255,255])
+            lower_blue = np.array([90,50,50])
+            upper_blue = np.array([110,255,255])
             mask = cv2.inRange(hsv, lower_blue, upper_blue)
             isolated_blue = cv2.bitwise_and(frame,frame, mask= mask)
             _, threshold = cv2.threshold(isolated_blue, 80, 255, cv2.THRESH_BINARY)
