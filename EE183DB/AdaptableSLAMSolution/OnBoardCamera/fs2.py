@@ -9,17 +9,18 @@ Nfaster = 0
 hahaz = 0
 nequal = 0
 
+width = 123
 # Fast SLAM covariance
 # What we model
 R = np.diag([2.5, np.deg2rad(10.0)])**2
-Q = np.diag([5.0, np.deg2rad(20.0)])**2
+Q = np.diag([18.4, np.deg2rad(1/width * 2*18.4)])**2
 
 #  Simulation parameter
 Rsim = np.diag([1.0, np.deg2rad(2.0)])**2
 Qsim = np.diag([0.5, 0.5])**2
 OFFSET_YAWRATE_NOISE = 1.0
 
-DT = 1  # time tick [s]
+#DT = 1  # time tick [s]
 SIM_LENGTH = 50.0  # simulation time [s]
 MAX_RANGE = 300.0  # maximum observation range
 M_DIST_TH = 2.0  # Threshold of Mahalanobis distance for data association.
@@ -30,11 +31,11 @@ NTH = N_PARTICLE / 1.5  # Number of particle for re-sampling
 N_LM = 10 # upper limit on number of landmarks
 ENV_SIZE = 700 # 70cm environment
 
-INIT_X = 350.0
-INIT_Y = 350.0
+INIT_X = 100.0
+INIT_Y = 100.0
 INIT_YAW = 0.0
 
-show_animation = False
+show_animation = True
 
 class Particle:
 
@@ -50,12 +51,12 @@ class Particle:
         self.lmP = np.zeros((N_LM * LM_SIZE, LM_SIZE))
 
 def gen_input(t):
-    if t < 3.0:
-        v_l = 0
-        v_r = 0
+    if t < 4.0:
+        v_l = 180
+        v_r = 85
     else:
-        v_l = 10.0
-        v_r = 20.0
+        v_l = 90
+        v_r = 90
     
     return np.array([[v_l], [v_r]])
 
@@ -76,7 +77,7 @@ def predict_particles(particles, u):
         px[0, 0] = particles[i].x
         px[1, 0] = particles[i].y
         px[2, 0] = particles[i].yaw
-        ud = u + (np.random.randn(1, 2) @ R).T  # add noise
+        ud = u #+ (np.random.randn(1, 2) @ R).T  # add noise
         px = motion_model(px, ud)
         particles[i].x = px[0, 0]
         particles[i].y = px[1, 0]
@@ -225,10 +226,24 @@ def motion_model(st, u):
                   [DT * np.sin(st[2, 0]), 0],
                   [0.0, DT]])
 
-    #why 1/70?
-    u_prime = np.array([[(u[0,0] + u[1,0])/2], [1/70 * (u[1,0] - u[0,0])]])
-    #print(u_prime)
-    st = F @ st + B @ u_prime
+    v = np.zeros((2,1))
+    
+    if u[0,0] == 90:
+        v[0,0] = 0.0
+    elif (u[0,0] == 180): #FW
+        v[0,0] = 228.1183511
+    elif (u[0,0] == 83): #BW
+        v[0,0] = -230.366008
+
+    if u[1,0] == 90:
+        v[1,0] = 0.0
+    elif (u[1,0] == 85): #FW
+        v[1,0] = 235.3996466
+    elif (u[1,0] == 101): #BW
+        v[1,0] = -208.6064064
+
+    v = np.array([[(v[0,0] + v[1,0])/2], [1/width * (v[1,0] - v[0,0])]])
+    st = F @ st + B @ v
     st[2, 0] = pi_2_pi(st[2, 0])
     return st
 
@@ -251,13 +266,13 @@ def make_obs(st_true, st_dr, u, env_lm):
             z = np.hstack((z, z_i))
 
     # noisy input
-    ud1 = u[0, 0] + np.random.randn() * Qsim[0, 0]
-    ud2 = u[1, 0] + np.random.randn() * Qsim[1, 1]
-    ud = np.array([[ud1], [ud2]])
+    #ud1 = u[0, 0] + np.random.randn() * Qsim[0, 0]
+    #ud2 = u[1, 0] + np.random.randn() * Qsim[1, 1]
+    #ud = np.array([[ud1], [ud2]])
     # ground truth
-    st_true = motion_model(st_true,ud)
-
-    return st_true, st_dr, z, ud
+    #st_true = motion_model(st_true,ud)
+    st_true = st_dr
+    return st_true, st_dr, z, u
 
 def normalize_weight(particles):
     sumw = sum([p.w for p in particles])
@@ -345,6 +360,7 @@ def calc_final_state(particles):
     return st_est
 
 def main(num_particle = 100, dt = 0.1):
+    global DT
     DT = dt
     print("Starting Simulation...")
 
@@ -352,15 +368,15 @@ def main(num_particle = 100, dt = 0.1):
     N_PARTICLE = num_particle
 
     #initialize environment
-    env_lm = np.array([[40,90],
-                       [600, 500],
+    env_lm = np.array([[0,0],
+                       [0, 1000],
                        [300, 300], 
-                       [100,400], 
+                       [1000,0], 
                        [400,100], 
                        [290, 100], 
                        [500,200], 
                        [300,550], 
-                       [600,200]])
+                       [1000,1000]])
     
     N_LM = env_lm.shape[0]
 
