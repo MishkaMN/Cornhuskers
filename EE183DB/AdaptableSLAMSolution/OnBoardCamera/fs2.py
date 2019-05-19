@@ -464,7 +464,8 @@ def main(num_particle = 100, dt = 0.1):
     print("=================================================")
     print("FastSLAM ended in %.2fs with Distance Error: %.2fmm, Angle Error: %.2fdeg" % (total_time, dist_err, angle_err))
     print("S: %d, N:%d, E:%d" % (Sfaster, Nfaster, hahaz))
-    plt.savefig("Sim with %d.png" %(num_particle))
+    if show_animation:
+        plt.savefig("Sim with %d.png" %(num_particle))
     return dist_err, angle_err
 
 def run(num_particle, dt):
