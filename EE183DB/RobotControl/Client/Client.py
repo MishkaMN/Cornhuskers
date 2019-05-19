@@ -5,6 +5,8 @@ import numpy as np
 import math
 
 #esp8266host = "ws://192.168.0.104:81/"
+import time
+#esp8266host = "ws://192.168.0.104:81/"
 esp8266host = "ws://192.168.50.133:81/"
 
 command = ""
@@ -69,9 +71,13 @@ if __name__ == '__main__':
         while(1):
             print("Send Command")
             command = input()
+            sleeptime = int(command.split(' ')[2])
             command = dir_to_cmd(command)
+
             if command:
                 ws.send(command)
+                time.sleep(float(sleeptime)/1000.0)
+                ws.send("90 90 100")
 
         ws.received_message()
         exit()
