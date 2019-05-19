@@ -99,7 +99,8 @@ if __name__ == '__main__':
 
         print("Starting...")
 
-        filename = time.strftime("%Y-%m-%d %H:%M:%S") + '.csv'
+        #filename = time.strftime("%Y-%m-%d %H:%M:%S") + '.csv'
+        filename = 'data.csv'
         with open(filename, 'w') as csvfile:
             writer = csv.writer(csvfile)
 
@@ -107,7 +108,7 @@ if __name__ == '__main__':
             x = envWidth / 2
             y = envLength / 2
             theta = 0
-            moving_to_center = False
+            rotating_to_center = False
             upper_angle = lower_angle = 0
             angle_padding = 5
             left_pwm = right_pwm = 90
@@ -184,7 +185,7 @@ if __name__ == '__main__':
                 else:
                     flag = False
 
-                if moving_to_center:
+                if rotating_to_center:
                     current_angle = theta
 
                     # Put angle between 0 and 360 degrees
@@ -197,7 +198,7 @@ if __name__ == '__main__':
 
                         # Stop
                         ws.send('90 90')
-                        moving_to_center = False
+                        rotating_to_center = False
 
                         # Move forward
                         ws.send('98 82')
@@ -207,8 +208,10 @@ if __name__ == '__main__':
                     ws.send('90 90')
                     command_stop_time = 0
 
+                    #time.sleep(500)
+
                     # Get angle from point of robot to center point
-                    angle_to_center = math.degrees(math.atan2(envWidth - x / envLength - y))
+                    angle_to_center = math.degrees(math.atan2(envLength - y, envWidth - x))
                     current_angle = theta
 
                     # Put angles between 0 and 360 degrees
@@ -228,8 +231,6 @@ if __name__ == '__main__':
                         # turn CW
                         command = '180 101'
 
-                    ws.send(command)
-
                     # Minimum threshold to consider robot to be "facing the center"
                     lower_angle = angle_to_center - angle_padding
                     if lower_angle < 0:
@@ -237,6 +238,9 @@ if __name__ == '__main__':
                     upper_angle = angle_to_center + angle_padding
                     if upper_angle >= 360:
                         upper_angle -= 360
+
+                    rotating_to_center = True 
+                    ws.send(command)
 
                 elif current_milli_time() >= command_stop_time:
                     # Stop
@@ -246,12 +250,13 @@ if __name__ == '__main__':
                     duration = 10000
 
                     # Random inputs
-                    left_pwm = random.choice([180, 83, 90])
-                    right_pwm = random.choice([85, 101, 90])
+                    # left_pwm = random.choice([180, 83, 90])
+                    # right_pwm = random.choice([85, 101, 90])
+                    left_pwm = 180
+                    right_pwm = 85
 
                     # Drive motors
-                    # command = str(left_pwm) + ' ' + str(right_pwm)
-                    command = '180 85'
+                    command = str(left_pwm) + ' ' + str(right_pwm)
                     ws.send(command)
 
                     command_stop_time = current_milli_time() + duration
@@ -268,10 +273,13 @@ if __name__ == '__main__':
                 writer.writerow([current_time, left_pwm, right_pwm, x, y, theta])
 
                 if current_time >= end_time:
+                    ws.send('90 90')
+                    ws.close()
                     break
 
         cap.release()
         cv2.destroyAllWindows()
 
     except KeyboardInterrupt:
+        ws.send('90 90')
         ws.close()

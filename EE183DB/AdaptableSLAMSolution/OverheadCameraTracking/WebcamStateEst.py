@@ -21,7 +21,8 @@ def getPose(corners, pMatrix):
 
 if __name__ == '__main__':
     cap = cv2.VideoCapture(0)
-    envSize = 1060
+    envLength = 1219
+    envWidth = 914
     print("Starting...")
     flag = False
     while(True):
@@ -46,12 +47,12 @@ if __name__ == '__main__':
 
             #Perspective transform to correct for angle of camera
             pts1 = np.float32([topLeft, topRight, bottomLeft, bottomRight])
-            pts2 = np.float32([[0,0],[envSize,0],[0,envSize],[envSize,envSize]])
+            pts2 = np.float32([[0,0],[envWidth,0],[0,envLength],[envWidth,envLength]])
             M = cv2.getPerspectiveTransform(pts1,pts2)
 
             #perform pose estimates
             center, topCenter, vec = getPose(sortedCorners,M)
-            center = (center[0] - 3, envSize - center[1] - 9)
+            center = (center[0], envLength - center[1])
             angle = np.arctan2(-1*vec[1], vec[0])
             print(center, angle*180/np.pi)
 
@@ -60,7 +61,7 @@ if __name__ == '__main__':
             print(angle_to_center)
 
             #warp frames
-            frame = cv2.warpPerspective(frame,M,(envSize,envSize))
+            frame = cv2.warpPerspective(frame,M,(envWidth,envLength))
 
             # Identify blue obstacles
             hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
@@ -77,9 +78,9 @@ if __name__ == '__main__':
             for cnt in cnts:
                 x,y,w,h = cv2.boundingRect(cnt)
                 cv2.rectangle(frame,(x,y),(x+w,y+h),(0,255,0),2)
-                print( (x+w/2, envSize - (y+h/2) ))
+                print( (x+w/2, envLength - (y+h/2) ))
 
-            cv2.line(frame, (int(center[0]), int(envSize - center[1])), (int(topCenter[0]), int(topCenter[1])), (0,255,0), 3)
+            cv2.line(frame, (int(center[0]), int(envLength - center[1])), (int(topCenter[0]), int(topCenter[1])), (0,255,0), 3)
             cv2.imshow('frame',frame)
 
         else:
