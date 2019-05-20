@@ -82,7 +82,7 @@ def getPose(corners, pMatrix):
     return center,topCenter,vec
 
 def inBounds(envWidth, envLength, x, y):
-    padding = 200
+    padding = 300 # In millimeters
     return (x >= padding and x <= envWidth - padding and
             y >= padding and y <= envLength - padding)
 
@@ -99,18 +99,20 @@ if __name__ == '__main__':
 
         print("Starting...")
 
-        #filename = time.strftime("%Y-%m-%d %H:%M:%S") + '.csv'
-        filename = 'data.csv'
+        filename = time.strftime("%Y%m%d_%H%M%S") + '.csv'
+        #filename = 'data.csv'
         with open(filename, 'w') as csvfile:
             writer = csv.writer(csvfile)
+            writer.writerow(['time', 'left_pwm', 'right_pwm', 'x', 'y', 'theta'])
 
             flag = False
             x = envWidth / 2
             y = envLength / 2
             theta = 0
             rotating_to_center = False
+            moving_to_center = False
             upper_angle = lower_angle = 0
-            angle_padding = 5
+            angle_padding = 15
             left_pwm = right_pwm = 90
 
             # PWMs
@@ -123,8 +125,9 @@ if __name__ == '__main__':
             command_time_max = 3000
 
             start_time = current_milli_time()
-            total_duration = 3600 * 1000 # in MS
-            end_time = start_time + total_duration
+            total_duration = 10 # In seconds
+
+            print('Running robot for ' + str(total_duration) + ' seconds')
 
             while(True):
                 ret, frame = cap.read()
@@ -162,15 +165,21 @@ if __name__ == '__main__':
                     #warp frames
                     frame = cv2.warpPerspective(frame,M,(envWidth,envLength))
 
-                    # Identify blue obstacles
+                    # Identify red obstacles
                     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-                    lower_blue = np.array([100,50,50])
-                    upper_blue = np.array([140,255,255])
-                    mask = cv2.inRange(hsv, lower_blue, upper_blue)
-                    isolated_blue = cv2.bitwise_and(frame,frame, mask= mask)
-                    _, threshold = cv2.threshold(isolated_blue, 80, 255, cv2.THRESH_BINARY)
+                    lower_red1 = np.array([0, 200, 100])
+                    upper_red1 = np.array([10, 255, 255])
+                    mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
+                    lower_red2 = np.array([160, 100, 100])
+                    upper_red2 = np.array([179, 255, 255])
+                    mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
+                    mask = cv2.addWeighted(mask1, 1.0, mask2, 1.0, 0.0);
+                    isolated = cv2.bitwise_and(frame, frame, mask= mask)
+                    #cv2.imshow("mask", isolated)
+                    _, threshold = cv2.threshold(isolated, 80, 255, cv2.THRESH_BINARY)
                     imgray = cv2.cvtColor(threshold, cv2.COLOR_BGR2GRAY);
                     contours, hierarchy = cv2.findContours(imgray, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
                     # Find the index of the largest contour
                     areas = np.array([cv2.contourArea(c) for c in contours])
                     cnts = [contours[i] for i in np.where(areas > 10)[0]]
@@ -185,7 +194,13 @@ if __name__ == '__main__':
                 else:
                     flag = False
 
-                if rotating_to_center:
+                if moving_to_center:
+                    if current_milli_time() >= command_stop_time:
+                        ws.send('90 90')
+                        moving_to_center = False
+                        #time.sleep(500)
+
+                elif rotating_to_center:
                     current_angle = theta
 
                     # Put angle between 0 and 360 degrees
@@ -201,7 +216,8 @@ if __name__ == '__main__':
                         rotating_to_center = False
 
                         # Move forward
-                        ws.send('98 82')
+                        ws.send('180 85')
+                        moving_to_center = True
                         command_stop_time = current_milli_time() + 1000
 
                 elif not inBounds(envWidth, envLength, x, y):
@@ -211,11 +227,11 @@ if __name__ == '__main__':
                     #time.sleep(500)
 
                     # Get angle from point of robot to center point
-                    angle_to_center = math.degrees(math.atan2(envLength - y, envWidth - x))
+                    angle_to_center = math.degrees(math.atan2(envLength/2 - y, envWidth/2 - x))
                     current_angle = theta
 
                     # Put angles between 0 and 360 degrees
-                    if angle_to_center < -180:
+                    if angle_to_center < 0:
                         angle_to_center += 360
                     if current_angle < 0:
                         current_angle += 360
@@ -239,21 +255,21 @@ if __name__ == '__main__':
                     if upper_angle >= 360:
                         upper_angle -= 360
 
-                    rotating_to_center = True 
+                    rotating_to_center = True
                     ws.send(command)
 
                 elif current_milli_time() >= command_stop_time:
                     # Stop
                     ws.send('90 90')
 
-                    # duration = randint(command_time_min, command_time_max)
-                    duration = 10000
+                    duration = random.randint(command_time_min, command_time_max)
+                    # duration = 10000
 
                     # Random inputs
-                    # left_pwm = random.choice([180, 83, 90])
-                    # right_pwm = random.choice([85, 101, 90])
-                    left_pwm = 180
-                    right_pwm = 85
+                    left_pwm = random.choice([180, 83, 90])
+                    right_pwm = random.choice([85, 101, 90])
+                    # left_pwm = 180
+                    # right_pwm = 85
 
                     # Drive motors
                     command = str(left_pwm) + ' ' + str(right_pwm)
@@ -261,7 +277,7 @@ if __name__ == '__main__':
 
                     command_stop_time = current_milli_time() + duration
 
-                    # print('Input ' + str(left_pwm) + ' ' + str(right_pwm) + ' for ' + str(duration) + ' ms')
+                    print('Input ' + str(left_pwm) + ' ' + str(right_pwm) + ' for ' + str(duration) + ' ms')
 
                 if not flag:
                     cv2.imshow('frame',frame)
@@ -270,11 +286,12 @@ if __name__ == '__main__':
 
                 # Record data in CSV file
                 current_time = (current_milli_time() - start_time) / 1000 # Time in seconds
-                writer.writerow([current_time, left_pwm, right_pwm, x, y, theta])
+                writer.writerow([current_time, left_pwm, right_pwm, round(x,6), round(y,6), round(theta,6)])
 
-                if current_time >= end_time:
+                if current_time >= total_duration:
                     ws.send('90 90')
                     ws.close()
+                    print('Data gathering complete')
                     break
 
         cap.release()

@@ -63,15 +63,21 @@ if __name__ == '__main__':
             #warp frames
             frame = cv2.warpPerspective(frame,M,(envWidth,envLength))
 
-            # Identify blue obstacles
+            # Identify red obstacles
             hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-            lower_blue = np.array([90,50,50])
-            upper_blue = np.array([110,255,255])
-            mask = cv2.inRange(hsv, lower_blue, upper_blue)
-            isolated_blue = cv2.bitwise_and(frame,frame, mask= mask)
-            _, threshold = cv2.threshold(isolated_blue, 80, 255, cv2.THRESH_BINARY)
+            lower_red1 = np.array([0, 200, 100])
+            upper_red1 = np.array([10, 255, 255])
+            mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
+            lower_red2 = np.array([160, 100, 100])
+            upper_red2 = np.array([179, 255, 255])
+            mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
+            mask = cv2.addWeighted(mask1, 1.0, mask2, 1.0, 0.0);
+            isolated = cv2.bitwise_and(frame, frame, mask= mask)
+            #cv2.imshow("mask", isolated)
+            _, threshold = cv2.threshold(isolated, 80, 255, cv2.THRESH_BINARY)
             imgray = cv2.cvtColor(threshold, cv2.COLOR_BGR2GRAY);
             contours, hierarchy = cv2.findContours(imgray, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
             # Find the index of the largest contour
             areas = np.array([cv2.contourArea(c) for c in contours])
             cnts = [contours[i] for i in np.where(areas > 10)[0]]
