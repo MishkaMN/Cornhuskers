@@ -1,7 +1,7 @@
 #from picamera.array import PiRGBArray
 #from picamera import PiCamera
 import numpy as np
-#import cv2
+import cv2
 import matplotlib.pyplot as plt
 import time
 objHeight = 50 #mm
@@ -11,7 +11,7 @@ sens_h = 2.76 #6.828 # mm
 # d = 107.95 #millimeters
 
 def locateObstacle():
-    """
+
     #_, threshold = cv2.threshold(img, 150, 255, cv2.THRESH_BINARY)
     #imgray = cv2.cvtColor(threshold, cv2.COLOR_BGR2GRAY);
     #contours, hierarchy = cv2.findContours(imgray, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -51,24 +51,25 @@ def locateObstacle():
         angle = np.arctan(px_from_center/f*sens_h/(img.shape[1]))
         locations.append((d2,angle,x,y,w,h))
 
-    For a full debug, maybe we can use the function from
-    original fs2 to give observation
-    """
-    locations = np.array([[200, 1/6*np.pi]])
+    #For a full debug, maybe we can use the function from
+    #original fs2 to give observation
+    
+    #locations = np.array([[200, 1/6*np.pi]])
     return locations
 
     
 def main():
     input("Press Enter to Start")
-
-    camera = PiCamera()
-    camera.vflip = True
-    rawCap = PiRGBArray(camera)
+    cap = cv2.VideoCapture('wk8.mp4')
+    #camera = PiCamera()
+    #camera.vflip = True
+    #rawCap = PiRGBArray(camera)
     time.sleep(1)
     flag=True
-    while(1):
-        camera.capture(rawCap, format="bgr")
-        img = rawCap.array
+    while(cap.isOpened()):
+        #camera.capture(rawCap, format="bgr")
+        #img = rawCap.array
+        ret, img = cap.read()
         locations = locateObstacle(img)
 
         objPoseX = []
@@ -88,7 +89,7 @@ def main():
             objPoseX.append(d2*np.sin(angle))
             objPoseY.append(d2*np.cos(angle))
 
-        rawCap.truncate(0)
+        #rawCap.truncate(0)
 
 if __name__ == "__main__":
     main()

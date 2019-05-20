@@ -28,15 +28,16 @@ Rsim = np.diag([1.0, np.deg2rad(2.0)])**2
 Qsim = np.diag([0.5, 0.5])**2
 OFFSET_YAWRATE_NOISE = 1.0
 
+
 DT = 1  # time tick [s]
-SIM_LENGTH = 50.0  # simulation time [s]
+SIM_LENGTH = 100.0  # simulation time [s]
 MAX_RANGE = 300.0  # maximum observation range
 M_DIST_TH = 2.0  # Threshold of Mahalanobis distance for data association.
 STATE_SIZE = 3  # State size [x,y,yaw]
 LM_SIZE = 2  # LM srate size [x,y]
 N_PARTICLE = 100  # number of particle
 NTH = N_PARTICLE / 1.5  # Number of particle for re-sampling
-N_LM = 10 # upper limit on number of landmarks
+N_LM = 20 # upper limit on number of landmarks
 ENV_SIZE = 700 # 70cm environment
 
 INIT_X = 100.0
@@ -114,7 +115,7 @@ def add_new_lm_mod(particle, z, R):
     try:
         lm_id = lst.index([0,0])
     except ValueError:
-        print("Could not find 0,0; lm list full")
+        #print("Could not find 0,0; lm list full")
         return particle, -1
     # plus should be changed to minus when using contour
     s = math.sin(pi_2_pi(particle.yaw + b))
@@ -130,7 +131,7 @@ def add_new_lm_mod(particle, z, R):
     particle.lmP[2 * lm_id:2 * lm_id + 2] = Gz @ R @ Gz.T
     particle.seen += 1
 
-    print(lm_id)
+    #print(lm_id)
     #input()
     return particle, lm_id
 
@@ -208,7 +209,7 @@ def update_KF_with_cholesky(xf, Pf, v, Q, Hf):
 
 
 def update_landmark(particle, z, Q):
-
+    print("Updating lndmark")
     lm_id = int(z[2])
     xf = np.array(particle.lm[lm_id, :]).reshape(2, 1)
     Pf = np.array(particle.lmP[2 * lm_id:2 * lm_id + 2])
@@ -341,7 +342,7 @@ def make_obs(particles, st_true, st_dr, u, img, env_lm):
     """
     locations = np.zeros((2, 0))
     for i in range(len(env_lm[:, 0])):
-        print(i)
+        #print(i)
         dx = env_lm[i, 0] - st_true[0, 0]
         dy = env_lm[i, 1] - st_true[1, 0]
         d = math.sqrt(dx**2+dy**2)
@@ -349,18 +350,20 @@ def make_obs(particles, st_true, st_dr, u, img, env_lm):
         #check if lm in front
         if d <= MAX_RANGE and angle > -1*np.pi/2 and angle < np.pi/2:
             #print(env_lm
-            print(env_lm[i,0], env_lm[i,1])
+            #print(env_lm[i,0], env_lm[i,1])
             #print("Observing in Original Way\n")
             d_n = d + np.random.randn() * Rsim[0, 0]  # add noise
             angle_n = angle + np.random.randn() * Rsim[1, 1]  # add noise
             loc = np.array([[d_n], [pi_2_pi(angle_n)]])
             locations = np.hstack((locations, loc))
-    print("Original type of observed locations:\n ", locations)
-
+    #print("Original type of observed locations:\n ", locations)
+    #print(locations)
+    #input()
     # Until this part can be taken out
     if (locations.shape[1] != 0):
         for loc in np.hsplit(locations, locations.shape[1]):
-            print("Processing loc:\n", loc)
+            #print("==============================================")
+            #print("Processing loc:\n", loc)
             dist = loc[0]
             angle = loc[1]
             lm_probs = np.zeros((N_LM,N_PARTICLE))
@@ -368,27 +371,30 @@ def make_obs(particles, st_true, st_dr, u, img, env_lm):
             lm_id = 0
             for ip in range(N_PARTICLE):
                 if particles[ip].seen == 0:
-                    print("Particle has never seen before\n")
+                    #print("Particle has never seen before\n")
                     particles[ip], lm_id = add_new_lm_mod(particles[ip], loc, R)
                 else:
                     #vote for the shortest distance one
-                    vote_id = 0
                     min_dist= 10000000
                     for il in range(particles[ip].seen):
+                        
                         curr_dist = dist_from_obs_to_stored(particles[ip],loc,particles[ip].lm[il])
                         #print("il, Dist from obs to stored", il, curr_dist)
-                        if (curr_dist < 30.0):
+                        if (curr_dist < 40.0):
                             lm_id = il
                             min_dist = curr_dist
                         
 
                     if min_dist == 10000000:
-                        print("No suitable landmarks matched")
+                        #print("No suitable landmarks matched")
                         particles[ip], lm_id = add_new_lm_mod(particles[ip], loc, R)
                         if lm_id == -1:
                             continue
                     #print(vote_id)
                 lm_ids[0,lm_id] += 1
+                #print("=================", lm_ids)
+                #input()
+                #print(lm_ids)
             """
             has some bug in multivariate normal
             as well as lm_ids vector, which is being treated as a matrix
@@ -443,6 +449,7 @@ def update_with_observation(particles, z):
             # observed
             w = compute_weight(particles[ip], z[:, iz], R)
             particles[ip].w *= w
+            #print("z", z)
             particles[ip] = update_landmark(particles[ip], z[:, iz], R)
             particles[ip] = proposal_sampling(particles[ip], z[:, iz], R)
 
