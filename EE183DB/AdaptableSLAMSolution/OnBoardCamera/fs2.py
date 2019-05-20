@@ -28,7 +28,7 @@ Rsim = np.diag([1.0, np.deg2rad(2.0)])**2
 Qsim = np.diag([0.5, 0.5])**2
 OFFSET_YAWRATE_NOISE = 1.0
 
-#DT = 1  # time tick [s]
+DT = 1  # time tick [s]
 SIM_LENGTH = 50.0  # simulation time [s]
 MAX_RANGE = 300.0  # maximum observation range
 M_DIST_TH = 2.0  # Threshold of Mahalanobis distance for data association.
@@ -109,12 +109,12 @@ def add_new_lm_mod(particle, z, R):
 
     r = z[0,0]
     b = z[1,0]
-
+    lm_id = 0
     lst = [list(x) for x in particle.lm]
     try:
         lm_id = lst.index([0,0])
     except ValueError:
-        print("Could not find 0,0; Empty lm holder")
+        print("Could not find 0,0; lm list full")
         return particle, -1
     # plus should be changed to minus when using contour
     s = math.sin(pi_2_pi(particle.yaw + b))
@@ -130,6 +130,8 @@ def add_new_lm_mod(particle, z, R):
     particle.lmP[2 * lm_id:2 * lm_id + 2] = Gz @ R @ Gz.T
     particle.seen += 1
 
+    print(lm_id)
+    #input()
     return particle, lm_id
 
 def dist_from_obs_to_stored(particle, z, stored_lm_state):
@@ -339,13 +341,16 @@ def make_obs(particles, st_true, st_dr, u, img, env_lm):
     """
     locations = np.zeros((2, 0))
     for i in range(len(env_lm[:, 0])):
+        print(i)
         dx = env_lm[i, 0] - st_true[0, 0]
         dy = env_lm[i, 1] - st_true[1, 0]
-        d = np.sqrt(dx**2+dy**2)
+        d = math.sqrt(dx**2+dy**2)
         angle = pi_2_pi(math.atan2(dy, dx) - st_true[2, 0])
         #check if lm in front
         if d <= MAX_RANGE and angle > -1*np.pi/2 and angle < np.pi/2:
-            print("Observing in Original Way\n")
+            #print(env_lm
+            print(env_lm[i,0], env_lm[i,1])
+            #print("Observing in Original Way\n")
             d_n = d + np.random.randn() * Rsim[0, 0]  # add noise
             angle_n = angle + np.random.randn() * Rsim[1, 1]  # add noise
             loc = np.array([[d_n], [pi_2_pi(angle_n)]])
@@ -371,9 +376,8 @@ def make_obs(particles, st_true, st_dr, u, img, env_lm):
                     min_dist= 10000000
                     for il in range(particles[ip].seen):
                         curr_dist = dist_from_obs_to_stored(particles[ip],loc,particles[ip].lm[il])
-                        print("il, Dist from obs to stored", il, curr_dist)
-                        if (min_dist > curr_dist and curr_dist < 25.0):
-                            print("Associated with distance", curr_dist)
+                        #print("il, Dist from obs to stored", il, curr_dist)
+                        if (curr_dist < 30.0):
                             lm_id = il
                             min_dist = curr_dist
                         
@@ -385,9 +389,6 @@ def make_obs(particles, st_true, st_dr, u, img, env_lm):
                             continue
                     #print(vote_id)
                 lm_ids[0,lm_id] += 1
-
-
-
             """
             has some bug in multivariate normal
             as well as lm_ids vector, which is being treated as a matrix
@@ -410,7 +411,11 @@ def make_obs(particles, st_true, st_dr, u, img, env_lm):
             
             z_i = np.array([[dist[0]], [pi_2_pi(angle[0])], [lm_id]])
             z = np.hstack((z, z_i))
-    #st_true = st_dr
+    ud1 = u[0, 0] + np.random.randn() * Qsim[0, 0]
+    ud2 = u[1, 0] + np.random.randn() * Qsim[1, 1]
+    ud = np.array([[ud1], [ud2]])
+    st_true = motion_model(st_true,ud)
+
     return st_true, st_dr, z, u
 
         
@@ -435,7 +440,7 @@ def update_with_observation(particles, z):
     for iz in range(len(z[0, :])):
         lmid = int(z[2, iz])
         for ip in range(N_PARTICLE):
-            # new landmark
+            # observed
             w = compute_weight(particles[ip], z[:, iz], R)
             particles[ip].w *= w
             particles[ip] = update_landmark(particles[ip], z[:, iz], R)
@@ -552,7 +557,7 @@ def main(num_particle = 100, dt = 0.1):
     fig_err_t = plt.figure()
 
     while(SIM_LENGTH >= sim_time):
-        print("%.2f%%: %d Particles, dt = %.2f" % ((100*sim_time/SIM_LENGTH), num_particle, dt), flush=True)
+        #print("%.2f%%: %d Particles, dt = %.2f" % ((100*sim_time/SIM_LENGTH), num_particle, dt), flush=True)
         sim_time += DT
 
         #camera.capture(rawCap, format="bgr")
@@ -585,10 +590,10 @@ def main(num_particle = 100, dt = 0.1):
                     ## CHECK z[iz,2] exists
                     lmid = int(z[2,iz])
                     ##  need another function that gets correct id
-                    plt.plot([st_est[0], particles[0].lm[lmid, 0]], [
-                            st_est[1], particles[0].lm[lmid, 1]], "-k")
-                    plt.plot([st_est[0], particles[0].lm[lmid, 0]], [
-                            st_est[1], particles[0].lm[lmid, 1]], "-k")
+                    #plt.plot([st_est[0], particles[0].lm[lmid, 0]], [
+                    #        st_est[1], particles[0].lm[lmid, 1]], "-k")
+                    #plt.plot([st_est[0], particles[0].lm[lmid, 0]], [
+                    #        st_est[1], particles[0].lm[lmid, 1]], "-k")
 
             for i in range(N_PARTICLE):
                 plt.plot(particles[i].x, particles[i].y, ".r")
