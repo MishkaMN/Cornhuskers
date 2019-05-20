@@ -3,6 +3,7 @@ import numpy as np
 import math
 import time
 import ContourFind
+from scipy.stats import multivariate_normal
 
 Sfaster = 0
 Nfaster = 0
@@ -247,21 +248,33 @@ def motion_model(st, u):
     st[2, 0] = pi_2_pi(st[2, 0])
     return st
 
-def make_obs(st_true, st_dr, u, img):
+def make_obs(particles, st_true, st_dr, u, img):
     # dead reckoning
     st_dr = motion_model(st_dr, u)
     
     # noisy observation
-    z = np.zeros((2, 0))
+    z = np.zeros((3, 0))
     locations = ContourFind.locateObstacle(img)
     for loc in locations:
         dist = loc[0]
         angle = loc[1]
-        z_i = np.array([[dist], [pi_2_pi(angle)])
+        lm_probs = np.zeros((N_LM,N_PARTICLE))
+        lm_ids = np.zeros((1,N_PARTICLE))
+        lm_id = 0
+        for ip in range(N_PARTICLE):
+            for il in range(N_LM):
+                lm_probs[il,ip] = multivariate_normal(particles[ip].lm[il], particles[ip].lmP[2 * lm_id:2 * lm_id + 2])
+            lm_ids[0,ip] = np.argmax(lm_probs[:,ip])
+        lm_id = np.argmax(np.bincount(lm_ids))
+
+        z_i = np.array([[dist], [pi_2_pi(angle)], [lm_id]])
         z = np.hstack((z, z_i))
 
     st_true = st_dr
     return st_true, st_dr, z, u
+
+        
+
 
 def normalize_weight(particles):
     sumw = sum([p.w for p in particles])
@@ -403,7 +416,7 @@ def main(num_particle = 100, dt = 0.1):
         img = rawCap.array
         u = gen_input(sim_time)
 
-        st_true, st_dr, z, ud = make_obs(st_true, st_dr, u, rawCap)
+        st_true, st_dr, z, ud = make_obs(particles, st_true, st_dr, u, rawCap)
 
         particles = fast_slam2(particles, ud, z)
 
