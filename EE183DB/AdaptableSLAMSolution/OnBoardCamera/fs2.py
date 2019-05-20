@@ -6,7 +6,7 @@ import ContourFind
 from scipy.stats import multivariate_normal
 
 
-width = 123
+width = 70
 """
 # Fast SLAM covariance
 # What we modeled:
@@ -114,7 +114,7 @@ def add_new_lm_mod(particle, z, R):
     try:
         lm_id = lst.index([0,0])
     except ValueError:
-        print("Could not find 0,0")
+        print("Could not find 0,0; Empty lm holder")
         return particle, -1
     # plus should be changed to minus when using contour
     s = math.sin(pi_2_pi(particle.yaw + b))
@@ -362,18 +362,9 @@ def make_obs(particles, st_true, st_dr, u, img, env_lm):
             lm_ids = np.zeros((1,N_LM))
             lm_id = 0
             for ip in range(N_PARTICLE):
-                """
-                Problems right now:
-                1. How would the particle know to add 
-                a new landmark if it has seen a few before, but not this one.
-                Because right now, it is associating what it is seeing to a previously seen one
-                that seems the most similar(closest).
-                Setting boundary of 20 mm
-                """
                 if particles[ip].seen == 0:
                     print("Particle has never seen before\n")
                     particles[ip], lm_id = add_new_lm_mod(particles[ip], loc, R)
-                    lm_ids[0,lm_id] += 1
                 else:
                     #vote for the shortest distance one
                     vote_id = 0
@@ -383,19 +374,17 @@ def make_obs(particles, st_true, st_dr, u, img, env_lm):
                         print("il, Dist from obs to stored", il, curr_dist)
                         if (min_dist > curr_dist and curr_dist < 25.0):
                             print("Associated with distance", curr_dist)
-                            vote_id = il
+                            lm_id = il
                             min_dist = curr_dist
                         
 
                     if min_dist == 10000000:
                         print("No suitable landmarks matched")
                         particles[ip], lm_id = add_new_lm_mod(particles[ip], loc, R)
-                        if lm_id != -1:
-                            vote_id = lm_id
-                        else:
+                        if lm_id == -1:
                             continue
                     #print(vote_id)
-                    lm_ids[0,vote_id] += 1
+                lm_ids[0,lm_id] += 1
 
 
 
@@ -445,17 +434,12 @@ def update_with_observation(particles, z):
 
     for iz in range(len(z[0, :])):
         lmid = int(z[2, iz])
-
         for ip in range(N_PARTICLE):
             # new landmark
-            if abs(particles[ip].lm[lmid, 0]) <= 0.01:
-                particles[ip] = add_new_lm(particles[ip], z[:, iz], R)
-            # known landmark
-            else:
-                w = compute_weight(particles[ip], z[:, iz], R)
-                particles[ip].w *= w
-                particles[ip] = update_landmark(particles[ip], z[:, iz], R)
-                particles[ip] = proposal_sampling(particles[ip], z[:, iz], R)
+            w = compute_weight(particles[ip], z[:, iz], R)
+            particles[ip].w *= w
+            particles[ip] = update_landmark(particles[ip], z[:, iz], R)
+            particles[ip] = proposal_sampling(particles[ip], z[:, iz], R)
 
     return particles
 
