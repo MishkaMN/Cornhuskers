@@ -5,16 +5,23 @@ import time
 import ContourFind
 from scipy.stats import multivariate_normal
 
-Sfaster = 0
-Nfaster = 0
-hahaz = 0
-nequal = 0
 
 width = 123
+"""
 # Fast SLAM covariance
-# What we model
+# What we modeled:
+#R = np.diag([10.0, np.deg2rad(10.0)])**2
+#Q = np.diag([18.4, np.deg2rad(1/width * 2*18.4)])**2
+
+
+#  Simulation parameter
+Rsim = np.diag([1.0, np.deg2rad(2.0)])**2
+Qsim = np.diag([0.5, 0.5])**2
+OFFSET_YAWRATE_NOISE = 1.0
+"""
+# Original
 R = np.diag([2.5, np.deg2rad(10.0)])**2
-Q = np.diag([18.4, np.deg2rad(1/width * 2*18.4)])**2
+Q = np.diag([5.0, np.deg2rad(20.0)])**2
 
 #  Simulation parameter
 Rsim = np.diag([1.0, np.deg2rad(2.0)])**2
@@ -36,7 +43,7 @@ INIT_X = 100.0
 INIT_Y = 100.0
 INIT_YAW = 0.0
 
-show_animation = False
+show_animation = True
 
 class Particle:
 
@@ -50,8 +57,20 @@ class Particle:
         self.lm = np.zeros((N_LM, LM_SIZE))
         # landmark position covariance
         self.lmP = np.zeros((N_LM * LM_SIZE, LM_SIZE))
+        #self.lmP = (self.lmP + self.lmP.T)/2
+        self.seen = 0
 
 def gen_input(t):
+    if t < 3.0:
+        v_l = 0
+        v_r = 0
+    else:
+        v_l = 10.0
+        v_r = 20.0
+    
+    return np.array([[v_l], [v_r]])
+
+def gen_input_ours(t):
     if t < 4.0:
         v_l = 180
         v_r = 85
@@ -86,7 +105,52 @@ def predict_particles(particles, u):
 
     return particles
 
-def add_new_lm(particle, z, Q):
+def add_new_lm_mod(particle, z, R):
+
+    r = z[0,0]
+    b = z[1,0]
+
+    lst = [list(x) for x in particle.lm]
+    #try:
+    lm_id = lst.index([0,0])
+    #except ValueError:
+    #    print("Could not find 0,0")
+    # it should definitely be different number than 0
+    #    return particle, 0
+    # plus should be changed to minus when using contour
+    s = math.sin(pi_2_pi(particle.yaw + b))
+    c = math.cos(pi_2_pi(particle.yaw + b))
+
+    particle.lm[lm_id, 0] = particle.x + r * c
+    particle.lm[lm_id, 1] = particle.y + r * s
+
+    # covariance
+    Gz = np.array([[c, -r * s],
+                   [s, r * c]])
+    print("Matrice Gz\n", Gz)
+    #print("Gz:", Gz)
+    particle.lmP[2 * lm_id:2 * lm_id + 2] = Gz @ R @ Gz.T
+    particle.seen += 1
+
+    return particle, lm_id
+
+def dist_from_obs_to_stored(particle, z, stored_lm_state):
+
+    r_obs = z[0]
+    b_obs = z[1]
+
+    x_std = stored_lm_state[0]
+    y_std = stored_lm_state[1]
+
+    # plus should be changed to minus when using contour
+    y_obs = math.sin(pi_2_pi(particle.yaw + b_obs))
+    x_obs = math.cos(pi_2_pi(particle.yaw + b_obs))
+
+    dist = np.sqrt((x_obs - x_std)**2 + (y_obs - y_std)**2)
+
+    return dist
+
+def add_new_lm(particle, z, R):
 
     r = z[0]
     b = z[1]
@@ -102,7 +166,7 @@ def add_new_lm(particle, z, Q):
     Gz = np.array([[c, -r * s],
                    [s, r * c]])
 
-    particle.lmP[2 * lm_id:2 * lm_id + 2] = Gz @ Q @ Gz.T
+    particle.lmP[2 * lm_id:2 * lm_id + 2] = Gz @ R @ Gz.T
 
     return particle
 
@@ -165,6 +229,7 @@ def update_landmark(particle, z, Q):
 def compute_weight(particle, z, Q):
 
     lm_id = int(z[2])
+    print("lm_id", lm_id)
     xf = np.array(particle.lm[lm_id, :]).reshape(2, 1)
     Pf = np.array(particle.lmP[2 * lm_id:2 * lm_id + 2])
     zp, Hv, Hf, Sf = compute_jacobians(particle, xf, Pf, Q)
@@ -172,19 +237,20 @@ def compute_weight(particle, z, Q):
     dz = z[0:2].reshape(2, 1) - zp
     dz[1, 0] = pi_2_pi(dz[1, 0])
 
-    
     try:
         invS = np.linalg.inv(Sf)
     except np.linalg.linalg.LinAlgError:
         print("Error")
         return 1.0
-
+    print("dz",dz)
+    print("invS", invS)
     num = math.exp(-0.5 * dz.T @ invS @ dz)
-
+    print("num", num)
 
     den = 2.0 * math.pi * math.sqrt(np.linalg.det(Sf))
-
+    print("den", den)
     w = num / den
+    print("weight in compute_weight", w)
 
     return w
 
@@ -227,6 +293,22 @@ def motion_model(st, u):
                   [DT * np.sin(st[2, 0]), 0],
                   [0.0, DT]])
 
+    #why 1/70?
+    u_prime = np.array([[(u[0,0] + u[1,0])/2], [1/70 * (u[1,0] - u[0,0])]])
+    #print(u_prime)
+    st = F @ st + B @ u_prime
+    st[2, 0] = pi_2_pi(st[2, 0])
+    return st
+
+def motion_model_ours(st, u):
+    F = np.array([[1.0, 0, 0],
+                  [0, 1.0, 0],
+                  [0, 0, 1.0]])
+
+    B = np.array([[DT * np.cos(st[2, 0]), 0],
+                  [DT * np.sin(st[2, 0]), 0],
+                  [0.0, DT]])
+
     v = np.zeros((2,1))
     
     if u[0,0] == 90:
@@ -247,30 +329,101 @@ def motion_model(st, u):
     st = F @ st + B @ v
     st[2, 0] = pi_2_pi(st[2, 0])
     return st
-
-def make_obs(particles, st_true, st_dr, u, img):
+# would not need env_lm in the future
+def make_obs(particles, st_true, st_dr, u, img, env_lm):
     # dead reckoning
     st_dr = motion_model(st_dr, u)
     
     # noisy observation
+    
     z = np.zeros((3, 0))
-    locations = ContourFind.locateObstacle(img)
-    for loc in locations:
-        dist = loc[0]
-        angle = loc[1]
-        lm_probs = np.zeros((N_LM,N_PARTICLE))
-        lm_ids = np.zeros((1,N_PARTICLE))
-        lm_id = 0
-        for ip in range(N_PARTICLE):
-            for il in range(N_LM):
-                lm_probs[il,ip] = multivariate_normal(particles[ip].lm[il], particles[ip].lmP[2 * lm_id:2 * lm_id + 2])
-            lm_ids[0,ip] = np.argmax(lm_probs[:,ip])
-        lm_id = np.argmax(np.bincount(lm_ids))
+    """
+    locations = ContourFind.locateObstacle()
+    not connected right now, so using the old observation method to create dist, angle
+    but once it is connected, it can be completely taken out
+    """
+    locations = np.zeros((2, 0))
+    for i in range(len(env_lm[:, 0])):
+        dx = env_lm[i, 0] - st_true[0, 0]
+        dy = env_lm[i, 1] - st_true[1, 0]
+        d = np.sqrt(dx**2+dy**2)
+        angle = pi_2_pi(math.atan2(dy, dx) - st_true[2, 0])
+        #check if lm in front
+        if d <= MAX_RANGE and angle > -1*np.pi/2 and angle < np.pi/2:
+            print("Observing in Original Way\n")
+            d_n = d + np.random.randn() * Rsim[0, 0]  # add noise
+            angle_n = angle + np.random.randn() * Rsim[1, 1]  # add noise
+            loc = np.array([[d_n], [pi_2_pi(angle_n)]])
+            locations = np.hstack((locations, loc))
+    print("Original type of observed locations:\n ", locations)
 
-        z_i = np.array([[dist], [pi_2_pi(angle)], [lm_id]])
-        z = np.hstack((z, z_i))
+    # Until this part can be taken out
+    if (locations.shape[1] != 0):
+        for loc in np.hsplit(locations, locations.shape[1]):
+            print("Processing loc:\n", loc)
+            dist = loc[0]
+            angle = loc[1]
+            lm_probs = np.zeros((N_LM,N_PARTICLE))
+            lm_ids = np.zeros((1,N_LM))
+            lm_id = 0
+            for ip in range(N_PARTICLE):
+                """
+                Problems right now:
+                1. How would the particle know to add 
+                a new landmark if it has seen a few before, but not this one.
+                Because right now, it is associating what it is seeing to a previously seen one
+                that seems the most similar(closest).
+                Setting boundary of 20 mm
+                """
+                if particles[ip].seen == 0:
+                    print("Particle has never seen before\n")
+                    particles[ip], lm_id = add_new_lm_mod(particles[ip], loc, R)
+                    lm_ids[0,lm_id] += 1
+                else:
+                    #vote for the shortest distance one
+                    vote_id = 0
+                    min_dist= 10000000
+                    for il in range(particles[ip].seen):
+                        curr_dist = dist_from_obs_to_stored(particles[ip],loc,particles[ip].lm[il])
+                        print("Dist from obs to stored", curr_dist)
+                        if (min_dist > curr_dist and curr_dist < 50.0):
+                            print("Associated with distance", curr_dist)
+                            vote_id = il
+                            min_dist = curr_dist
 
-    st_true = st_dr
+                    if min_dist == 10000000:
+                        print("No suitable landmarks matched")
+                        particles[ip], lm_id = add_new_lm_mod(particles[ip], loc, R)
+                        vote_id = lm_id
+                    #print(vote_id)
+                    lm_ids[0,vote_id] += 1
+
+
+
+            """
+            has some bug in multivariate normal
+            as well as lm_ids vector, which is being treated as a matrix
+                lm_ids[lm_id,ip] = multivariate_normal.pdf(particles[ip].lm[lm_id], particles[ip].lmP[2 * lm_id:2 * lm_id + 2])
+            else:
+                for il in range(particles[ip].seen):
+                    lm_probs[il,ip] = multivariate_normal.pdf(particles[ip].lm[il], particles[ip].lmP[2 * il:2 * il + 2])
+                    _best_prob = np.argmax(lm_probs[:,ip])
+                # if the lm is sufficiently probable
+                if (_best_prob > 0.5):
+                    lm_ids[0,ip] = _best_prob
+                else: #if we basically did not find any suitable particle
+                    print("None was good!")
+                    particle[ip], lm_id = add_new_lm_mod(particle[ip], loc, R)
+                    lm_ids[lm_id,ip] = multivariate_normal.pdf(particles[ip].lm[lm_id], particles[ip].lmP[2 * lm_id:2 * lm_id + 2])
+                    input()
+
+            """
+            lm_id = np.argmax(lm_ids)
+            
+            z_i = np.array([[dist[0]], [pi_2_pi(angle[0])], [lm_id]])
+            z = np.hstack((z, z_i))
+    print("Printing z in make_obs", z)
+    #st_true = st_dr
     return st_true, st_dr, z, u
 
         
@@ -298,14 +451,14 @@ def update_with_observation(particles, z):
         for ip in range(N_PARTICLE):
             # new landmark
             if abs(particles[ip].lm[lmid, 0]) <= 0.01:
-                particles[ip] = add_new_lm(particles[ip], z[:, iz], Q)
+                particles[ip] = add_new_lm(particles[ip], z[:, iz], R)
             # known landmark
             else:
-                w = compute_weight(particles[ip], z[:, iz], Q)
+                w = compute_weight(particles[ip], z[:, iz], R)
                 particles[ip].w *= w
-
-                particles[ip] = update_landmark(particles[ip], z[:, iz], Q)
-                particles[ip] = proposal_sampling(particles[ip], z[:, iz], Q)
+                print("w:", particles[ip].w)
+                particles[ip] = update_landmark(particles[ip], z[:, iz], R)
+                particles[ip] = proposal_sampling(particles[ip], z[:, iz], R)
 
     return particles
 
@@ -319,10 +472,11 @@ def resampling(particles):
 
     pw = []
     for i in range(N_PARTICLE):
+        print("Particle weight:", particles[i].w)
         pw.append(particles[i].w)
 
     pw = np.array(pw)
-
+    print("pw\n", pw)
     Neff = 1.0 / (pw @ pw.T)  # Effective particle number
     #  print(Neff)
 
@@ -369,12 +523,13 @@ def main(num_particle = 100, dt = 0.1):
     global N_PARTICLE 
     N_PARTICLE = num_particle
 
-    camera = PiCamera()
-    camera.vflip = True
-    rawCap = PiRGBArray(camera)
+    #camera = PiCamera()
+    #camera.vflip = True
+    #rawCap = PiRGBArray(camera)
     time.sleep(1)
 
     #initialize environment
+    """
     env_lm = np.array([[0,0],
                        [0, 1000],
                        [300, 300], 
@@ -383,7 +538,16 @@ def main(num_particle = 100, dt = 0.1):
                        [290, 100], 
                        [500,200], 
                        [1000,1000]])
-    
+    """
+    env_lm = np.array([[40,90],
+                           [600, 500],
+                           [300, 300], 
+                           [100,400], 
+                           [400,100], 
+                           [290, 100], 
+                           [500,200], 
+                           [300,550], 
+                           [600,200]])
     N_LM = env_lm.shape[0]
 
     #initialize states
@@ -412,11 +576,11 @@ def main(num_particle = 100, dt = 0.1):
         print("%.2f%%: %d Particles, dt = %.2f" % ((100*sim_time/SIM_LENGTH), num_particle, dt), flush=True)
         sim_time += DT
 
-        camera.capture(rawCap, format="bgr")
-        img = rawCap.array
+        #camera.capture(rawCap, format="bgr")
+        #img = rawCap.array
         u = gen_input(sim_time)
 
-        st_true, st_dr, z, ud = make_obs(particles, st_true, st_dr, u, rawCap)
+        st_true, st_dr, z, ud = make_obs(particles, st_true, st_dr, u, 0, env_lm)
 
         particles = fast_slam2(particles, ud, z)
 
@@ -441,10 +605,10 @@ def main(num_particle = 100, dt = 0.1):
                 for iz in range(len(z[0,:])):
                     ## CHECK z[iz,2] exists
                     lmid = int(z[2,iz])
-                    plt.plot([st_est[0], env_lm[lmid, 0]], [
-                            st_est[1], env_lm[lmid, 1]], "-k")
-                    plt.plot([st_est[0], env_lm[lmid, 0]], [
-                            st_est[1], env_lm[lmid, 1]], "-k")
+                    plt.plot([st_est[0], particles[0].lm[lmid, 0]], [
+                            st_est[1], particles[0].lm[lmid, 1]], "-k")
+                    plt.plot([st_est[0], particles[0].lm[lmid, 0]], [
+                            st_est[1], particles[0].lm[lmid, 1]], "-k")
 
             for i in range(N_PARTICLE):
                 plt.plot(particles[i].x, particles[i].y, ".r")
@@ -458,10 +622,7 @@ def main(num_particle = 100, dt = 0.1):
             plt.axis("equal")
             plt.grid(True)
             plt.pause(0.000001)
-
-
-
-
+            #plt.show()
 
     # Report Error
     
@@ -471,7 +632,6 @@ def main(num_particle = 100, dt = 0.1):
     angle_err = np.rad2deg(hist_err[2])
     print("=================================================")
     print("FastSLAM ended in %.2fs with Distance Error: %.2fmm, Angle Error: %.2fdeg" % (total_time, dist_err, angle_err))
-    print("S: %d, N:%d, E:%d" % (Sfaster, Nfaster, hahaz))
     if show_animation:
         plt.savefig("Sim with %d.png" %(num_particle))
     return dist_err, angle_err

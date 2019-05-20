@@ -1,7 +1,7 @@
-from picamera.array import PiRGBArray
-from picamera import PiCamera
+#from picamera.array import PiRGBArray
+#from picamera import PiCamera
 import numpy as np
-import cv2
+#import cv2
 import matplotlib.pyplot as plt
 import time
 objHeight = 50 #mm
@@ -10,7 +10,8 @@ f = 3.04 # 4.5 # mm
 sens_h = 2.76 #6.828 # mm
 # d = 107.95 #millimeters
 
-def locateObstacle(img):
+def locateObstacle():
+    """
     #_, threshold = cv2.threshold(img, 150, 255, cv2.THRESH_BINARY)
     #imgray = cv2.cvtColor(threshold, cv2.COLOR_BGR2GRAY);
     #contours, hierarchy = cv2.findContours(imgray, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -49,6 +50,11 @@ def locateObstacle(img):
         px_from_center = (x+w/2) - img.shape[1]/2
         angle = np.arctan(px_from_center/f*sens_h/(img.shape[1]))
         locations.append((d2,angle,x,y,w,h))
+
+    For a full debug, maybe we can use the function from
+    original fs2 to give observation
+    """
+    locations = np.array([[200, 1/6*np.pi]])
     return locations
 
     

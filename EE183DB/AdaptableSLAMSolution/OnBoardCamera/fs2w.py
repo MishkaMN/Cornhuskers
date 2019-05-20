@@ -168,12 +168,13 @@ def compute_weight(particle, z, Q):
         invS = np.linalg.inv(Sf)
     except np.linalg.linalg.LinAlgError:
         return 1.0
-
+    print("dz",dz)
+    print("invS", invS)
     num = math.exp(-0.5 * dz.T @ invS @ dz)
     den = 2.0 * math.pi * math.sqrt(np.linalg.det(Sf))
-
+    print("num", num)
     w = num / den
-
+    print("den", den)
     return w
 
 
@@ -246,7 +247,6 @@ def make_obs(st_true, st_dr, u, env_lm):
     ud = np.array([[ud1], [ud2]])
     # ground truth
     st_true = motion_model(st_true,ud)
-
     return st_true, st_dr, z, ud
 
 def normalize_weight(particles):
@@ -278,7 +278,7 @@ def update_with_observation(particles, z):
             else:
                 w = compute_weight(particles[ip], z[:, iz], Q)
                 particles[ip].w *= w
-
+                print("w:", particles[ip].w)
                 particles[ip] = update_landmark(particles[ip], z[:, iz], Q)
                 particles[ip] = proposal_sampling(particles[ip], z[:, iz], Q)
 
