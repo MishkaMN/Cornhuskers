@@ -62,7 +62,7 @@ def main():
     flag=True
     while(1):
         camera.capture(rawCap, format="bgr")
-        img = cv2.imread("tmp.jpg")
+        img = rawCap.array
         locations = locateObstacle(img)
 
         objPoseX = []
