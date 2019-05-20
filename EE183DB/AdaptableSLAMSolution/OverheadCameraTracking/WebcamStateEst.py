@@ -20,7 +20,7 @@ def getPose(corners, pMatrix):
     return center,topCenter,vec
 
 if __name__ == '__main__':
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(1)
     envSize = 1060
     print("Starting...")
     flag = False
