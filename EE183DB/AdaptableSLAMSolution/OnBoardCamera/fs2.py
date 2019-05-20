@@ -111,12 +111,11 @@ def add_new_lm_mod(particle, z, R):
     b = z[1,0]
 
     lst = [list(x) for x in particle.lm]
-    #try:
-    lm_id = lst.index([0,0])
-    #except ValueError:
-    #    print("Could not find 0,0")
-    # it should definitely be different number than 0
-    #    return particle, 0
+    try:
+        lm_id = lst.index([0,0])
+    except ValueError:
+        print("Could not find 0,0")
+        return particle, -1
     # plus should be changed to minus when using contour
     s = math.sin(pi_2_pi(particle.yaw + b))
     c = math.cos(pi_2_pi(particle.yaw + b))
@@ -127,8 +126,7 @@ def add_new_lm_mod(particle, z, R):
     # covariance
     Gz = np.array([[c, -r * s],
                    [s, r * c]])
-    print("Matrice Gz\n", Gz)
-    #print("Gz:", Gz)
+    
     particle.lmP[2 * lm_id:2 * lm_id + 2] = Gz @ R @ Gz.T
     particle.seen += 1
 
@@ -143,10 +141,10 @@ def dist_from_obs_to_stored(particle, z, stored_lm_state):
     y_std = stored_lm_state[1]
 
     # plus should be changed to minus when using contour
-    y_obs = math.sin(pi_2_pi(particle.yaw + b_obs))
-    x_obs = math.cos(pi_2_pi(particle.yaw + b_obs))
+    y_obs = particle.y + r_obs * math.sin(pi_2_pi(particle.yaw + b_obs))
+    x_obs = particle.x + r_obs * math.cos(pi_2_pi(particle.yaw + b_obs))
 
-    dist = np.sqrt((x_obs - x_std)**2 + (y_obs - y_std)**2)
+    dist = math.sqrt((x_obs - x_std)**2 + (y_obs - y_std)**2)
 
     return dist
 
@@ -229,7 +227,7 @@ def update_landmark(particle, z, Q):
 def compute_weight(particle, z, Q):
 
     lm_id = int(z[2])
-    print("lm_id", lm_id)
+
     xf = np.array(particle.lm[lm_id, :]).reshape(2, 1)
     Pf = np.array(particle.lmP[2 * lm_id:2 * lm_id + 2])
     zp, Hv, Hf, Sf = compute_jacobians(particle, xf, Pf, Q)
@@ -242,15 +240,12 @@ def compute_weight(particle, z, Q):
     except np.linalg.linalg.LinAlgError:
         print("Error")
         return 1.0
-    print("dz",dz)
-    print("invS", invS)
+    
     num = math.exp(-0.5 * dz.T @ invS @ dz)
-    print("num", num)
-
+    
     den = 2.0 * math.pi * math.sqrt(np.linalg.det(Sf))
-    print("den", den)
+    
     w = num / den
-    print("weight in compute_weight", w)
 
     return w
 
@@ -293,9 +288,9 @@ def motion_model(st, u):
                   [DT * np.sin(st[2, 0]), 0],
                   [0.0, DT]])
 
-    #why 1/70?
+    
     u_prime = np.array([[(u[0,0] + u[1,0])/2], [1/70 * (u[1,0] - u[0,0])]])
-    #print(u_prime)
+    
     st = F @ st + B @ u_prime
     st[2, 0] = pi_2_pi(st[2, 0])
     return st
@@ -385,16 +380,20 @@ def make_obs(particles, st_true, st_dr, u, img, env_lm):
                     min_dist= 10000000
                     for il in range(particles[ip].seen):
                         curr_dist = dist_from_obs_to_stored(particles[ip],loc,particles[ip].lm[il])
-                        print("Dist from obs to stored", curr_dist)
-                        if (min_dist > curr_dist and curr_dist < 50.0):
+                        print("il, Dist from obs to stored", il, curr_dist)
+                        if (min_dist > curr_dist and curr_dist < 25.0):
                             print("Associated with distance", curr_dist)
                             vote_id = il
                             min_dist = curr_dist
+                        
 
                     if min_dist == 10000000:
                         print("No suitable landmarks matched")
                         particles[ip], lm_id = add_new_lm_mod(particles[ip], loc, R)
-                        vote_id = lm_id
+                        if lm_id != -1:
+                            vote_id = lm_id
+                        else:
+                            continue
                     #print(vote_id)
                     lm_ids[0,vote_id] += 1
 
@@ -422,7 +421,6 @@ def make_obs(particles, st_true, st_dr, u, img, env_lm):
             
             z_i = np.array([[dist[0]], [pi_2_pi(angle[0])], [lm_id]])
             z = np.hstack((z, z_i))
-    print("Printing z in make_obs", z)
     #st_true = st_dr
     return st_true, st_dr, z, u
 
@@ -456,7 +454,6 @@ def update_with_observation(particles, z):
             else:
                 w = compute_weight(particles[ip], z[:, iz], R)
                 particles[ip].w *= w
-                print("w:", particles[ip].w)
                 particles[ip] = update_landmark(particles[ip], z[:, iz], R)
                 particles[ip] = proposal_sampling(particles[ip], z[:, iz], R)
 
@@ -472,11 +469,9 @@ def resampling(particles):
 
     pw = []
     for i in range(N_PARTICLE):
-        print("Particle weight:", particles[i].w)
         pw.append(particles[i].w)
 
     pw = np.array(pw)
-    print("pw\n", pw)
     Neff = 1.0 / (pw @ pw.T)  # Effective particle number
     #  print(Neff)
 
@@ -605,6 +600,7 @@ def main(num_particle = 100, dt = 0.1):
                 for iz in range(len(z[0,:])):
                     ## CHECK z[iz,2] exists
                     lmid = int(z[2,iz])
+                    ##  need another function that gets correct id
                     plt.plot([st_est[0], particles[0].lm[lmid, 0]], [
                             st_est[1], particles[0].lm[lmid, 1]], "-k")
                     plt.plot([st_est[0], particles[0].lm[lmid, 0]], [
