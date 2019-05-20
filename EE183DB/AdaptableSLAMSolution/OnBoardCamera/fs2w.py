@@ -17,7 +17,7 @@ SIM_LENGTH = 50.0  # simulation time [s]
 MAX_RANGE = 300.0  # maximum observation range
 M_DIST_TH = 2.0  # Threshold of Mahalanobis distance for data association.
 STATE_SIZE = 3  # State size [x,y,yaw]
-LM_SIZE = 2  # LM srate size [x,y]
+LM_SIZE = 2  # LM state size [x,y]
 N_PARTICLE = 100  # number of particle
 NTH = N_PARTICLE / 1.5  # Number of particle for re-sampling
 N_LM = 10 # upper limit on number of landmarks
@@ -270,7 +270,9 @@ def update_with_observation(particles, z):
 
         for ip in range(N_PARTICLE):
             # new landmark
+            print(abs(particles[ip].lm[lmid, 0]))
             if abs(particles[ip].lm[lmid, 0]) <= 0.01:
+                #print()
                 particles[ip] = add_new_lm(particles[ip], z[:, iz], Q)
             # known landmark
             else:
@@ -334,7 +336,7 @@ def calc_final_state(particles):
     st_est[2, 0] = pi_2_pi(st_est[2, 0])
     return st_est
 
-def main(num_particle = 100, dt = 1):
+def main(num_particle = 100, dt = 0.1):
     
     global DT
     DT = dt
@@ -383,7 +385,7 @@ def main(num_particle = 100, dt = 1):
         start_time = time.time()
     
         while(SIM_LENGTH >= sim_time):
-            print("%.2f%%: %d Particles, dt = %.2f" % ((100*sim_time/SIM_LENGTH), num_particle, dt), flush=True)
+            #print("SimN:%d,%.2f%%: %d Particles, dt = %.2f" % (sim_num+1,(100*sim_time/SIM_LENGTH), num_particle, dt), flush=True)
             sim_time += DT
             
             u = gen_input(sim_time)
@@ -441,6 +443,7 @@ def main(num_particle = 100, dt = 1):
         print("FastSLAM k = %d ended in %.2fs with Distance Error: %.2fmm, Angle Error: %.2fdeg" % (k, total_time[k], dist_err[k], angle_err[k]))
         if show_animation: 
             plt.savefig("Sim with %d.png" %(num_particle))
+        #input()
     return sum(dist_err)/NUM_ITER, sum(angle_err)/NUM_ITER, sum(total_time)/NUM_ITER
 
 def run(num_particle, dt):
