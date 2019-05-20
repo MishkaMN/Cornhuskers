@@ -2,7 +2,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import math
 import time
-#import ContourFind
+import ContourFind
+from scipy.stats import multivariate_normal
 
 Sfaster = 0
 Nfaster = 0
@@ -35,7 +36,7 @@ INIT_X = 100.0
 INIT_Y = 100.0
 INIT_YAW = 0.0
 
-show_animation = True
+show_animation = False
 
 class Particle:
 
@@ -247,32 +248,33 @@ def motion_model(st, u):
     st[2, 0] = pi_2_pi(st[2, 0])
     return st
 
-def make_obs(st_true, st_dr, u, env_lm):
+def make_obs(particles, st_true, st_dr, u, img):
     # dead reckoning
     st_dr = motion_model(st_dr, u)
     
     # noisy observation
     z = np.zeros((3, 0))
-    for i in range(len(env_lm[:, 0])):
-        dx = env_lm[i, 0] - st_true[0, 0]
-        dy = env_lm[i, 1] - st_true[1, 0]
-        d = np.sqrt(dx**2+dy**2)
-        angle = pi_2_pi(math.atan2(dy, dx) - st_true[2, 0])
-        #check if lm in front
-        if d <= MAX_RANGE and angle > -1*np.pi/2 and angle < np.pi/2:
-            d_n = d + np.random.randn() * Rsim[0, 0]  # add noise
-            angle_n = angle + np.random.randn() * Rsim[1, 1]  # add noise
-            z_i = np.array([[d_n], [pi_2_pi(angle_n)], [i]])
-            z = np.hstack((z, z_i))
+    locations = ContourFind.locateObstacle(img)
+    for loc in locations:
+        dist = loc[0]
+        angle = loc[1]
+        lm_probs = np.zeros((N_LM,N_PARTICLE))
+        lm_ids = np.zeros((1,N_PARTICLE))
+        lm_id = 0
+        for ip in range(N_PARTICLE):
+            for il in range(N_LM):
+                lm_probs[il,ip] = multivariate_normal(particles[ip].lm[il], particles[ip].lmP[2 * lm_id:2 * lm_id + 2])
+            lm_ids[0,ip] = np.argmax(lm_probs[:,ip])
+        lm_id = np.argmax(np.bincount(lm_ids))
 
-    # noisy input
-    #ud1 = u[0, 0] + np.random.randn() * Qsim[0, 0]
-    #ud2 = u[1, 0] + np.random.randn() * Qsim[1, 1]
-    #ud = np.array([[ud1], [ud2]])
-    # ground truth
-    #st_true = motion_model(st_true,ud)
+        z_i = np.array([[dist], [pi_2_pi(angle)], [lm_id]])
+        z = np.hstack((z, z_i))
+
     st_true = st_dr
     return st_true, st_dr, z, u
+
+        
+
 
 def normalize_weight(particles):
     sumw = sum([p.w for p in particles])
@@ -367,6 +369,11 @@ def main(num_particle = 100, dt = 0.1):
     global N_PARTICLE 
     N_PARTICLE = num_particle
 
+    camera = PiCamera()
+    camera.vflip = True
+    rawCap = PiRGBArray(camera)
+    time.sleep(1)
+
     #initialize environment
     env_lm = np.array([[0,0],
                        [0, 1000],
@@ -375,7 +382,6 @@ def main(num_particle = 100, dt = 0.1):
                        [400,100], 
                        [290, 100], 
                        [500,200], 
-                       [300,550], 
                        [1000,1000]])
     
     N_LM = env_lm.shape[0]
@@ -405,10 +411,12 @@ def main(num_particle = 100, dt = 0.1):
     while(SIM_LENGTH >= sim_time):
         print("%.2f%%: %d Particles, dt = %.2f" % ((100*sim_time/SIM_LENGTH), num_particle, dt), flush=True)
         sim_time += DT
-        
+
+        camera.capture(rawCap, format="bgr")
+        img = rawCap.array
         u = gen_input(sim_time)
 
-        st_true, st_dr, z, ud = make_obs(st_true, st_dr, u, env_lm)
+        st_true, st_dr, z, ud = make_obs(particles, st_true, st_dr, u, rawCap)
 
         particles = fast_slam2(particles, ud, z)
 
@@ -478,4 +486,4 @@ if __name__ == '__main__':
     if i == '':
         main()
     else:
-        main(int(i))
+        main(int(i),1.0)
