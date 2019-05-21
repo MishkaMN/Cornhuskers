@@ -588,6 +588,7 @@ def main(num_particle = 100, dt = 0.1):
 
         if show_animation:  # pragma: no cover
             plt.cla()
+            
             plt.plot(env_lm[:, 0], env_lm[:, 1], "*k")
 
             if(len(z[0,:]) > 0):
@@ -611,6 +612,8 @@ def main(num_particle = 100, dt = 0.1):
             plt.plot(st_est[0], st_est[1], "xk")
             plt.axis("equal")
             plt.grid(True)
+            plt.xlim([300, 800])
+            plt.ylim([400, 950])
             plt.pause(0.000001)
             #plt.show()
 
