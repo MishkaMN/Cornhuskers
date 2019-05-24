@@ -509,7 +509,7 @@ def main(num_particle = 100, dt = 0.1):
     global N_PARTICLE 
     N_PARTICLE = num_particle
 
-    cap = cv2.VideoCapture('wk8.mp4')
+    #cap = cv2.VideoCapture('wk8.mp4')
     camera = PiCamera()
     camera.vflip = True
     rawCap = PiRGBArray(camera)
@@ -568,7 +568,8 @@ def main(num_particle = 100, dt = 0.1):
         camera.capture(rawCap, format="bgr")
         img = rawCap.array
         u = gen_input(sim_time)
-        ret, img = cap.read()
+        #ret, img = cap.read()
+        ret = False
         if not ret:
             input("Video Ended, press Enter to stop")
             exit()
