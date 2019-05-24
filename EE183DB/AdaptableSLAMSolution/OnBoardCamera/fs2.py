@@ -661,7 +661,7 @@ def main(num_particle = 100, dt = 0.1):
         plt.axis("equal")
         plt.grid(True)
         plt.savefig("CompletedSLAM%d.png" %(num_particle))
-    else:
+
     return #dist_err, angle_err
 
 def run(num_particle, dt):
