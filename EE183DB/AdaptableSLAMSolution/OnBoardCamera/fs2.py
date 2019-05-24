@@ -621,8 +621,6 @@ def main(num_particle = 100, dt = 0.1):
             plt.ylim([400, 950])
             plt.pause(0.000001)
             #plt.show()
-
-
         DT = time.time() - startTime
 
     # Report Error
@@ -636,6 +634,34 @@ def main(num_particle = 100, dt = 0.1):
     #print("FastSLAM ended in %.2fs with Distance Error: %.2fmm, Angle Error: %.2fdeg" % (total_time, dist_err, angle_err))
     if show_animation:
         plt.savefig("Sim with %d.png" %(num_particle))
+    else:
+        plt.cla()
+            
+        plt.plot(env_lm[:, 0], env_lm[:, 1], "*k")
+
+        if(len(z[0,:]) > 0):
+            for iz in range(len(z[0,:])):
+                ## CHECK z[iz,2] exists
+                lmid = int(z[2,iz])
+                ##  need another function that gets correct id
+                #plt.plot([st_est[0], particles[0].lm[lmid, 0]], [
+                #        st_est[1], particles[0].lm[lmid, 1]], "-k")
+                #plt.plot([st_est[0], particles[0].lm[lmid, 0]], [
+                #        st_est[1], particles[0].lm[lmid, 1]], "-k")
+
+        for i in range(N_PARTICLE):
+            plt.plot(particles[i].x, particles[i].y, ".r")
+            plt.plot(particles[i].lm[:, 0], particles[i].lm[:, 1], "xb")
+
+        
+        #plt.plot(hist_true[0, :], hist_true[1, :], "-b")
+        plt.plot(hist_dr[0, :], hist_dr[1, :], "-k")
+        plt.plot(hist_est[0, :], hist_est[1, :], "-r")
+        plt.plot(st_est[0], st_est[1], "xk")
+        plt.axis("equal")
+        plt.grid(True)
+        plt.savefig("CompletedSLAM%d.png" %(num_particle))
+    else:
     return #dist_err, angle_err
 
 def run(num_particle, dt):
@@ -648,4 +674,4 @@ if __name__ == '__main__':
     if i == '':
         main()
     else:
-        main(int(i),1.0/30.0)
+        main(int(i),1.3)
