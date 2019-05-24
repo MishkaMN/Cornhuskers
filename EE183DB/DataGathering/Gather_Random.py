@@ -5,9 +5,10 @@ import math
 import numpy as np
 import cv2
 import cv2.aruco as aruco
+import random
 import time
-import datetime
 import csv
+import datetime
 
 current_milli_time = lambda: int(round(time.time() * 1000))
 
@@ -80,55 +81,60 @@ def getPose(corners, pMatrix):
     vec = topCenter - center
     return center,topCenter,vec
 
+def inBounds(envWidth, envLength, x, y):
+    padding = 300 # In millimeters
+    return (x >= padding and x <= envWidth - padding and
+            y >= padding and y <= envLength - padding)
+
 if __name__ == '__main__':
-
-    data = []
-
+    random.seed()
     try:
         ws = DummyClient(esp8266host)
         ws.connect()
 
         cap = cv2.VideoCapture(1)
 
+        #envSize = 1060
         envLength = 1219
         envWidth = 914
 
-        l_inputs = [83, 90, 180]
-        r_inputs = [101, 90, 85]
-
-        l_stop, r_stop = [90, 90]
-
-        command_times = range(100, 1500 + 100, 100)
-
-        commands = []
-        l_len = len(l_inputs)
-        r_len = len(r_inputs)
-        for l_idx in range(0, l_len):
-            for r_idx in range(0, r_len):
-                for t in command_times:
-                    commands.append((l_inputs[l_idx], r_inputs[r_idx], t, True))
-                    commands.append((l_stop, r_stop, 500, False))
-                    commands.append((l_inputs[l_len - l_idx - 1], r_inputs[r_len - r_idx - 1], t, False))
-                    commands.append((l_stop, r_stop, 500, False))
-
         print("Starting...")
 
-
-        flag = False
-        x = envWidth / 2
-        y = envLength / 2
-        theta = 0
-        l_input = r_input = 90
-        record = False
-
-        command_stop_time = 0
-        start_time = current_milli_time()
-
-        trial_num = 0
         filename = time.strftime("%Y%m%d_%H%M%S") + '.csv'
+        #filename = 'data.csv'
         with open(filename, 'w') as csvfile:
             writer = csv.writer(csvfile)
-            while(commands):
+            writer.writerow(['time', 'left_pwm', 'right_pwm', 'x', 'y', 'theta'])
+
+            flag = False
+            x = envWidth / 2
+            y = envLength / 2
+            theta = 0
+            rotating_to_center = False
+            moving_to_center = False
+            upper_angle = lower_angle = 0
+            angle_padding = 10
+            left_pwm = right_pwm = 90
+            angle_to_center = 0
+
+            # PWMs
+            motor_min = 82
+            motor_max = 98
+
+            # Millisecond times
+            command_stop_time = 0
+            command_time_min = 100
+            command_time_max = 3000
+
+            start_time = current_milli_time()
+            #command_stop_time = start_time + 10000
+            total_duration = 5 * 60 # In seconds
+
+            #flag2 = False
+
+            print('Running robot for ' + str(total_duration) + ' seconds')
+
+            while(True):
                 ret, frame = cap.read()
 
                 #detect aruco tags and find corners
@@ -138,6 +144,7 @@ if __name__ == '__main__':
                 corners, ids, rejectedImgPoints = aruco.detectMarkers(gray, aruco_dict, parameters=parameters)
 
                 if (not ids is None) and (len(ids) == 5):
+                    flag = True
                     sortedCorners =  [x for _,x in sorted(zip(ids,corners))]
 
                     #find centers of environment tags
@@ -187,42 +194,138 @@ if __name__ == '__main__':
                         print( (bx+bw/2, envLength - (by+bh/2) ))
 
                     cv2.line(frame, (int(center[0]), int(envLength - center[1])), (int(topCenter[0]), int(topCenter[1])), (0,255,0), 3)
-
                     cv2.imshow('frame',frame)
-                current_time = (current_milli_time() - start_time) / 1000 # Time in seconds
-                current_data = np.array([trial_num, current_time, np.array([l_input, r_input]), np.array([x, y, theta])])
-                #data.append(current_data)
-                if record:
-                    writer.writerow([trial_num, current_time, l_input, r_input, x, y, theta])
 
-                if current_milli_time() >= command_stop_time:
-                    # Get next command
-                    l_input, r_input, duration, record = commands.pop(0)
+                else:
+                    # left_pwm = right_pwm = 90
+                    # command = str(left_pwm) + ' ' + str(right_pwm)
+                    # ws.send(command)
+                    flag = False
+                    # continue
 
-                    trial_num += 1
+                if moving_to_center:
+                    print('moving to center')
+                    if inBounds(envWidth, envLength, x, y):
+                        left_pwm = right_pwm = 90
+                        command = str(left_pwm) + ' ' + str(right_pwm)
+                        ws.send(command)
+                        moving_to_center = False
+                        #time.sleep(500)
+
+                elif rotating_to_center:
+                    print('rotating to center')
+                    current_angle = theta
+
+                    # Put angle between 0 and 360 degrees
+                    if current_angle < 0:
+                        current_angle += 360
+
+                    print('angle', current_angle, lower_angle, upper_angle)
+
+                    if current_milli_time() >= command_stop_time:
+                        if left_pwm == 90 and right_pwm == 90:
+                            # Determine optimal rotation direction
+                            diff = angle_to_center - current_angle
+                            if diff < 0:
+                                diff += 360
+                            if diff < 180:
+                                # turn CCW
+                                left_pwm = 83
+                                right_pwm = 85
+                            else:
+                                # turn CW
+                                left_pwm = 180
+                                right_pwm = 101
+
+                            # Minimum threshold to consider robot to be "facing the center"
+                            lower_angle = angle_to_center - angle_padding
+                            if lower_angle < 0:
+                                lower_angle += 360
+                            upper_angle = angle_to_center + angle_padding
+                            if upper_angle >= 360:
+                                upper_angle -= 360
+
+                            command_stop_time = current_milli_time() + 100
+
+                            command = str(left_pwm) + ' ' + str(right_pwm)
+                            ws.send(command)
+
+                        # Check if robot is facing towards center (within a threshold)
+                        elif (((upper_angle < lower_angle) and (current_angle > upper_angle and current_angle < lower_angle)) or
+                            (current_angle > lower_angle and current_angle < upper_angle)):
+
+                            rotating_to_center = False
+
+                            # Move forward
+                            left_pwm = 180
+                            right_pwm = 85
+                            command = str(left_pwm) + ' ' + str(right_pwm)
+                            ws.send(command)
+                            moving_to_center = True
+                            command_stop_time = 0
+
+                        else:
+                            left_pwm = right_pwm = 90
+                            command = str(left_pwm) + ' ' + str(right_pwm)
+                            ws.send(command)
+                            command_stop_time = current_milli_time() + 300
+
+                elif not inBounds(envWidth, envLength, x, y):
+                    print('not in bounds')
+                    left_pwm = right_pwm = 90
+                    command = str(left_pwm) + ' ' + str(right_pwm)
+                    ws.send(command)
+
+                    command_stop_time = 0
+
+                    # Get angle from point of robot to center point
+                    angle_to_center = math.degrees(math.atan2(envLength/2 - y, envWidth/2 - x))
+
+                    rotating_to_center = True
+
+                elif current_milli_time() >= command_stop_time:
+                    # Stop
+                    ws.send('90 90')
+
+                    #if not flag2:
+
+                    # duration = random.randint(command_time_min, command_time_max)
+                    duration = 10000
+
+                    # Random inputs
+                    # left_pwm = random.choice([180, 83, 90])
+                    # right_pwm = random.choice([85, 101, 90])
+                    left_pwm = 180
+                    right_pwm = 85
 
                     # Drive motors
-                    command = str(l_input) + ' ' + str(r_input)
+                    command = str(left_pwm) + ' ' + str(right_pwm)
                     ws.send(command)
 
                     command_stop_time = current_milli_time() + duration
 
-                    print('Input ' + str(l_input) + ' ' + str(r_input) + ' for ' + str(duration) + ' ms')
+                    print('Input ' + str(left_pwm) + ' ' + str(right_pwm) + ' for ' + str(duration) + ' ms')
 
+                    # flag2 = True
+
+                if not flag:
+                    cv2.imshow('frame',frame)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
 
-            print('All trials complete')
-            print('Total inputs: ', trial_num + 1)
+                # Record data in CSV file
+                current_time = (current_milli_time() - start_time) / 1000 # Time in seconds
+                writer.writerow([current_time, left_pwm, right_pwm, round(x,6), round(y,6), round(theta,6)])
+
+                if current_time >= total_duration:
+                    ws.send('90 90')
+                    ws.close()
+                    print('Data gathering complete')
+                    break
+
+        cap.release()
+        cv2.destroyAllWindows()
 
     except KeyboardInterrupt:
         ws.send('90 90')
-
-    finally:
-        ws.send('90 90')
         ws.close()
-        cap.release()
-        cv2.destroyAllWindows()
-        # filename = time.strftime("%Y%m%d_%H%M%S")
-        #data = np.array(data)
-        #np.save(filename, data)
