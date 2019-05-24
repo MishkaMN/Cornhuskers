@@ -9,6 +9,7 @@ objHeight = 50 #mm
 f_app = 1783.166667
 f = 3.04 # 4.5 # mm
 sens_h = 2.76 #6.828 # mm
+cam_offset = 55 #mm
 # d = 107.95 #millimeters
 
 def locateObstacle(img):
@@ -42,14 +43,20 @@ def locateObstacle(img):
         x,y,w,h = cv2.boundingRect(cnt)
         
         # DISTANCE CALC
-        d2 = f_app*objHeight/h
+        d = f_app*objHeight/h
         #d2 = f * objHeight / (sens_h * h/img.shape[0])
         #f_app = d * h / objHeight
 
         #ANGLE CALC
         px_from_center = (x+w/2) - img.shape[1]/2
         angle = np.arctan(px_from_center/f*sens_h/(img.shape[1]))
-        locations = np.hstack((locations, np.array([[d2],[angle]])))
+        angleSign = np.sign(angle)
+        obtuse = np.pi - np.abs(angle)
+
+        d2 = np.sqrt((cam_offset**2 + d**2) - (2*cam_offset*d*np.cos(obtuse)))
+        angle2 = angleSign * np.arccos((cam_offset**2 + d2**2 - d**2)/(2*cam_offset*d2))
+
+        locations = np.hstack((locations, np.array([[d2],[angle2]])))
         #data = np.array(x,y,w,h)
     return locations
 

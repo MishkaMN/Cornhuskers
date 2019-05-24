@@ -5,6 +5,8 @@ import time
 import ContourFind
 import cv2
 from scipy.stats import multivariate_normal
+from picamera.array import PiRGBArray
+from picamera import PiCamera
 
 
 width = 70
@@ -45,7 +47,7 @@ INIT_X = 528.6003
 INIT_Y = 502.26361083984375
 INIT_YAW = 89.16821191834865 * np.pi/180.0
 
-show_animation = True
+show_animation = False
 
 class Particle:
 
@@ -508,9 +510,9 @@ def main(num_particle = 100, dt = 0.1):
     N_PARTICLE = num_particle
 
     cap = cv2.VideoCapture('wk8.mp4')
-    #camera = PiCamera()
-    #camera.vflip = True
-    #rawCap = PiRGBArray(camera)
+    camera = PiCamera()
+    camera.vflip = True
+    rawCap = PiRGBArray(camera)
     time.sleep(1)
 
     #initialize environment
@@ -560,11 +562,11 @@ def main(num_particle = 100, dt = 0.1):
     fig_err_t = plt.figure()
 
     while(SIM_LENGTH >= sim_time):
-        #print("%.2f%%: %d Particles, dt = %.2f" % ((100*sim_time/SIM_LENGTH), num_particle, dt), flush=True)
+        print("%.2f%%: %d Particles, dt = %.2f" % ((100*sim_time/SIM_LENGTH), num_particle, dt), flush=True)
         sim_time += DT
 
-        #camera.capture(rawCap, format="bgr")
-        #img = rawCap.array
+        camera.capture(rawCap, format="bgr")
+        img = rawCap.array
         u = gen_input(sim_time)
         ret, img = cap.read()
         if not ret:
