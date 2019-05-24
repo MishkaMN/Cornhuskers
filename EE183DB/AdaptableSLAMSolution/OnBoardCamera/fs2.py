@@ -79,13 +79,14 @@ def gen_input(t, ws):
     #     v_l = 180
     #     v_r = 85
     # else:
-    
+    global completedInput    
     v_l = 90
     v_r = 90
     ws.send("90 90 10")
     if not completedInput:
         completedInput = True
         ws.send("180 85 1")
+        return np.array([[180],[85]])
     return np.array([[v_l], [v_r]])
 
 def fast_slam2(particles, u, z):
