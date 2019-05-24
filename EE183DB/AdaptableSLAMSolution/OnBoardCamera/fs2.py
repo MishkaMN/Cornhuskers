@@ -7,7 +7,7 @@ import cv2
 from scipy.stats import multivariate_normal
 from picamera.array import PiRGBArray
 from picamera import PiCamera
-
+import Client
 
 width = 70
 """
@@ -73,15 +73,19 @@ class Particle:
 #         v_r = 20.0
     
 #     return np.array([[v_l], [v_r]])
-
-def gen_input(t):
+completedInput = False
+def gen_input(t, ws):
     # if t > 1.1 and t < 1.67:
     #     v_l = 180
     #     v_r = 85
     # else:
+    
     v_l = 90
     v_r = 90
-    
+    ws.send("90 90 10")
+    if not completedInput:
+        completedInput = True
+        ws.send("180 85 1")
     return np.array([[v_l], [v_r]])
 
 def fast_slam2(particles, u, z):
@@ -502,98 +506,143 @@ def calc_final_state(particles):
     return st_est
 
 def main(num_particle = 100, dt = 0.1):
-    global DT
-    DT = dt
-    print("Starting Simulation...")
+    try:
+        global DT
+        DT = dt
+        ws = Client.DummyClient(Client.esp8266host)
+        ws.connect()
+        print("Ready")
+        print("Starting...")
 
-    global N_PARTICLE 
-    N_PARTICLE = num_particle
+        global N_PARTICLE 
+        N_PARTICLE = num_particle
 
-    #cap = cv2.VideoCapture('wk8.mp4')
-    camera = PiCamera()
-    camera.vflip = True
-    rawCap = PiRGBArray(camera)
-    time.sleep(1)
-    rawCap.truncate(0)
-    #initialize environment
-    """
-    env_lm = np.array([[0,0],
-                       [0, 1000],
-                       [300, 300], 
-                       [1000,0], 
-                       [400,100], 
-                       [290, 100], 
-                       [500,200], 
-                       [1000,1000]])
-    """
-    # env_lm = np.array([
-    #     [709.0, 677.0],
-    #     [370.5, 676.5],
-    #     [684.5, 756.0],
-    #     [677.5, 753.0],
-    #     [679.0, 762.5],
-    #     [405.5, 764.5],
-    #     [633.5, 838.5],
-    #     [474.5, 854.0],
-    #     [568.5, 911.5]
-    # ])
-    N_LM = 10#env_lm.shape[0]
-
-    #initialize states
-    st_est = np.array([[INIT_X,INIT_Y,INIT_YAW]]).T
-    #st_true = np.array([[INIT_X,INIT_Y,INIT_YAW]]).T
-    st_dr = np.array([[INIT_X,INIT_Y,INIT_YAW]]).T
-
-    #state histories
-    hist_est = st_est
-    #hist_true = st_true
-    hist_dr = st_dr
-
-    particles = [Particle(N_LM) for i in range(N_PARTICLE)]
-
-    ## Initialize the error holder
-    #hist_err = np.zeros((STATE_SIZE, 1)) # Error in state
-
-    ## Simulation utilities
-    sim_time = 0.0
-    sim_num = 0
-    start_time = time.time()
-
-    fig_err_t = plt.figure()
-
-    while(SIM_LENGTH >= sim_time):
-        startTime = time.time()
-        
-        print("%.2f%%: %d Particles, dt = %.2f" % ((100*sim_time/SIM_LENGTH), num_particle, DT), flush=True)
-        sim_time += DT
-
-        camera.capture(rawCap, format="bgr")
-        img = rawCap.array
-        u = gen_input(sim_time)
-        # ret, img = cap.read()
-        # ret = False
-        # if not ret:
-        #     input("Video Ended, press Enter to stop")
-        #     exit()
-        st_dr, z, ud = make_obs(particles, st_dr, u, img)
+        #cap = cv2.VideoCapture('wk8.mp4')
+        camera = PiCamera()
+        camera.vflip = True
+        rawCap = PiRGBArray(camera)
+        time.sleep(1)
         rawCap.truncate(0)
-        particles = fast_slam2(particles, ud, z)
+        #initialize environment
+        """
+        env_lm = np.array([[0,0],
+                        [0, 1000],
+                        [300, 300], 
+                        [1000,0], 
+                        [400,100], 
+                        [290, 100], 
+                        [500,200], 
+                        [1000,1000]])
+        """
+        # env_lm = np.array([
+        #     [709.0, 677.0],
+        #     [370.5, 676.5],
+        #     [684.5, 756.0],
+        #     [677.5, 753.0],
+        #     [679.0, 762.5],
+        #     [405.5, 764.5],
+        #     [633.5, 838.5],
+        #     [474.5, 854.0],
+        #     [568.5, 911.5]
+        # ])
+        N_LM = 10#env_lm.shape[0]
 
-        st_est = calc_final_state(particles)
+        #initialize states
+        st_est = np.array([[INIT_X,INIT_Y,INIT_YAW]]).T
+        #st_true = np.array([[INIT_X,INIT_Y,INIT_YAW]]).T
+        st_dr = np.array([[INIT_X,INIT_Y,INIT_YAW]]).T
 
-        # store data history
-        hist_est = np.hstack((hist_est, st_est))
-        hist_dr = np.hstack((hist_dr, st_dr))
+        #state histories
+        hist_est = st_est
+        #hist_true = st_true
+        hist_dr = st_dr
 
-        #st_err = abs(st_est - st_true)
+        particles = [Particle(N_LM) for i in range(N_PARTICLE)]
 
-        #print("Current Distance Error: %.2f, Angle Error: %.2f" % (math.sqrt(st_err[0]**2 + st_err[1]**2), np.rad2deg(abs(st_err[2]))))
-        #hist_err += st_err
-        sim_num += 1
+        ## Initialize the error holder
+        #hist_err = np.zeros((STATE_SIZE, 1)) # Error in state
 
-        if show_animation:  # pragma: no cover
-            plt.cla()
+        ## Simulation utilities
+        sim_time = 0.0
+        sim_num = 0
+        start_time = time.time()
+
+        fig_err_t = plt.figure()
+
+        while(SIM_LENGTH >= sim_time):
+            startTime = time.time()
             
+            print("%.2f%%: %d Particles, dt = %.2f" % ((100*sim_time/SIM_LENGTH), num_particle, DT), flush=True)
+            sim_time += DT
+
+            camera.capture(rawCap, format="bgr")
+            img = rawCap.array
+            u = gen_input(sim_time, ws)
+            # ret, img = cap.read()
+            # ret = False
+            # if not ret:
+            #     input("Video Ended, press Enter to stop")
+            #     exit()
+            st_dr, z, ud = make_obs(particles, st_dr, u, img)
+            rawCap.truncate(0)
+            particles = fast_slam2(particles, ud, z)
+
+            st_est = calc_final_state(particles)
+
+            # store data history
+            hist_est = np.hstack((hist_est, st_est))
+            hist_dr = np.hstack((hist_dr, st_dr))
+
+            #st_err = abs(st_est - st_true)
+
+            #print("Current Distance Error: %.2f, Angle Error: %.2f" % (math.sqrt(st_err[0]**2 + st_err[1]**2), np.rad2deg(abs(st_err[2]))))
+            #hist_err += st_err
+            sim_num += 1
+
+            if show_animation:  # pragma: no cover
+                plt.cla()
+                
+                #plt.plot(env_lm[:, 0], env_lm[:, 1], "*k")
+
+                if(len(z[0,:]) > 0):
+                    for iz in range(len(z[0,:])):
+                        ## CHECK z[iz,2] exists
+                        lmid = int(z[2,iz])
+                        ##  need another function that gets correct id
+                        #plt.plot([st_est[0], particles[0].lm[lmid, 0]], [
+                        #        st_est[1], particles[0].lm[lmid, 1]], "-k")
+                        #plt.plot([st_est[0], particles[0].lm[lmid, 0]], [
+                        #        st_est[1], particles[0].lm[lmid, 1]], "-k")
+
+                for i in range(N_PARTICLE):
+                    plt.plot(particles[i].x, particles[i].y, ".r")
+                    plt.plot(particles[i].lm[:, 0], particles[i].lm[:, 1], "xb")
+
+                
+                #plt.plot(hist_true[0, :], hist_true[1, :], "-b")
+                plt.plot(hist_dr[0, :], hist_dr[1, :], "-k")
+                plt.plot(hist_est[0, :], hist_est[1, :], "-r")
+                plt.plot(st_est[0], st_est[1], "xk")
+                plt.axis("equal")
+                plt.grid(True)
+                plt.pause(0.000001)
+                #plt.show()
+            DT = time.time() - startTime
+
+        # Report Error
+        
+        #hist_err = hist_err / sim_num
+        total_time = abs(start_time - time.time())
+        #dist_err = math.sqrt(hist_err[0]**2 + hist_err[1]**2)
+        #angle_err = np.rad2deg(hist_err[2])
+        print("=================================================")
+        print("FastSLAM ended in %.2fs" % (total_time))
+        #print("FastSLAM ended in %.2fs with Distance Error: %.2fmm, Angle Error: %.2fdeg" % (total_time, dist_err, angle_err))
+        if show_animation:
+            plt.savefig("Sim with %d.png" %(num_particle))
+        else:
+            plt.cla()
+                
             #plt.plot(env_lm[:, 0], env_lm[:, 1], "*k")
 
             if(len(z[0,:]) > 0):
@@ -617,50 +666,14 @@ def main(num_particle = 100, dt = 0.1):
             plt.plot(st_est[0], st_est[1], "xk")
             plt.axis("equal")
             plt.grid(True)
-            plt.pause(0.000001)
-            #plt.show()
-        DT = time.time() - startTime
+            plt.savefig("CompletedSLAM%d.png" %(num_particle))
 
-    # Report Error
-    
-    #hist_err = hist_err / sim_num
-    total_time = abs(start_time - time.time())
-    #dist_err = math.sqrt(hist_err[0]**2 + hist_err[1]**2)
-    #angle_err = np.rad2deg(hist_err[2])
-    print("=================================================")
-    print("FastSLAM ended in %.2fs" % (total_time))
-    #print("FastSLAM ended in %.2fs with Distance Error: %.2fmm, Angle Error: %.2fdeg" % (total_time, dist_err, angle_err))
-    if show_animation:
-        plt.savefig("Sim with %d.png" %(num_particle))
-    else:
-        plt.cla()
-            
-        #plt.plot(env_lm[:, 0], env_lm[:, 1], "*k")
-
-        if(len(z[0,:]) > 0):
-            for iz in range(len(z[0,:])):
-                ## CHECK z[iz,2] exists
-                lmid = int(z[2,iz])
-                ##  need another function that gets correct id
-                #plt.plot([st_est[0], particles[0].lm[lmid, 0]], [
-                #        st_est[1], particles[0].lm[lmid, 1]], "-k")
-                #plt.plot([st_est[0], particles[0].lm[lmid, 0]], [
-                #        st_est[1], particles[0].lm[lmid, 1]], "-k")
-
-        for i in range(N_PARTICLE):
-            plt.plot(particles[i].x, particles[i].y, ".r")
-            plt.plot(particles[i].lm[:, 0], particles[i].lm[:, 1], "xb")
-
+        return #dist_err, angle_err
+    except KeyboardInterrupt:
+        rawCap.truncate(0)
+        camera.close()
+        #ws.close()
         
-        #plt.plot(hist_true[0, :], hist_true[1, :], "-b")
-        plt.plot(hist_dr[0, :], hist_dr[1, :], "-k")
-        plt.plot(hist_est[0, :], hist_est[1, :], "-r")
-        plt.plot(st_est[0], st_est[1], "xk")
-        plt.axis("equal")
-        plt.grid(True)
-        plt.savefig("CompletedSLAM%d.png" %(num_particle))
-
-    return #dist_err, angle_err
 
 def run(num_particle, dt):
     return main(num_particle, dt)
