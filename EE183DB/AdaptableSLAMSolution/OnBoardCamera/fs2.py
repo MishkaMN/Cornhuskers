@@ -75,12 +75,12 @@ class Particle:
 #     return np.array([[v_l], [v_r]])
 
 def gen_input(t):
-    if t > 1.1 and t < 1.67:
-        v_l = 180
-        v_r = 85
-    else:
-        v_l = 90
-        v_r = 90
+    # if t > 1.1 and t < 1.67:
+    #     v_l = 180
+    #     v_r = 85
+    # else:
+    v_l = 90
+    v_r = 90
     
     return np.array([[v_l], [v_r]])
 
@@ -526,18 +526,18 @@ def main(num_particle = 100, dt = 0.1):
                        [500,200], 
                        [1000,1000]])
     """
-    env_lm = np.array([
-        [709.0, 677.0],
-        [370.5, 676.5],
-        [684.5, 756.0],
-        [677.5, 753.0],
-        [679.0, 762.5],
-        [405.5, 764.5],
-        [633.5, 838.5],
-        [474.5, 854.0],
-        [568.5, 911.5]
-    ])
-    N_LM = env_lm.shape[0]
+    # env_lm = np.array([
+    #     [709.0, 677.0],
+    #     [370.5, 676.5],
+    #     [684.5, 756.0],
+    #     [677.5, 753.0],
+    #     [679.0, 762.5],
+    #     [405.5, 764.5],
+    #     [633.5, 838.5],
+    #     [474.5, 854.0],
+    #     [568.5, 911.5]
+    # ])
+    N_LM = 10#env_lm.shape[0]
 
     #initialize states
     st_est = np.array([[INIT_X,INIT_Y,INIT_YAW]]).T
@@ -594,7 +594,7 @@ def main(num_particle = 100, dt = 0.1):
         if show_animation:  # pragma: no cover
             plt.cla()
             
-            plt.plot(env_lm[:, 0], env_lm[:, 1], "*k")
+            #plt.plot(env_lm[:, 0], env_lm[:, 1], "*k")
 
             if(len(z[0,:]) > 0):
                 for iz in range(len(z[0,:])):
@@ -617,8 +617,6 @@ def main(num_particle = 100, dt = 0.1):
             plt.plot(st_est[0], st_est[1], "xk")
             plt.axis("equal")
             plt.grid(True)
-            plt.xlim([300, 800])
-            plt.ylim([400, 950])
             plt.pause(0.000001)
             #plt.show()
         DT = time.time() - startTime
@@ -637,7 +635,7 @@ def main(num_particle = 100, dt = 0.1):
     else:
         plt.cla()
             
-        plt.plot(env_lm[:, 0], env_lm[:, 1], "*k")
+        #plt.plot(env_lm[:, 0], env_lm[:, 1], "*k")
 
         if(len(z[0,:]) > 0):
             for iz in range(len(z[0,:])):
