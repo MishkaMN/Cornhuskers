@@ -409,7 +409,7 @@ def main(num_particle = 100, dt = 0.1):
             if show_animation:  # pragma: no cover
                 plt.cla()
                 plt.plot(env_lm[:, 0], env_lm[:, 1], "*k")
-
+                """
                 if(len(z[0,:]) > 0):
                     for iz in range(len(z[0,:])):
                         ## CHECK z[iz,2] exists
@@ -418,7 +418,7 @@ def main(num_particle = 100, dt = 0.1):
                                 st_est[1], env_lm[lmid, 1]], "-k")
                         plt.plot([st_est[0], env_lm[lmid, 0]], [
                                 st_est[1], env_lm[lmid, 1]], "-k")
-
+                """
                 for i in range(N_PARTICLE):
                     plt.plot(particles[i].x, particles[i].y, ".r")
                     plt.plot(particles[i].lm[:, 0], particles[i].lm[:, 1], "xb")
