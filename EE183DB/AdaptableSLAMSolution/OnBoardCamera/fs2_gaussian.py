@@ -11,7 +11,6 @@ from picamera.array import PiRGBArray
 from picamera import PiCamera
 import Client
 
-import sklearn
 from scipy.stats import chi2
 import matplotlib.mlab as mlab
 from random import *
@@ -21,12 +20,14 @@ from numpy.linalg import cholesky
 PRINT_DEBUG = False
 numz = 0
 change = 0
+
+width = 70
+
 # Fast SLAM covariance
 # What we model
 R = np.diag([10.0, np.deg2rad(10.0)])**2
 Q = np.diag([18.4, np.deg2rad(1/width * 2*18.4)])**2
 
-width = 70
 
 #  Simulation parameter
 #Rsim = np.diag([1.0, np.deg2rad(2.0)])**2
@@ -68,6 +69,7 @@ class Particle:
         
         self.seen = 0
 
+completedInput = False
 def gen_input(t, ws):
     # if t > 1.1 and t < 1.67:
     #     v_l = 180
@@ -83,11 +85,11 @@ def gen_input(t, ws):
         return np.array([[180],[85]])
     return np.array([[v_l], [v_r]])
 
-def fast_slam2(particles, u, st_true, st_dr, camera):
+def fast_slam2(particles, u, st_true, st_dr, camera, rawCap):
 
     particles = predict_particles(particles, u)
 
-    st_true, st_dr, locations = make_obs(particles, st_true, st_dr, u, camera)
+    st_true, st_dr, locations = make_obs(particles, st_true, st_dr, u, camera, rawCap)
 
     z = data_assoc(particles, locations)
 
@@ -151,7 +153,6 @@ def dist_from_obs_to_stored(particle, z, stored_lm_state):
     # plus should be changed to minus when using contour
     y_obs = particle.y + r_obs * math.sin(pi_2_pi(particle.yaw + b_obs))
     x_obs = particle.x + r_obs * math.cos(pi_2_pi(particle.yaw + b_obs))
-
 
     dist = math.sqrt((x_obs - x_std)**2 + (y_obs - y_std)**2)
 
@@ -319,7 +320,7 @@ def motion_model(st, u):
     st[2, 0] = pi_2_pi(st[2, 0])
     return st
 
-def make_obs(particles, st_true, st_dr, u, camera):
+def make_obs(particles, st_true, st_dr, u, camera, rawCap):
     # dead reckoning
     st_dr = motion_model(st_dr, u)
 
@@ -531,7 +532,7 @@ def main(num_particle = 100, dt = 0.1):
 
         # iterating for NUM_ITER time to get better average results
         # set to just 1 to run once
-        total_time = []
+        #total_time = []
         dist_err = [] 
         angle_err = []
         for k in range(NUM_ITER):
@@ -567,7 +568,7 @@ def main(num_particle = 100, dt = 0.1):
                 
                 u = gen_input(sim_time, ws)
 
-                particles, st_true, st_dr, z = fast_slam2(particles, u, st_true, st_dr, camera)
+                particles, st_true, st_dr, z = fast_slam2(particles, u, st_true, st_dr, camera, rawCap)
 
                 st_est = calc_final_state(particles)
 
@@ -613,7 +614,7 @@ def main(num_particle = 100, dt = 0.1):
             # Report Error
             
             #hist_err = hist_err / sim_num
-            total_time += [abs(start_time - time.time())]
+            total_time = abs(start_time - time.time())
             #dist_err += [math.sqrt(hist_err[0]**2 + hist_err[1]**2)]
             #angle_err += list(np.rad2deg(hist_err[2]))
             print("=================================================")

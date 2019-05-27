@@ -5,7 +5,7 @@ import time
 import matplotlib.animation as animation
 from scipy import stats
     
-import sklearn
+#import sklearn
 from scipy.stats import chi2
 import matplotlib.mlab as mlab
 from random import *
