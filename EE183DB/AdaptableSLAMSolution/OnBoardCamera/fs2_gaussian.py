@@ -85,11 +85,11 @@ def gen_input(t, ws):
         return np.array([[180],[85]])
     return np.array([[v_l], [v_r]])
 
-def fast_slam2(particles, u, st_true, st_dr, camera, rawCap):
+def fast_slam2(particles, u, st_dr, camera, rawCap):
 
     particles = predict_particles(particles, u)
 
-    st_true, st_dr, locations = make_obs(particles, st_true, st_dr, u, camera, rawCap)
+    st_dr, locations = make_obs(particles, st_dr, u, camera, rawCap)
 
     z = data_assoc(particles, locations)
 
@@ -97,7 +97,7 @@ def fast_slam2(particles, u, st_true, st_dr, camera, rawCap):
 
     particles = resampling(particles)
 
-    return particles, st_true, st_dr, z
+    return particles, st_dr, z
 
 def predict_particles(particles, u):
 
@@ -320,12 +320,9 @@ def motion_model(st, u):
     st[2, 0] = pi_2_pi(st[2, 0])
     return st
 
-def make_obs(particles, st_true, st_dr, u, camera, rawCap):
+def make_obs(particles, st_dr, u, camera, rawCap):
     # dead reckoning
     st_dr = motion_model(st_dr, u)
-
-    # ground truth
-    st_true = motion_model(st_true, u)
 
     # Camera setup
     camera.capture(rawCap, format="bgr")
@@ -351,7 +348,7 @@ def make_obs(particles, st_true, st_dr, u, camera, rawCap):
             loc = np.array([[d_n], [pi_2_pi(angle_n)]])
             locations = np.hstack((locations, loc))
     """
-    return st_true, st_dr, locations
+    return st_dr, locations
 
 def data_assoc(particles, locations):
 
@@ -540,12 +537,12 @@ def main(num_particle = 100, dt = 0.1):
         
             #initialize states
             st_est = np.array([[INIT_X,INIT_Y,INIT_YAW]]).T
-            st_true = np.array([[INIT_X,INIT_Y,INIT_YAW]]).T
+            #st_true = np.array([[INIT_X,INIT_Y,INIT_YAW]]).T
             st_dr = np.array([[INIT_X,INIT_Y,INIT_YAW]]).T
 
             #state histories
             hist_est = st_est
-            hist_true = st_true
+            #hist_true = st_true
             hist_dr = st_dr
 
             particles = [Particle(N_LM) for i in range(N_PARTICLE)]
@@ -568,14 +565,14 @@ def main(num_particle = 100, dt = 0.1):
                 
                 u = gen_input(sim_time, ws)
 
-                particles, st_true, st_dr, z = fast_slam2(particles, u, st_true, st_dr, camera, rawCap)
+                particles, st_dr, z = fast_slam2(particles, u, st_dr, camera, rawCap)
 
                 st_est = calc_final_state(particles)
 
                 # store data history
                 hist_est = np.hstack((hist_est, st_est))
                 hist_dr = np.hstack((hist_dr, st_dr))
-                hist_true = np.hstack((hist_true, st_true))
+                #hist_true = np.hstack((hist_true, st_true))
 
                 st_err = abs(st_est - st_true)
 
@@ -601,7 +598,7 @@ def main(num_particle = 100, dt = 0.1):
                         for j in range(particles[i].seen):
                             plot_cov_ellipse(particles[i].lmP[2*j:2*j + 2],particles[i].lm[j], 2, ax1)
 
-                    ax1.plot(hist_true[0, :], hist_true[1, :], "-b")
+                    #ax1.plot(hist_true[0, :], hist_true[1, :], "-b")
 
                     ax1.plot(hist_dr[0, :], hist_dr[1, :], "-k")
                     ax1.plot(hist_est[0, :], hist_est[1, :], "-r")
