@@ -58,7 +58,22 @@ def locateObstacle(img):
 
         locations = np.hstack((locations, np.array([[d2],[angle2]])))
         #data = np.array(x,y,w,h)
-    return locations
+    # debug
+    d2 = loc[0]
+    angle = loc[1]
+    #print(d2, angle*180/np.pi)
+    x = loc[2]
+    y = loc[3]  
+    w = loc[4]
+    h = loc[5]
+    cv2.rectangle(img,(x,y),(x+w,y+h),(0,255,0),2)
+    cv2.putText(img, "angle"+str(angle*180/np.pi), (x, y), cv2.FONT_HERSHEY_TRIPLEX, 2, (0,255,0), lineType=cv2.LINE_AA) 
+    cv2.putText(img, "Dist"+str(d2), (x, y-100), cv2.FONT_HERSHEY_TRIPLEX, 2, (0,255,0), lineType=cv2.LINE_AA)
+    
+    cv2.imwrite('contourdebug.png',img)
+
+    
+return locations
 
 def pi_2_pi(angle):
     return (angle + np.pi) % (2 * np.pi) - np.pi    
@@ -125,8 +140,6 @@ def main():
         if ret:
             locations = locateObstacle(img)
 
-            
-            
             #print("Frame:")
             for loc in locations:
                 d2 = loc[0]
@@ -142,6 +155,7 @@ def main():
                 
                 objPoseX.append(d2*np.sin(angle) + st[-1,0])
                 objPoseY.append(d2*np.cos(angle) + st[-1,1])
+
         else:
             break
         cv2.imshow('Shapes', img)
