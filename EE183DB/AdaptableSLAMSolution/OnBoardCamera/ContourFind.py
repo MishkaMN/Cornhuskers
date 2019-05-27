@@ -39,6 +39,7 @@ def locateObstacle(img):
     cnts = [contours[i] for i in np.where(areas > 1000)[0]]
 
     locations = np.zeros((2,0))
+    locationz = np.zeros((2,0))
     for cnt in cnts:
         x,y,w,h = cv2.boundingRect(cnt)
         
@@ -57,23 +58,23 @@ def locateObstacle(img):
         angle2 = angleSign * np.arccos((cam_offset**2 + d2**2 - d**2)/(2*cam_offset*d2))
 
         locations = np.hstack((locations, np.array([[d2],[angle2]])))
+        locationz = np.hstack((locationz, np.array([[d2],[angle2], [x],[y],[w],[h]])))
         #data = np.array(x,y,w,h)
     # debug
-    d2 = loc[0]
-    angle = loc[1]
-    #print(d2, angle*180/np.pi)
-    x = loc[2]
-    y = loc[3]  
-    w = loc[4]
-    h = loc[5]
-    cv2.rectangle(img,(x,y),(x+w,y+h),(0,255,0),2)
-    cv2.putText(img, "angle"+str(angle*180/np.pi), (x, y), cv2.FONT_HERSHEY_TRIPLEX, 2, (0,255,0), lineType=cv2.LINE_AA) 
-    cv2.putText(img, "Dist"+str(d2), (x, y-100), cv2.FONT_HERSHEY_TRIPLEX, 2, (0,255,0), lineType=cv2.LINE_AA)
-    
-    cv2.imwrite('contourdebug.png',img)
+    for k, loc in enumerate(np.hsplit(locationz, locationz.shape[1])):
+        d2 = loc[0]
+        angle = loc[1]
+        #print(d2, angle*180/np.pi)
+        x = loc[2]
+        y = loc[3]  
+        w = loc[4]
+        h = loc[5]
+        cv2.rectangle(img,(x,y),(x+w,y+h),(0,255,0),2)
+        cv2.putText(img, "angle"+str(angle*180/np.pi), (x, y), cv2.FONT_HERSHEY_TRIPLEX, 2, (0,255,0), lineType=cv2.LINE_AA) 
+        cv2.putText(img, "Dist"+str(d2), (x, y-100), cv2.FONT_HERSHEY_TRIPLEX, 2, (0,255,0), lineType=cv2.LINE_AA)
 
-    
-return locations
+    cv2.imwrite('contourdebug.png',img)
+    return locations
 
 def pi_2_pi(angle):
     return (angle + np.pi) % (2 * np.pi) - np.pi    
