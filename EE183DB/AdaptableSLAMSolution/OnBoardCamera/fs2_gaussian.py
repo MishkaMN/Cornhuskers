@@ -17,11 +17,14 @@ from random import *
 from matplotlib.patches import Ellipse
 from numpy.linalg import cholesky
 
+# animation or debug purpose
+NUM_ITER = 1
+show_animation = False
 PRINT_DEBUG = False
 numz = 0
 change = 0
 
-width = 70
+width = 123
 
 # Fast SLAM covariance
 # What we model
@@ -43,14 +46,11 @@ LM_SIZE = 2  # LM state size [x,y]
 N_PARTICLE = 100  # number of particle
 NTH = N_PARTICLE / 1.5  # Number of particle for re-sampling
 N_LM = 10 # upper limit on number of landmarks
-ENV_SIZE = 700 # 70cm environment
+#ENV_SIZE = 700 # 70cm environment
 
-INIT_X = 300.0
-INIT_Y = 200.0
-INIT_YAW = 0.0
-
-NUM_ITER = 1
-show_animation = False
+INIT_X = 500.1477
+INIT_Y = 292.2932
+INIT_YAW =  89.09467 * np.pi/180.0
 
 class Particle:
 
@@ -330,8 +330,9 @@ def make_obs(particles, st_dr, u, camera, rawCap):
 
     # noisy observation
     locations = np.zeros((2,0))
-    locations = ContourFind.locateObstacle(img)
-
+    global numz
+    locations = ContourFind.locateObstacle(img, numz)
+    numz += 1
     rawCap.truncate(0)
     """
     for i in range(len(env_lm[:, 0])):
@@ -556,14 +557,17 @@ def main(num_particle = 100, dt = 0.1):
             start_time = time.time()
             fig = plt.figure()
             ax1 = fig.add_subplot(1,1,1)
-        
+            z = np.array([[1000000]])
             while(SIM_LENGTH >= sim_time):
                 startTime = time.time()
                 print("%.2f%%: %d Particles, dt = %.2f" % ((100*sim_time/SIM_LENGTH), num_particle, DT), flush=True)
             
                 sim_time += DT
-                
-                u = gen_input(sim_time, ws)
+                if (z[0,0] <= 150):
+                    completedInput = True
+                    u = gen_input(sim_time, ws)
+                else:
+                    u = gen_input(sim_time, ws)
 
                 particles, st_dr, z = fast_slam2(particles, u, st_dr, camera, rawCap)
 

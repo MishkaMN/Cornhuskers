@@ -12,7 +12,7 @@ sens_h = 2.76 #6.828 # mm
 cam_offset = 55 #mm
 # d = 107.95 #millimeters
 
-def locateObstacle(img):
+def locateObstacle(img, i):
     #_, threshold = cv2.threshold(img, 150, 255, cv2.THRESH_BINARY)
     #imgray = cv2.cvtColor(threshold, cv2.COLOR_BGR2GRAY);
     #contours, hierarchy = cv2.findContours(imgray, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -61,7 +61,7 @@ def locateObstacle(img):
         locationz = np.hstack((locationz, np.array([[d2],[angle2], [x],[y],[w],[h]])))
         #data = np.array(x,y,w,h)
     # debug
-    if if (locationz.shape[1] != 0):
+    if (locationz.shape[1] != 0):
         for k, loc in enumerate(np.hsplit(locationz, locationz.shape[1])):
             d2 = loc[0]
             angle = loc[1]
@@ -73,8 +73,9 @@ def locateObstacle(img):
             cv2.rectangle(img,(x,y),(x+w,y+h),(0,255,0),2)
             cv2.putText(img, "angle"+str(angle*180/np.pi), (x, y), cv2.FONT_HERSHEY_TRIPLEX, 2, (0,255,0), lineType=cv2.LINE_AA) 
             cv2.putText(img, "Dist"+str(d2), (x, y-100), cv2.FONT_HERSHEY_TRIPLEX, 2, (0,255,0), lineType=cv2.LINE_AA)
-
-    cv2.imwrite('contourdebug.png',img)
+            #imageName = 'cont_debug%d'
+        cv2.imwrite("contourdebug%d.png" %(i),img) 
+    
     return locations
 
 def pi_2_pi(angle):
