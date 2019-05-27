@@ -574,9 +574,9 @@ def main(num_particle = 100, dt = 0.1):
                 hist_dr = np.hstack((hist_dr, st_dr))
                 #hist_true = np.hstack((hist_true, st_true))
 
-                st_err = abs(st_est - st_true)
+                #st_err = abs(st_est - st_true)
 
-                hist_err += st_err
+                #hist_err += st_err
                 sim_num += 1
                 if show_animation:
                     ax1.cla()
