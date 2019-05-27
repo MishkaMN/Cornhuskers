@@ -159,26 +159,6 @@ def dist_from_obs_to_stored(particle, z, stored_lm_state):
 
     return dist
 
-def add_new_lm(particle, z, R):
-
-    r = z[0]
-    b = z[1]
-    lm_id = int(z[2])
-
-    s = math.sin(pi_2_pi(particle.yaw + b))
-    c = math.cos(pi_2_pi(particle.yaw + b))
-
-    particle.lm[lm_id, 0] = particle.x + r * c
-    particle.lm[lm_id, 1] = particle.y + r * s
-
-    # covariance
-    Gz = np.array([[c, -r * s],
-                   [s, r * c]])
-
-    particle.lmP[2 * lm_id:2 * lm_id + 2] = Gz @ R @ Gz.T
-
-    return particle
-
 
 def compute_jacobians(particle, xf, Pf, Q):
     dx = xf[0, 0] - particle.x
