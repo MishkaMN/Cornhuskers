@@ -557,13 +557,13 @@ def main(num_particle = 100, dt = 0.1):
             start_time = time.time()
             fig = plt.figure()
             ax1 = fig.add_subplot(1,1,1)
-            z = np.array([[1000000]])
+            z = np.array([1000000])
             while(SIM_LENGTH >= sim_time):
                 startTime = time.time()
                 print("%.2f%%: %d Particles, dt = %.2f" % ((100*sim_time/SIM_LENGTH), num_particle, DT), flush=True)
             
                 sim_time += DT
-                if (z[0,0] <= 150):
+                if (z[0] <= 150):
                     completedInput = True
                     u = gen_input(sim_time, ws)
                 else:

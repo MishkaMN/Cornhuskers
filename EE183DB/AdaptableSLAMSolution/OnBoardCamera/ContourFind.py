@@ -11,6 +11,7 @@ f = 3.04 # 4.5 # mm
 sens_h = 2.76 #6.828 # mm
 cam_offset = 55 #mm
 # d = 107.95 #millimeters
+numz = 0
 
 def locateObstacle(img, i):
     #_, threshold = cv2.threshold(img, 150, 255, cv2.THRESH_BINARY)
@@ -129,6 +130,7 @@ def main():
     dt = 1.0/30.0
     plt.figure()
     frame = 0
+    global numz
     while(cap.isOpened()):
         # camera.capture(rawCap, format="bgr")
         # img = rawCap.array
@@ -141,7 +143,8 @@ def main():
 
         ret, img = cap.read()
         if ret:
-            locations = locateObstacle(img)
+            locations = locateObstacle(img, numz)
+            numz +=1
 
             #print("Frame:")
             for loc in locations:
