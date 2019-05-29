@@ -1,5 +1,5 @@
-# from picamera.array import PiRGBArray
-# from picamera import PiCamera
+from picamera.array import PiRGBArray
+from picamera import PiCamera
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
@@ -9,10 +9,12 @@ objHeight = 50 #mm
 f_app = 1783.166667
 f = 3.04 # 4.5 # mm
 sens_h = 2.76 #6.828 # mm
-cam_offset = 55 #mm
+cam_offset = 70 #mm
 # d = 107.95 #millimeters
 numz = 0
-
+MAX_DEG = 19.0
+MAX_DIST = 370.0
+MIN_DIST = 160.0
 def locateObstacle(img, i):
     #_, threshold = cv2.threshold(img, 150, 255, cv2.THRESH_BINARY)
     #imgray = cv2.cvtColor(threshold, cv2.COLOR_BGR2GRAY);
@@ -58,15 +60,25 @@ def locateObstacle(img, i):
         d2 = np.sqrt((cam_offset**2 + d**2) - (2*cam_offset*d*np.cos(obtuse)))
         angle2 = angleSign * np.arccos((cam_offset**2 + d2**2 - d**2)/(2*cam_offset*d2))
 
-        locations = np.hstack((locations, np.array([[d2],[angle2]])))
-        locationz = np.hstack((locationz, np.array([[d2],[angle2], [x],[y],[w],[h]])))
+        # line fit to calibrate the camera
+        d2 = d2 * 0.90603 + 6.64151
+        angle2 = ((angle2 /np.pi * 180) * 1.3150  - 0.8510)
+
+        # store the observation if it's valid:
+        if (d2 >= MIN_DIST and d2 <= MAX_DIST and angle2 <= MAX_DEG and angle2 >= -MAX_DEG):
+            angle2 = angle2/180*np.pi
+            locations = np.hstack((locations, np.array([[d2],[angle2]])))
+            locationz = np.hstack((locationz, np.array([[d2],[angle2], [x],[y],[w],[h]])))
         #data = np.array(x,y,w,h)
-    # debug
+    
+    # debug, save figures or print values
+
     if (locationz.shape[1] != 0):
         for k, loc in enumerate(np.hsplit(locationz, locationz.shape[1])):
             d2 = loc[0]
             angle = loc[1]
-            #print(d2, angle*180/np.pi)
+            print(d2, angle*180/np.pi)
+            """
             x = loc[2]
             y = loc[3]  
             w = loc[4]
@@ -76,7 +88,7 @@ def locateObstacle(img, i):
             cv2.putText(img, "Dist"+str(d2), (x, y-100), cv2.FONT_HERSHEY_TRIPLEX, 2, (0,255,0), lineType=cv2.LINE_AA)
             #imageName = 'cont_debug%d'
         cv2.imwrite("contourdebug%d.png" %(i),img) 
-    
+    """
     return locations
 
 def pi_2_pi(angle):
@@ -115,6 +127,19 @@ def motion_model(st, u, DT):
     return st    
 
 def main():
+    camera = PiCamera()
+    camera.vflip = True
+    camera.hflip = True
+    rawCap = PiRGBArray(camera)
+    time.sleep(1)
+    rawCap.truncate(0)
+    while(True):
+        # Camera setup
+        camera.capture(rawCap, format="bgr")
+        img = rawCap.array
+        locations = locateObstacle(img, numz)
+        rawCap.truncate(0)
+def main_old():
     input("Press Enter to Start")
 
     # camera = PiCamera()

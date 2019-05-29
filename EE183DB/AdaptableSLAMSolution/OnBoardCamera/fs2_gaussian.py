@@ -19,7 +19,7 @@ from numpy.linalg import cholesky
 
 # animation or debug purpose
 NUM_ITER = 1
-show_animation = False
+show_animation = True
 PRINT_DEBUG = False
 numz = 0
 change = 0
@@ -28,7 +28,9 @@ width = 123
 
 # Fast SLAM covariance
 # What we model
-R = np.diag([10.0, np.deg2rad(10.0)])**2
+# standard error for dist was found to be 3.2872 after linear fit
+# approximate with 4
+R = np.diag([4.0, np.deg2rad(10.0)])**2
 Q = np.diag([18.4, np.deg2rad(1/width * 2*18.4)])**2
 
 
@@ -36,7 +38,7 @@ Q = np.diag([18.4, np.deg2rad(1/width * 2*18.4)])**2
 #Rsim = np.diag([1.0, np.deg2rad(2.0)])**2
 #Qsim = np.diag([0.5, 0.5])**2
 #OFFSET_YAWRATE_NOISE = 1.0
-
+D_ASSOC_RADIUS = 5
 DT = 0.1  # time tick [s]
 SIM_LENGTH = 30.0  # simulation time [s]
 MAX_RANGE = 300.0  # maximum observation range
@@ -48,9 +50,9 @@ NTH = N_PARTICLE / 1.5  # Number of particle for re-sampling
 N_LM = 10 # upper limit on number of landmarks
 #ENV_SIZE = 700 # 70cm environment
 
-INIT_X = 500.1477
-INIT_Y = 292.2932
-INIT_YAW =  89.09467 * np.pi/180.0
+INIT_X = 250.0
+INIT_Y = 250.0
+INIT_YAW =  90.0/180*np.pi
 
 class Particle:
 
@@ -69,20 +71,19 @@ class Particle:
         
         self.seen = 0
 
-completedInput = False
-def gen_input(t, ws):
+def gen_input(t, num, ws):
     # if t > 1.1 and t < 1.67:
     #     v_l = 180
     #     v_r = 85
-    # else:
-    global completedInput    
-    v_l = 90
-    v_r = 90
-    ws.send("90 90 10")
-    if not completedInput:
-        completedInput = True
-        ws.send("180 85 1")
-        return np.array([[180],[85]])
+    # else:  
+    if (num % 2 == 0):
+        v_l = 90
+        v_r = 90
+        ws.send("90 90 100")
+    else:
+        v_l = 180
+        v_r = 85
+        ws.send("180 85 100")
     return np.array([[v_l], [v_r]])
 
 def fast_slam2(particles, u, st_dr, camera, rawCap):
@@ -366,7 +367,7 @@ def data_assoc(particles, locations):
                 skip = False
                 for il in range(particles[ip].seen):
                     # Sample here
-                    if (not skip and dist_from_obs_to_stored(particles[ip], loc, particles[ip].lm[il]) <= 20):
+                    if (not skip and dist_from_obs_to_stored(particles[ip], loc, particles[ip].lm[il]) <= D_ASSOC_RADIUS):
                         skip = True
                         
                     zp, Hv, Hf, Sf = compute_jacobians(particles[ip], particles[ip].lm[il].reshape(2,1), particles[ip].lmP[2*il : 2*il + 2], R)
@@ -523,6 +524,7 @@ def main(num_particle = 100, dt = 0.1):
         
         camera = PiCamera()
         camera.vflip = True
+        #camera.hflip = True
         rawCap = PiRGBArray(camera)
         time.sleep(1)
         rawCap.truncate(0)
@@ -557,17 +559,18 @@ def main(num_particle = 100, dt = 0.1):
             start_time = time.time()
             fig = plt.figure()
             ax1 = fig.add_subplot(1,1,1)
-            z = np.array([1000000])
+            #z = np.array([1000000])
             while(SIM_LENGTH >= sim_time):
                 startTime = time.time()
                 print("%.2f%%: %d Particles, dt = %.2f" % ((100*sim_time/SIM_LENGTH), num_particle, DT), flush=True)
             
                 sim_time += DT
-                if (z[0] <= 150):
-                    completedInput = True
-                    u = gen_input(sim_time, ws)
-                else:
-                    u = gen_input(sim_time, ws)
+                # TODO: Fix:
+                u = gen_input(sim_time,sim_num, ws)
+        
+                # debugging
+                #ws.send("90 90 10")
+                #u = np.array([[90], [90]])
 
                 particles, st_dr, z = fast_slam2(particles, u, st_dr, camera, rawCap)
 
@@ -609,7 +612,9 @@ def main(num_particle = 100, dt = 0.1):
                     ax1.plot(st_est[0], st_est[1], "xk")
                     ax1.axis("equal")
                     ax1.grid(True)
-                    plt.pause(0.0001)
+                    #plt.pause(0.0001)
+                    plt.savefig("evolution%d,%d.png" %(num_particle, sim_num))
+                    
                 DT = time.time() - startTime
             
             # Report Error
@@ -622,10 +627,13 @@ def main(num_particle = 100, dt = 0.1):
             print("FastSLAM ended in %.2fs" % (total_time))
             #print("FastSLAM k = %d ended in %.2fs with Distance Error: %.2fmm, Angle Error: %.2fdeg" % (k, total_time[k], dist_err[k], angle_err[k]))
             #print("total difference", change)
-            if show_animation: 
+            if show_animation:
+                # if we had an animation 
                 plt.savefig("Sim with %d.png" %(num_particle))
             else:
                 plt.cla()
+                # if we didnt, just plot the final version
+                # and save
                 
                 #plt.plot(env_lm[:, 0], env_lm[:, 1], "*k")
 

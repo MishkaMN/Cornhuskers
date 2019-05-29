@@ -5,11 +5,11 @@
 
 Servo servoLeft, servoRight;
 
-const char* ssid     = "Kelton 211 (2G)";
-const char* password = "interesting";
+//const char* ssid     = "Kelton 211 (2G)";
+//const char* password = "interesting";
 
-//const char* ssid     = "YikeNet_2G";
-//const char* password = "luckytrain022";
+const char* ssid     = "YikeNet_2G";
+const char* password = "luckytrain022";
 
 WebSocketsServer webSocket = WebSocketsServer(81);
 
@@ -21,9 +21,9 @@ void parseCommand(String command, int* commandParts)
   commandParts[0] = atoi(strtokIndx);
   strtokIndx = strtok(NULL,", ");
   commandParts[1] = atoi(strtokIndx);
-//  strtokIndx = strtok(NULL,", ");
-//  commandParts[2] = atoi(strtokIndx);
-//  Serial.print(commandParts[2]);
+  strtokIndx = strtok(NULL,", ");
+  commandParts[2] = atoi(strtokIndx);
+  Serial.print(commandParts[2]);
 }
 
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t len) {
@@ -44,6 +44,8 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t len) {
 
               parseCommand(_payload, commandArgs);
               drive(commandArgs[0], commandArgs[1], servoLeft, servoRight);
+              sleep(commandArgs[2]);
+              drive(90,90,servoLeft,servoRight);
               sprintf(data, "Command,%d,%d,%d", commandArgs[0], commandArgs[1]);
               webSocket.sendTXT(num, data);
             }
