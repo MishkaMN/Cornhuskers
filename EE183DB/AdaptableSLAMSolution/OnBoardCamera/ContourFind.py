@@ -15,7 +15,7 @@ numz = 0
 MAX_DEG = 19.0
 MAX_DIST = 370.0
 MIN_DIST = 160.0
-def locateObstacle(img, i):
+def locateObstacle(img):
     #_, threshold = cv2.threshold(img, 150, 255, cv2.THRESH_BINARY)
     #imgray = cv2.cvtColor(threshold, cv2.COLOR_BGR2GRAY);
     #contours, hierarchy = cv2.findContours(imgray, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)

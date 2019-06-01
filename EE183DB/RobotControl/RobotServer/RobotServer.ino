@@ -44,7 +44,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t len) {
 
               parseCommand(_payload, commandArgs);
               drive(commandArgs[0], commandArgs[1], servoLeft, servoRight);
-              sleep(commandArgs[2]);
+              delay(commandArgs[2]);
               drive(90,90,servoLeft,servoRight);
               sprintf(data, "Command,%d,%d,%d", commandArgs[0], commandArgs[1]);
               webSocket.sendTXT(num, data);

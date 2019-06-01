@@ -19,7 +19,7 @@ from numpy.linalg import cholesky
 
 # animation or debug purpose
 NUM_ITER = 1
-show_animation = True
+show_animation = False
 PRINT_DEBUG = False
 numz = 0
 change = 0
@@ -31,28 +31,23 @@ width = 123
 # standard error for dist was found to be 3.2872 after linear fit
 # approximate with 4
 R = np.diag([4.0, np.deg2rad(10.0)])**2
-Q = np.diag([18.4, np.deg2rad(1/width * 2*18.4)])**2
+Q = np.diag([23.57, np.deg2rad(1/width * 2*18.4)])**2
 
 
-#  Simulation parameter
-#Rsim = np.diag([1.0, np.deg2rad(2.0)])**2
-#Qsim = np.diag([0.5, 0.5])**2
-#OFFSET_YAWRATE_NOISE = 1.0
 D_ASSOC_RADIUS = 5
-DT = 0.1  # time tick [s]
-SIM_LENGTH = 30.0  # simulation time [s]
+DT = 0.2  # time tick [s]
+SIM_LENGTH = 100  # simulation time [s]
 MAX_RANGE = 300.0  # maximum observation range
-M_DIST_TH = 2.0  # Threshold off Mahalanobis distance for data association.
+
 STATE_SIZE = 3  # State size [x,y,yaw]
 LM_SIZE = 2  # LM state size [x,y]
 N_PARTICLE = 100  # number of particle
 NTH = N_PARTICLE / 1.5  # Number of particle for re-sampling
-N_LM = 10 # upper limit on number of landmarks
-#ENV_SIZE = 700 # 70cm environment
+N_LM = 100 # upper limit on number of landmarks
 
-INIT_X = 250.0
-INIT_Y = 250.0
-INIT_YAW =  90.0/180*np.pi
+INIT_X = 287.58
+INIT_Y = 328.35
+INIT_YAW =  88.5788/180*np.pi
 
 class Particle:
 
@@ -72,25 +67,80 @@ class Particle:
         self.seen = 0
 
 def gen_input(t, num, ws):
-    # if t > 1.1 and t < 1.67:
-    #     v_l = 180
-    #     v_r = 85
-    # else:  
     if (num % 2 == 0):
         v_l = 90
         v_r = 90
         ws.send("90 90 100")
     else:
-        v_l = 180
-        v_r = 85
-        ws.send("180 85 100")
+
+        inputs  = np.array([[160,15, 200],
+            [160,15, 200],
+            [160,15, 200],
+            [83,85, 200],
+            [160,15, 200],
+            [160,15, 200],
+            [160,15, 200],
+            [170,101, 200],
+            [160,15, 200],
+            [160,15, 200],
+            [160,15, 200],
+            [160,15, 200],
+            [170,101, 200],
+            [170,101, 100],
+            [170,101, 200],
+            [170,101, 100],
+            [170,101, 200],
+            [170,101, 100],
+            [170,101, 200],
+            [170,101, 100],
+            [170,101, 200],
+            [170,101, 100],
+            [170,101, 200],
+            [170,101, 100],
+            [170,101, 100],
+            [160,15, 200],
+            [83,85, 200],
+            [160,15, 200],
+            [170,101, 200],
+            [160,15, 200],
+            [83,85, 200],
+            [160,15, 200],
+            [170,101, 100],
+            [160,15, 200],
+            [170,101, 200],
+            [170,101, 100],
+            [170,101, 200],
+            [170,101, 100],
+            [170,101, 200],
+            [170,101, 100],
+            [170,101, 200],
+            [170,101, 100],
+            [170,101, 200],
+            [170,101, 100],
+            [170,101, 200],
+            [170,101, 100],
+            [170,101, 100],
+            ])
+
+        idx = int(num /2)
+        if idx >= inputs.shape[0]:
+            v_l = 90
+            v_r = 90
+            ws.send("90 90 100")
+        else:
+            v_l = inputs[idx][0]
+            v_r = inputs[idx][1]
+            tm = inputs[idx][2]
+            cmd = str(v_l) + " " + str(v_r) + " " + str(tm)
+            ws.send(cmd)
     return np.array([[v_l], [v_r]])
 
-def fast_slam2(particles, u, st_dr, camera, rawCap):
+
+def fast_slam2(particles, u, st_est, camera, rawCap):
 
     particles = predict_particles(particles, u)
 
-    st_dr, locations = make_obs(particles, st_dr, u, camera, rawCap)
+    st_est, locations = make_obs(particles, st_est, u, camera, rawCap)
 
     z = data_assoc(particles, locations)
 
@@ -98,7 +148,7 @@ def fast_slam2(particles, u, st_dr, camera, rawCap):
 
     particles = resampling(particles)
 
-    return particles, st_dr, z
+    return particles, st_est, z
 
 def predict_particles(particles, u):
 
@@ -107,8 +157,10 @@ def predict_particles(particles, u):
         px[0, 0] = particles[i].x
         px[1, 0] = particles[i].y
         px[2, 0] = particles[i].yaw
-        ud = u + (np.random.randn(1, 2) @ R).T  # add noise
-        px = motion_model(px, ud)
+        #print("px_before\n", px)
+        #ud = u + (np.random.randn(1, 2) @ Q).T  # add noise
+        px = motion_model(px, u)
+        #print("px_after\n", px)
         particles[i].x = px[0, 0]
         particles[i].y = px[1, 0]
         particles[i].yaw = px[2, 0]
@@ -295,35 +347,48 @@ def motion_model(st, u):
     F = np.array([[1.0, 0, 0],
                   [0, 1.0, 0],
                   [0, 0, 1.0]])
-
+    # it was DT before, but I am changing it to something small
     B = np.array([[DT * np.cos(st[2, 0]), 0],
                   [DT * np.sin(st[2, 0]), 0],
                   [0.0, DT]])
 
     v = np.zeros((2,1))
-    
+    # Back and Forth
+    if u[0,0] == 160 and u[1,0] == 15:
+        v[0,0] = 254.63
+        v[1,0] = 254.63
+    elif u[0,0] == 0 and u[1,0] == 180:
+        v[0,0] = -316.11
+        v[1,0] = -316.11
+
+    # Turning
     if u[0,0] == 90:
         v[0,0] = 0.0
-    elif (u[0,0] == 180): #FW
+    elif (u[0,0] == 170): #
         v[0,0] = 228.1183511
-    elif (u[0,0] == 83): #BW
+    elif (u[0,0] == 83): #Left
         v[0,0] = -230.366008
 
     if u[1,0] == 90:
         v[1,0] = 0.0
-    elif (u[1,0] == 85): #FW
+    elif (u[1,0] == 85): #Left
         v[1,0] = 235.3996466
-    elif (u[1,0] == 101): #BW
+    elif (u[1,0] == 101): #Right
         v[1,0] = -208.6064064
 
+
     v = np.array([[(v[0,0] + v[1,0])/2], [1/width * (v[1,0] - v[0,0])]])
+    #print("Velocities:", v)
+    #print("\nF@st", F@st)
+    #print("\nB@v", B@v)
     st = F @ st + B @ v
     st[2, 0] = pi_2_pi(st[2, 0])
+    #print("\nNEW_ST", st)
     return st
 
-def make_obs(particles, st_dr, u, camera, rawCap):
+def make_obs(particles, st_est, u, camera, rawCap):
     # dead reckoning
-    st_dr = motion_model(st_dr, u)
+    st_est = motion_model(st_est, u)
 
     # Camera setup
     camera.capture(rawCap, format="bgr")
@@ -332,25 +397,11 @@ def make_obs(particles, st_dr, u, camera, rawCap):
     # noisy observation
     locations = np.zeros((2,0))
     global numz
-    locations = ContourFind.locateObstacle(img, numz)
+    locations = ContourFind.locateObstacle(img)
     numz += 1
     rawCap.truncate(0)
-    """
-    for i in range(len(env_lm[:, 0])):
 
-        dx = env_lm[i, 0] - st_true[0, 0]
-        dy = env_lm[i, 1] - st_true[1, 0]
-        d = math.sqrt(dx**2+dy**2)
-        angle = pi_2_pi(math.atan2(dy, dx) - st_true[2, 0])
-
-        #check if lm in front
-        if d <= MAX_RANGE and angle > -1*np.pi/2 and angle < np.pi/2:
-            d_n = d + np.random.randn() * Rsim[0, 0]  # add noise
-            angle_n = angle + np.random.randn() * Rsim[1, 1]  # add noise
-            loc = np.array([[d_n], [pi_2_pi(angle_n)]])
-            locations = np.hstack((locations, loc))
-    """
-    return st_dr, locations
+    return st_est, locations
 
 def data_assoc(particles, locations):
 
@@ -472,6 +523,7 @@ def calc_final_state(particles):
 
     st_est[2, 0] = pi_2_pi(st_est[2, 0])
     return st_est
+
 def plot_cov_ellipse(cov, pos, nstd=2, ax=None, **kwargs):
     """
     Plots an `nstd` sigma error ellipse based on the specified covariance
@@ -509,11 +561,9 @@ def plot_cov_ellipse(cov, pos, nstd=2, ax=None, **kwargs):
     ax.add_artist(ellip)
     return ellip
 
-def main(num_particle = 100, dt = 0.1):
+def main(num_particle = 100, dt = 0.2):
 
     try:
-        global DT
-        DT = dt
         ws = Client.DummyClient(Client.esp8266host)
         ws.connect()
         print("Ready")
@@ -522,14 +572,17 @@ def main(num_particle = 100, dt = 0.1):
         global N_PARTICLE 
         N_PARTICLE = num_particle
         
+        global DT
+        DT = dt
+
         camera = PiCamera()
         camera.vflip = True
         #camera.hflip = True
         rawCap = PiRGBArray(camera)
         time.sleep(1)
         rawCap.truncate(0)
-    
-
+        
+        
         # iterating for NUM_ITER time to get better average results
         # set to just 1 to run once
         #total_time = []
@@ -537,7 +590,17 @@ def main(num_particle = 100, dt = 0.1):
         angle_err = []
         for k in range(NUM_ITER):
             print("Starting Simulation %d..." % (k))
-        
+             
+            # For evaluation purpose
+            env_lm = np.array([
+                           [315.0,659.5],
+                           [71.0, 721.5],
+                           [50.5, 731.0], 
+                           [90.0, 743.0],
+                           [351.0, 841.0],
+                           [316.5, 868.0]
+                           ])
+
             #initialize states
             st_est = np.array([[INIT_X,INIT_Y,INIT_YAW]]).T
             #st_true = np.array([[INIT_X,INIT_Y,INIT_YAW]]).T
@@ -555,48 +618,33 @@ def main(num_particle = 100, dt = 0.1):
 
             ## Simulation utilities
             sim_time = 0.0
+            sim_dt = 0.0
             sim_num = 0
             start_time = time.time()
             fig = plt.figure()
             ax1 = fig.add_subplot(1,1,1)
-            #z = np.array([1000000])
             while(SIM_LENGTH >= sim_time):
                 startTime = time.time()
-                print("%.2f%%: %d Particles, dt = %.2f" % ((100*sim_time/SIM_LENGTH), num_particle, DT), flush=True)
+                print("%.2f%%: %d Particles, dt = %.2f" % ((100*sim_time/SIM_LENGTH), num_particle, sim_dt), flush=True)
             
-                sim_time += DT
-                # TODO: Fix:
+                sim_time += sim_dt
                 u = gen_input(sim_time,sim_num, ws)
-        
-                # debugging
-                #ws.send("90 90 10")
-                #u = np.array([[90], [90]])
 
-                particles, st_dr, z = fast_slam2(particles, u, st_dr, camera, rawCap)
+                particles, st_est, z = fast_slam2(particles, u, st_est, camera, rawCap)
 
                 st_est = calc_final_state(particles)
 
-                # store data history
                 hist_est = np.hstack((hist_est, st_est))
                 hist_dr = np.hstack((hist_dr, st_dr))
-                #hist_true = np.hstack((hist_true, st_true))
 
-                #st_err = abs(st_est - st_true)
-
-                #hist_err += st_err
                 sim_num += 1
                 if show_animation:
+                    
                     ax1.cla()
-                    
-                    
+                    plt.plot(env_lm[:, 0], env_lm[:, 1], "*k")
                     if(len(z[0,:]) > 0):
                         for iz in range(len(z[0,:])):
-                            ## CHECK z[iz,2] exists
                             lmid = int(z[2,iz])
-                            #ax1.plot([st_est[0], env_lm[lmid, 0]], [
-                            #        st_est[1], env_lm[lmid, 1]], "-k")
-                            #ax1.plot([st_est[0], env_lm[lmid, 0]], [
-                            #        st_est[1], env_lm[lmid, 1]], "-k")
                     
                     for i in range(N_PARTICLE):
                         ax1.plot(particles[i].x, particles[i].y, ".r")
@@ -604,8 +652,6 @@ def main(num_particle = 100, dt = 0.1):
                         # gaussian contour
                         for j in range(particles[i].seen):
                             plot_cov_ellipse(particles[i].lmP[2*j:2*j + 2],particles[i].lm[j], 2, ax1)
-
-                    #ax1.plot(hist_true[0, :], hist_true[1, :], "-b")
 
                     ax1.plot(hist_dr[0, :], hist_dr[1, :], "-k")
                     ax1.plot(hist_est[0, :], hist_est[1, :], "-r")
@@ -615,18 +661,13 @@ def main(num_particle = 100, dt = 0.1):
                     #plt.pause(0.0001)
                     plt.savefig("evolution%d,%d.png" %(num_particle, sim_num))
                     
-                DT = time.time() - startTime
+                sim_dt = time.time() - startTime
             
-            # Report Error
-            
-            #hist_err = hist_err / sim_num
+
             total_time = abs(start_time - time.time())
-            #dist_err += [math.sqrt(hist_err[0]**2 + hist_err[1]**2)]
-            #angle_err += list(np.rad2deg(hist_err[2]))
             print("=================================================")
             print("FastSLAM ended in %.2fs" % (total_time))
-            #print("FastSLAM k = %d ended in %.2fs with Distance Error: %.2fmm, Angle Error: %.2fdeg" % (k, total_time[k], dist_err[k], angle_err[k]))
-            #print("total difference", change)
+
             if show_animation:
                 # if we had an animation 
                 plt.savefig("Sim with %d.png" %(num_particle))
@@ -635,18 +676,12 @@ def main(num_particle = 100, dt = 0.1):
                 # if we didnt, just plot the final version
                 # and save
                 
-                #plt.plot(env_lm[:, 0], env_lm[:, 1], "*k")
+                plt.plot(env_lm[:, 0], env_lm[:, 1], "*k")
 
                 if(len(z[0,:]) > 0):
                     for iz in range(len(z[0,:])):
                         ## CHECK z[iz,2] exists
                         lmid = int(z[2,iz])
-                        ##  need another function that gets correct id
-                        #plt.plot([st_est[0], particles[0].lm[lmid, 0]], [
-                        #        st_est[1], particles[0].lm[lmid, 1]], "-k")
-                        #plt.plot([st_est[0], particles[0].lm[lmid, 0]], [
-                        #        st_est[1], particles[0].lm[lmid, 1]], "-k")
-
                 for i in range(N_PARTICLE):
                     plt.plot(particles[i].x, particles[i].y, ".r")
                     plt.plot(particles[i].lm[:, 0], particles[i].lm[:, 1], "xb")
@@ -676,8 +711,8 @@ def run(num_particle, dt):
 
 if __name__ == '__main__':
     print("Number of Particles?")
-    i = input()
+    i = 10#input()
     if i == '':
         main()
     else:
-        main(int(i), 1.3)
+        main(int(i))
