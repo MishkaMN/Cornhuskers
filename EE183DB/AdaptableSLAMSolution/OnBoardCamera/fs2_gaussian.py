@@ -14,6 +14,7 @@ from scipy import stats
 from picamera.array import PiRGBArray
 from picamera import PiCamera
 import Client
+import IMU 
 
 from scipy.stats import chi2
 import matplotlib.mlab as mlab
@@ -27,7 +28,7 @@ show_animation = False
 PRINT_DEBUG = False
 numz = 0
 change = 0
-
+INITIAL_ANGLE = 0
 width = 123
 
 # Fast SLAM covariance
@@ -369,7 +370,8 @@ def motion_model(st, u):
 
     st[0] = st[0] + predictions[0]
     st[1] = st[1] + predictions[1]
-    st[2] = arctan2(predictions[3], predictions[2])
+    st[2] = pi_2_pi(IMU.readAngle() - INITIAL_ANGLE)
+    #st[2] = arctan2(predictions[3], predictions[2])
     return st
 
 def make_obs(particles, st_est, u, camera, rawCap):
@@ -559,9 +561,12 @@ def main(num_particle = 100, dt = 0.2):
 
         global N_PARTICLE 
         N_PARTICLE = num_particle
-        
+
+        global INITIAL_ANGLE    
+        INITIAL_ANGLE = IMU.readAngle()
         global DT
         DT = dt
+
 
         camera = PiCamera()
         camera.vflip = True
