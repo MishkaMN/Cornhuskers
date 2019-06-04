@@ -5,11 +5,16 @@ import time
 import ContourFind
 import cv2
 import matplotlib.animation as animation
+from keras.models import Sequential, model_from_json
+from keras.initializers import Identity, RandomNormal
+from keras.layers import Dense, Dropout, LSTM, SimpleRNN, Dropout, GRU, BatchNormalization, Activation
+from keras.optimizers import Adam
 from scipy import stats
 
 from picamera.array import PiRGBArray
 from picamera import PiCamera
 import Client
+import IMU 
 
 from scipy.stats import chi2
 import matplotlib.mlab as mlab
@@ -23,7 +28,7 @@ show_animation = False
 PRINT_DEBUG = False
 numz = 0
 change = 0
-
+INITIAL_ANGLE = 0
 width = 123
 
 # Fast SLAM covariance
@@ -48,6 +53,21 @@ N_LM = 100 # upper limit on number of landmarks
 INIT_X = 287.58
 INIT_Y = 328.35
 INIT_YAW =  88.5788/180*np.pi
+
+def load_model(dirpath, model_fname, lr=1e-3):
+    # load theta RNN model
+    json_file = open(os.path.join(dirpath, '{}.json'.format(model_fname)), 'r')
+    loaded_model_json = json_file.read()
+    json_file.close()
+    model = model_from_json(loaded_model_json)
+    # load weights into new model
+    model.load_weights(os.path.join(dirpath, "{}.h5".format(model_fname)))
+
+    optimizer = Adam(lr=lr)
+    model.compile(loss='mean_squared_error', optimizer=optimizer)
+
+    print("Loaded {} from disk".format(model_fname))
+    return model
 
 class Particle:
 
@@ -344,46 +364,14 @@ def pi_2_pi(angle):
     return (angle + np.pi) % (2 * np.pi) - np.pi
 
 def motion_model(st, u):
-    F = np.array([[1.0, 0, 0],
-                  [0, 1.0, 0],
-                  [0, 0, 1.0]])
-    # it was DT before, but I am changing it to something small
-    B = np.array([[DT * np.cos(st[2, 0]), 0],
-                  [DT * np.sin(st[2, 0]), 0],
-                  [0.0, DT]])
+    _X = np.array([DT, u[0], u[1], np.cos(current_theta), np.sin(current_theta)]).reshape(1, 1, -1)
+    
+    predictions = nn_model.predict(_X).ravel()
 
-    v = np.zeros((2,1))
-    # Back and Forth
-    if u[0,0] == 160 and u[1,0] == 15:
-        v[0,0] = 254.63
-        v[1,0] = 254.63
-    elif u[0,0] == 0 and u[1,0] == 180:
-        v[0,0] = -316.11
-        v[1,0] = -316.11
-
-    # Turning
-    if u[0,0] == 90:
-        v[0,0] = 0.0
-    elif (u[0,0] == 170): #
-        v[0,0] = 228.1183511
-    elif (u[0,0] == 83): #Left
-        v[0,0] = -230.366008
-
-    if u[1,0] == 90:
-        v[1,0] = 0.0
-    elif (u[1,0] == 85): #Left
-        v[1,0] = 235.3996466
-    elif (u[1,0] == 101): #Right
-        v[1,0] = -208.6064064
-
-
-    v = np.array([[(v[0,0] + v[1,0])/2], [1/width * (v[1,0] - v[0,0])]])
-    #print("Velocities:", v)
-    #print("\nF@st", F@st)
-    #print("\nB@v", B@v)
-    st = F @ st + B @ v
-    st[2, 0] = pi_2_pi(st[2, 0])
-    #print("\nNEW_ST", st)
+    st[0] = st[0] + predictions[0]
+    st[1] = st[1] + predictions[1]
+    st[2] = pi_2_pi(IMU.readAngle() - INITIAL_ANGLE)
+    #st[2] = arctan2(predictions[3], predictions[2])
     return st
 
 def make_obs(particles, st_est, u, camera, rawCap):
@@ -563,6 +551,8 @@ def plot_cov_ellipse(cov, pos, nstd=2, ax=None, **kwargs):
 
 def main(num_particle = 100, dt = 0.2):
 
+    global nn_model
+    nn_model = load_model('.', 'fnn_model')
     try:
         ws = Client.DummyClient(Client.esp8266host)
         ws.connect()
@@ -571,9 +561,12 @@ def main(num_particle = 100, dt = 0.2):
 
         global N_PARTICLE 
         N_PARTICLE = num_particle
-        
+
+        global INITIAL_ANGLE    
+        INITIAL_ANGLE = IMU.readAngle()
         global DT
         DT = dt
+
 
         camera = PiCamera()
         camera.vflip = True
