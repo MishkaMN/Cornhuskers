@@ -9,6 +9,8 @@ import time
 #esp8266host = "ws://192.168.0.104:81/"
 esp8266host = "ws://192.168.50.133:81/"
 
+#new pi weber home
+#esp8266host = "ws://192.168.50.9:81/"
 command = ""
 
 class DummyClient(WebSocketClient):
