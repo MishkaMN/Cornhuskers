@@ -51,13 +51,13 @@ def dir_to_cmd(command):
     dirs = ['f', 'r', 'b', 'l','a', 'w', 's', 'd' ]
     if tmp[0] in dirs:
         if tmp[0] == 'f' or tmp[0] == 'w':
-            cmd = '180 0 ' + tmp[1]
+            cmd = '160 15 ' + '100'
         elif tmp[0] == 'b' or tmp[0] == 's':
-            cmd = '0 180 ' + tmp[1]
+            cmd = '0 180 ' + '100'
         elif tmp[0] == 'r' or tmp[0] == 'd':
-            cmd = '180 180 '+ tmp[1]
+            cmd = '170 101 '+ '100'
         elif tmp[0] == 'l' or tmp[0] == 'a':
-            cmd = '0 0 '+ tmp[1]
+            cmd = '83 85 '+ '100'
     else:
         cmd = command
     return cmd
