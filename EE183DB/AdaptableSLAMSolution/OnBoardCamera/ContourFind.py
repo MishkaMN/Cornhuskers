@@ -77,7 +77,7 @@ def locateObstacle(img):
         for k, loc in enumerate(np.hsplit(locationz, locationz.shape[1])):
             d2 = loc[0]
             angle = loc[1]
-            print(d2, angle*180/np.pi)
+            #print(d2, angle*180/np.pi)
             """
             x = loc[2]
             y = loc[3]  
@@ -120,7 +120,7 @@ def motion_model(st, u, DT):
         v[1,0] = -208.6064064
 
     v = np.array([[(v[0,0] + v[1,0])/2], [1/123 * (v[1,0] - v[0,0])]])
-    print(st)
+    #print(st)
     st = F @ st + np.transpose(B @ v)
 
     st[0,2] = pi_2_pi(st[0,2])

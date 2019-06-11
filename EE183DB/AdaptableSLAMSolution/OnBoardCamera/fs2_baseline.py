@@ -36,7 +36,7 @@ Q = np.diag([23.57, np.deg2rad(1/width * 2*18.4)])**2
 
 D_ASSOC_RADIUS = 5
 DT = 0.2  # time tick [s]
-SIM_LENGTH = 100  # simulation time [s]
+SIM_LENGTH = 100000  # simulation time [s] not used in the demo
 MAX_RANGE = 300.0  # maximum observation range
 
 STATE_SIZE = 3  # State size [x,y,yaw]
@@ -68,15 +68,26 @@ class Particle:
 
 def gen_input(t, num, ws):
     if (num % 2 == 0):
+        
         v_l = 90
         v_r = 90
         ws.send("90 90 100")
     else:
-        cmd_raw = input("F/B/L/R or W/S/A/D + Time: 100-200 \n")
-        inputs = Client.dir_to_cmd(cmd_raw)
+        while (True):
+            cmd_raw = input("Control with F/B/L/R or W/S/A/D or q: \n")
+            #Exit
+            if cmd_raw == 'q':
+                return 'q'
+            inputs = Client.dir_to_cmd(cmd_raw)
+            if cmd_raw == 'invalid': 
+                print("Invalid direction... please try again")
+                continue
+            else:
+                break
+        
+        print("SLAMING! Please wait...")
+        ws.send(inputs)
         inputs = np.fromstring(inputs, dtype=int, sep=' ')
-
-        print(inputs)
         """
         inputs  = np.array([[160,15, 200],
             [160,15, 200],
@@ -102,13 +113,13 @@ def gen_input(t, num, ws):
             [170,101, 200],
             ])
         """
-        #idx = int(num /2);
         v_l = inputs[0]
         v_r = inputs[1]
         #tm = inputs[2]
-        cmd = str(v_l) + " " + str(v_r)
-        print(cmd)
-        ws.send(cmd)
+        #print(cmd)
+        #cmd = str(v_l) + " " + str(v_r)
+
+        
     return np.array([[v_l], [v_r]])
 
 
@@ -565,9 +576,10 @@ def main(num_particle = 100, dt = 0.2):
         dist_err = [] 
         angle_err = []
         for k in range(NUM_ITER):
-            print("Starting Simulation %d..." % (k))
+            print("Starting SLAM! Press q to quit when it prompts")
              
             # For evaluation purpose
+            """
             env_lm = np.array([
                            [315.0, 659.5],
                            [71.0, 721.5],
@@ -581,7 +593,7 @@ def main(num_particle = 100, dt = 0.2):
                            [351.0, 841.0],
                            [316.5, 868.0],
                            ])
-
+            """
             #initialize states
             st_est = np.array([[INIT_X,INIT_Y,INIT_YAW]]).T
             #st_true = np.array([[INIT_X,INIT_Y,INIT_YAW]]).T
@@ -604,13 +616,15 @@ def main(num_particle = 100, dt = 0.2):
             start_time = time.time()
             fig = plt.figure()
             ax1 = fig.add_subplot(1,1,1)
-            while(SIM_LENGTH >= sim_time):
+            while(True):
                 startTime = time.time()
-                print("%.2f%%: %d Particles, dt = %.2f" % ((100*sim_time/SIM_LENGTH), num_particle, sim_dt), flush=True)
+                #print("%.2f%%: %d Particles, dt = %.2f" % ((100*sim_time/SIM_LENGTH), num_particle, sim_dt), flush=True)
             
                 sim_time += sim_dt
                 u = gen_input(sim_time,sim_num, ws)
-
+                if u == 'q':
+                    break
+                
                 particles, st_est, z = fast_slam2(particles, u, st_est, camera, rawCap)
 
                 st_est = calc_final_state(particles)
@@ -622,7 +636,7 @@ def main(num_particle = 100, dt = 0.2):
                 if show_animation:
                     
                     ax1.cla()
-                    plt.plot(env_lm[:, 0], env_lm[:, 1], "*k")
+                    #plt.plot(env_lm[:, 0], env_lm[:, 1], "*k")
                     if(len(z[0,:]) > 0):
                         for iz in range(len(z[0,:])):
                             lmid = int(z[2,iz])
@@ -657,7 +671,7 @@ def main(num_particle = 100, dt = 0.2):
                 # if we didnt, just plot the final version
                 # and save
                 
-                plt.plot(env_lm[:, 0], env_lm[:, 1], "*k")
+                #plt.plot(env_lm[:, 0], env_lm[:, 1], "*k")
 
                 if(len(z[0,:]) > 0):
                     for iz in range(len(z[0,:])):
@@ -677,7 +691,7 @@ def main(num_particle = 100, dt = 0.2):
                 plt.plot(st_est[0], st_est[1], "xk")
                 plt.axis("equal")
                 plt.grid(True)
-                plt.savefig("CompletedSLAM%d.png" %(num_particle))
+                plt.savefig("BaselineSLAM%d.png" %(num_particle))
 
             return
     except KeyboardInterrupt:
@@ -686,12 +700,12 @@ def main(num_particle = 100, dt = 0.2):
 
     #return sum(dist_err)/NUM_ITER, sum(angle_err)/NUM_ITER, sum(total_time)/NUM_ITER
 
-def run(num_particle, dt):
-    return main(num_particle, dt)
+def run(num_particle):
+    return main(num_particle)
 
 
 if __name__ == '__main__':
-    print("Number of Particles?")
+    print("Number of Particles: 10")
     i = 10#input()
     if i == '':
         main()
