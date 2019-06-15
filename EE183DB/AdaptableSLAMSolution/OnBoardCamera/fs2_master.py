@@ -5,18 +5,18 @@ import fs2_baseline
 
 def main():
 	while (True):
-		select = input("[N]eural? or [B]aseline? or [Q]uit?")
-		if select == 'n' or 'N':
+
+		select = input("[N]eural? or [B]aseline? or [Q]uit?\n")
+		if select == 'n' or select == 'N':
 			print("Selected Neural FastSLAM")
 			fs2_neural.run(10)
 			break
-
-		elif select == 'b' or 'B':
+		elif select == 'b' or select == 'B':
 			print("Selected Baseline FastSLAM")
 			fs2_baseline.run(10)
 			break
 
-		elif select == 'q' or 'Q':
+		elif select == 'q' or select == 'Q':
 			print("Quitting...")
 			break
 		else:

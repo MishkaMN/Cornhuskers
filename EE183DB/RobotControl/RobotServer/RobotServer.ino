@@ -5,8 +5,8 @@
 
 Servo servoLeft, servoRight;
 
-const char* ssid     = "Kelton 211 (2G)";
-const char* password = "interesting";
+const char* ssid     = "NotAKeylogger";
+const char* password = "GiveWifi";
 
 //const char* ssid     = "YikeNet_2G";
 //const char* password = "luckytrain022";

@@ -6,7 +6,7 @@ import math
 
 #esp8266host = "ws://192.168.0.104:81/"
 import time
-esp8266host = "ws://192.168.0.104:81/"
+esp8266host = "ws://192.168.43.240:81/"
 #esp8266host = "ws://192.168.50.133:81/"
 
 #new pi weber home
@@ -51,16 +51,16 @@ def dir_to_cmd(command):
     dirs = ['f', 'r', 'b', 'l','a', 'w', 's', 'd' ]
     if tmp[0] in dirs:
         if tmp[0] == 'f' or tmp[0] == 'w':
-            cmd = '160 15 ' + '100'
+            cmd = '160 15 ' + '200'
             print("Forward!")
         elif tmp[0] == 'b' or tmp[0] == 's':
-            cmd = '0 180 ' + '100'
+            cmd = '0 180 ' + '200'
             print("Backward!")
         elif tmp[0] == 'r' or tmp[0] == 'd':
-            cmd = '170 101 '+ '100'
+            cmd = '170 101 '+ '200'
             print("Right!")
         elif tmp[0] == 'l' or tmp[0] == 'a':
-            cmd = '83 85 '+ '100'
+            cmd = '83 85 '+ '200'
             print("Left!")
     else:
         cmd = 'invalid'
